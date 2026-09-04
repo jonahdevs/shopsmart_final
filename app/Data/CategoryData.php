@@ -3,6 +3,7 @@
 namespace App\Data;
 
 use App\Models\Category;
+use App\Support\SvgSanitizer;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
@@ -41,7 +42,9 @@ class CategoryData extends Data
             name: $category->name,
             slug: $category->slug,
             description: $category->description,
-            iconSvg: $category->icon_svg,
+            // Rendered with v-html by CategoryTiles, so it is reduced to an
+            // allow-listed glyph on the way out rather than trusted.
+            iconSvg: app(SvgSanitizer::class)->sanitize($category->icon_svg),
             image: $image === null ? null : ImageData::fromMedia($image, $category->name, 'thumb'),
             productCount: $productCount ?? (isset($category->products_count) ? (int) $category->products_count : null),
             children: $children,

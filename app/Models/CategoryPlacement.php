@@ -4,8 +4,10 @@ namespace App\Models;
 
 use App\Enums\CategorySection;
 use App\Enums\CategoryStatus;
+use App\Observers\CategoryPlacementObserver;
 use Database\Factories\CategoryPlacementFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -27,6 +29,7 @@ use Illuminate\Support\Carbon;
  * @property-read Category $category
  */
 #[Fillable(['category_id', 'location', 'sort_order', 'status'])]
+#[ObservedBy(CategoryPlacementObserver::class)]
 class CategoryPlacement extends Model
 {
     /** @use HasFactory<CategoryPlacementFactory> */

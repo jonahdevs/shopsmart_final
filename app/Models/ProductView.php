@@ -64,9 +64,19 @@ class ProductView extends Model
      * Log a view for analytics, throttled to once per 30 minutes per
      * session+product so refreshes and back-navigation don't inflate the count.
      * Cache::add() is atomic, so two concurrent requests can't both win.
+     *
+     * A view with no session is not recorded at all. It cannot be throttled —
+     * every sessionless request would share one key per product, so a single
+     * such view would suppress all the others store-wide for half an hour — and
+     * it cannot be attributed either, since "customers also viewed" is built by
+     * joining product_views to itself on session_id.
      */
     public static function record(Product $product, ?User $user, ?string $sessionId): void
     {
+        if ($sessionId === null) {
+            return;
+        }
+
         $throttleKey = "product-view:{$sessionId}:{$product->getKey()}";
 
         if (! Cache::add($throttleKey, true, now()->addMinutes(self::THROTTLE_MINUTES))) {

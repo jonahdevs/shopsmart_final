@@ -4,6 +4,7 @@ use App\Enums\ProductVisibility;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use Illuminate\Support\Facades\DB;
 
 /**
  * The header autocomplete. It runs on every keystroke, so the two-character
@@ -47,4 +48,28 @@ test('search suggest hides products that are not published or not search visible
     $response = $this->getJson(route('search.suggest', ['q' => 'kettle']))->assertOk();
 
     expect($response->json('products.*.id'))->toBe([$visible->id]);
+});
+
+test('search suggest does not aggregate the whole catalog to answer a keystroke', function () {
+    $category = Category::factory()->create(['name' => 'Kettles']);
+    $brand = Brand::factory()->create(['name' => 'Kettleworks']);
+
+    Product::factory()
+        ->count(30)
+        ->published()
+        ->create(['primary_category_id' => $category->id, 'brand_id' => $brand->id]);
+
+    $queries = 0;
+    DB::listen(function () use (&$queries): void {
+        $queries++;
+    });
+
+    $this->getJson(route('search.suggest', ['q' => 'kettle']))->assertOk();
+
+    // Five at the time of writing: the product search and its two eager loads,
+    // the category lookup and the brand lookup. The count that matters is the
+    // sixth — decorating the category rows with live product counts pulls in
+    // the store-wide aggregate, which is only one query but scans the whole
+    // catalog, on an endpoint that fires on every keystroke.
+    expect($queries)->toBeLessThanOrEqual(5);
 });

@@ -119,6 +119,13 @@
     --sale: #ff1f6b;
     --field: #fcfcfd;
     --rule: #e6e8ee;
+
+    /*
+      Errors are loud but they are not discounts. A true red reads as a warning
+      where the magenta `--sale` would read as a price, so the two never share a
+      token — see the `--destructive` mapping below.
+    */
+    --alert: #d92d20;
 }
 
 /*
@@ -144,7 +151,7 @@
     --muted-foreground: #5b6070;
     --accent: #eef1ff;
     --accent-foreground: var(--electric);
-    --destructive: var(--sale);
+    --destructive: var(--alert);
     --destructive-foreground: #ffffff;
     --border: var(--rule);
     --input: var(--rule);

@@ -9,8 +9,11 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Review;
+use App\Support\Money;
+use App\Support\StorefrontCache;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -33,6 +36,12 @@ trait FiltersCatalogProducts
 
     /** Merchandising tag that pins a product into "new arrivals" regardless of age. */
     private const NEW_ARRIVAL_TAG = 'New Arrival';
+
+    /** How long the category facet counts stay fresh. */
+    private const COUNTS_FRESH_SECONDS = 300;
+
+    /** How long they may still be served stale while a refresh runs behind the response. */
+    private const COUNTS_STALE_SECONDS = 900;
 
     /**
      * The base listing query: live, catalog-visible products with everything a
@@ -177,12 +186,14 @@ trait FiltersCatalogProducts
      */
     private function applyPriceRange(Builder $query, CatalogFilterData $filters): void
     {
+        $money = app(Money::class);
+
         $query->where(fn (Builder $ceiling) => $ceiling
             ->whereNull('price')
-            ->orWhere('price', '<=', $filters->priceMax * 100));
+            ->orWhere('price', '<=', $money->toMinor($filters->priceMax)));
 
         if ($filters->priceMin > 0) {
-            $query->whereNotNull('price')->where('price', '>=', $filters->priceMin * 100);
+            $query->whereNotNull('price')->where('price', '>=', $money->toMinor($filters->priceMin));
         }
     }
 
@@ -191,14 +202,19 @@ trait FiltersCatalogProducts
      * sorts where the shopper sees it. Unpriced products always sink to the
      * bottom rather than clustering at whichever end NULL happens to sort.
      *
+     * Every sort ends on `id`. None of these columns is unique, and the grid
+     * pages through "load more" — without a unique tie-breaker the database is
+     * free to order tied rows differently between one page and the next, which
+     * shows up as a tile repeated across the join or missing entirely.
+     *
      * @param  Builder<Product>  $query
      */
     private function applySort(Builder $query, string $sort): void
     {
         match ($sort) {
-            'price-asc' => $query->orderByRaw('COALESCE(sale_price, price) IS NULL, COALESCE(sale_price, price) ASC'),
-            'price-desc' => $query->orderByRaw('COALESCE(sale_price, price) IS NULL, COALESCE(sale_price, price) DESC'),
-            'name-asc' => $query->orderBy('name'),
+            'price-asc' => $query->orderByRaw('COALESCE(sale_price, price) IS NULL, COALESCE(sale_price, price) ASC')->orderByDesc('id'),
+            'price-desc' => $query->orderByRaw('COALESCE(sale_price, price) IS NULL, COALESCE(sale_price, price) DESC')->orderByDesc('id'),
+            'name-asc' => $query->orderBy('name')->orderByDesc('id'),
             'newest' => $query->orderByDesc('published_at')->orderByDesc('id'),
             // "Popularity" is merchandised by hand through sort_order, newest first within a rank.
             default => $query->orderBy('sort_order')->orderByDesc('id'),
@@ -238,9 +254,31 @@ trait FiltersCatalogProducts
      * and counted in the database, rather than paying a correlated subquery per
      * category row or a count query per facet.
      *
+     * Cached because it scans the whole catalog, depends on nothing in the
+     * request, and is read by four pages. ProductObserver and CategoryObserver
+     * clear the key when something that changes a total is written, so the
+     * window below is a backstop for edits made outside Eloquent. `flexible()`
+     * serves the stale value and refreshes after the response rather than
+     * making one unlucky shopper wait for the rebuild.
+     *
      * @return array<int, int>
      */
     protected function catalogCountsByCategory(): array
+    {
+        /** @var array<int, int> $cached */
+        $cached = Cache::flexible(
+            StorefrontCache::CATEGORY_PRODUCT_COUNTS,
+            [self::COUNTS_FRESH_SECONDS, self::COUNTS_STALE_SECONDS],
+            fn (): array => $this->freshCatalogCountsByCategory(),
+        );
+
+        return $cached;
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    private function freshCatalogCountsByCategory(): array
     {
         $liveProducts = Product::query()
             ->published()

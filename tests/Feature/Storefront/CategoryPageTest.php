@@ -4,6 +4,7 @@ use App\Enums\CategoryStatus;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
 
 /**
@@ -131,4 +132,30 @@ test('the categories index lists active categories with their product counts', f
             ->where('categories.0.productCount', 1)
             ->has('categories.0.children', 1)
             ->where('categories.0.children.0.productCount', 1));
+});
+
+test('a category page issues a bounded number of queries for a page of products', function () {
+    $parent = Category::factory()->create();
+    $child = Category::factory()->child($parent)->create();
+    $brand = Brand::factory()->create();
+
+    Product::factory()
+        ->count(30)
+        ->published()
+        ->create(['primary_category_id' => $child->id, 'brand_id' => $brand->id]);
+
+    $queries = 0;
+    DB::listen(function () use (&$queries): void {
+        $queries++;
+    });
+
+    $this->get(route('category.show', $parent))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page->has('products.data', 24));
+
+    // The category tree is read once and walked in memory for all three of the
+    // subtree scope, the child counts and the breadcrumbs. Anything that grows
+    // this with the page size is an N+1; anything that adds a flat query is
+    // probably a second read of a list already in hand.
+    expect($queries)->toBeLessThanOrEqual(15);
 });

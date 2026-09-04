@@ -78,7 +78,10 @@ class ProductDetailData extends Data
     public static function fromModel(Product $product, array $breadcrumbs = []): self
     {
         $effective = $product->effectivePriceCents();
-        $card = ProductCardData::fromModel($product);
+
+        // Without the cover: `images` below resolves the whole gallery, so
+        // asking for one here would read a placeholder off disk and drop it.
+        $card = ProductCardData::withoutImage($product);
 
         return new self(
             id: $product->getKey(),

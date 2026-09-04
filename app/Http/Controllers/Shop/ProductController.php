@@ -9,12 +9,13 @@ use App\Data\ReviewData;
 use App\Enums\ProductVisibility;
 use App\Enums\StockStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Shop\Concerns\BuildsCategoryBreadcrumbs;
 use App\Http\Controllers\Shop\Concerns\FiltersCatalogProducts;
-use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductView;
 use App\Models\RecentlyViewed;
 use App\Models\Review;
+use App\Support\CategoryTree;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -24,7 +25,7 @@ use Inertia\Response;
 
 class ProductController extends Controller
 {
-    use FiltersCatalogProducts;
+    use BuildsCategoryBreadcrumbs, FiltersCatalogProducts;
 
     /** Products offered in each recommendation rail. */
     private const RAIL_SIZE = 12;
@@ -34,9 +35,6 @@ class ProductController extends Controller
 
     /** How long a product's recommendation pools stay pinned. */
     private const RECOMMENDATION_TTL_MINUTES = 10;
-
-    /** Guards the breadcrumb walk against a cyclic category tree. */
-    private const MAX_TREE_DEPTH = 10;
 
     /**
      * Show one product.
@@ -85,16 +83,25 @@ class ProductController extends Controller
     /**
      * Log the view for both the signed-in user's own history and the store-wide
      * analytics log that "customers also viewed" is built from.
+     *
+     * Deferred: these are two writes on the read path of the most-requested
+     * page in the store, and nothing in the response depends on them. A dropped
+     * view costs a row in an analytics log, which does not warrant a queued job
+     * with its retries and durability. The session id is read here, in the
+     * request, because the deferred callback runs after the response.
      */
     private function recordView(Request $request, Product $product): void
     {
         $user = $request->user();
+        $sessionId = $request->hasSession() ? $request->session()->getId() : null;
 
-        if ($user !== null) {
-            RecentlyViewed::record($user, $product);
-        }
+        defer(function () use ($product, $user, $sessionId): void {
+            if ($user !== null) {
+                RecentlyViewed::record($user, $product);
+            }
 
-        ProductView::record($product, $user, $request->hasSession() ? $request->session()->getId() : null);
+            ProductView::record($product, $user, $sessionId);
+        });
     }
 
     /**
@@ -240,51 +247,20 @@ class ProductController extends Controller
     /**
      * Home / Categories / the product's category trail / the product.
      *
+     * The tree is only loaded when the product is actually filed somewhere —
+     * an unfiled product's trail stops at Categories and needs no walk.
+     *
      * @return list<BreadcrumbData>
      */
     private function breadcrumbs(Product $product): array
     {
-        $trail = [
-            new BreadcrumbData(name: __('Home'), slug: null),
-            new BreadcrumbData(name: __('Categories'), slug: null),
-        ];
-
         $category = $product->primaryCategory;
 
-        if ($category === null) {
-            return [...$trail, new BreadcrumbData(name: $product->name, slug: $product->slug)];
-        }
+        $trail = $this->categoryBreadcrumbs(
+            $category,
+            $category === null ? CategoryTree::empty() : CategoryTree::load(),
+        );
 
-        // One query for the whole edge list beats one query per level up the tree.
-        $parentByChild = Category::query()
-            ->whereNotNull('parent_id')
-            ->pluck('parent_id', 'id');
-
-        $ancestors = [$category->getKey()];
-        $current = $parentByChild->get($category->getKey());
-        $depth = 0;
-
-        while ($current !== null && $depth < self::MAX_TREE_DEPTH) {
-            $ancestors[] = (int) $current;
-            $current = $parentByChild->get((int) $current);
-            $depth++;
-        }
-
-        $named = Category::query()
-            ->whereIn('id', $ancestors)
-            ->get(['id', 'name', 'slug'])
-            ->keyBy('id');
-
-        foreach (array_reverse($ancestors) as $id) {
-            $ancestor = $named->get($id);
-
-            if ($ancestor !== null) {
-                $trail[] = new BreadcrumbData(name: $ancestor->name, slug: $ancestor->slug);
-            }
-        }
-
-        $trail[] = new BreadcrumbData(name: $product->name, slug: $product->slug);
-
-        return $trail;
+        return [...$trail, new BreadcrumbData(name: $product->name, slug: $product->slug)];
     }
 }

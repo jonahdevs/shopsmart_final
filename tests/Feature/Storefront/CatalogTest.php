@@ -5,6 +5,8 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Review;
+use App\Support\StorefrontCache;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
 
@@ -230,4 +232,25 @@ test('the catalog issues a bounded number of queries for a page of products', fu
     // and the store settings. The number must not grow with the page size —
     // anything that does is an N+1.
     expect($queries)->toBeLessThanOrEqual(12);
+});
+
+test('the category facet counts are aggregated once and served from cache', function () {
+    $category = Category::factory()->create();
+    Product::factory()->count(3)->published()->create(['primary_category_id' => $category->id]);
+
+    $this->get(route('catalog'))->assertOk();
+
+    expect(Cache::get(StorefrontCache::CATEGORY_PRODUCT_COUNTS))->toBe([$category->id => 3]);
+
+    // A second render reads the cached map rather than re-scanning the catalog.
+    $aggregates = 0;
+    DB::listen(function ($query) use (&$aggregates): void {
+        if (stripos($query->sql, 'COUNT(DISTINCT product_id)') !== false) {
+            $aggregates++;
+        }
+    });
+
+    $this->get(route('catalog'))->assertOk();
+
+    expect($aggregates)->toBe(0);
 });

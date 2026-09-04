@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Enums\CategorySection;
 use App\Models\CategoryPlacement;
+use App\Support\StorefrontCache;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
@@ -56,17 +57,20 @@ class HandleInertiaRequests extends Middleware
      * CategoryPlacement rather than "all top-level categories", so merchandising
      * decides the navigation.
      *
-     * Cached because it is shared on every response and changes rarely; the
-     * admin invalidates `storefront.nav-categories` when placements are edited.
+     * Cached because it is shared on every response and changes rarely.
+     * CategoryPlacementObserver and CategoryObserver clear the key whenever a
+     * placement or a category's name, slug or status changes, so the hour is a
+     * backstop rather than the mechanism.
      *
      * @return array<int, array{name: string, slug: string}>
      */
     private function navCategories(): array
     {
-        return Cache::remember('storefront.nav-categories', now()->addHour(), function (): array {
+        return Cache::remember(StorefrontCache::NAV_CATEGORIES, now()->addHour(), function (): array {
             // A placement cannot outlive its category — the foreign key cascades
             // on delete — so the relation is always present here.
             return CategoryPlacement::query()
+                ->active()
                 ->forLocation(CategorySection::Navbar)
                 ->with('category:id,name,slug')
                 ->get()

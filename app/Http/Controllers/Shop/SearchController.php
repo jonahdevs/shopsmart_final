@@ -86,12 +86,15 @@ class SearchController extends Controller
     }
 
     /**
+     * The dropdown renders these as shortcuts, not as facets, so `count` is
+     * left at zero exactly as it is for brands. Populating it would mean
+     * running the store-wide category count aggregate on every keystroke to
+     * decorate at most four rows.
+     *
      * @return list<FacetOptionData>
      */
     private function categories(string $term): array
     {
-        $counts = $this->catalogCountsByCategory();
-
         return array_values(Category::query()
             ->active()
             ->where('name', 'like', "%{$term}%")
@@ -102,7 +105,7 @@ class SearchController extends Controller
                 id: $category->getKey(),
                 name: $category->name,
                 slug: $category->slug,
-                count: $counts[$category->getKey()] ?? 0,
+                count: 0,
             ))
             ->all());
     }

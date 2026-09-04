@@ -52,6 +52,21 @@ class ProductCardData extends Data
 
     public static function fromModel(Product $product): self
     {
+        return self::build($product, self::cover($product));
+    }
+
+    /**
+     * The same fields without the cover image, for a caller that resolves its
+     * own. The product page builds a full gallery, so letting it go through
+     * fromModel() would read the cover's placeholder off disk and discard it.
+     */
+    public static function withoutImage(Product $product): self
+    {
+        return self::build($product, null);
+    }
+
+    private static function build(Product $product, ?ImageData $image): self
+    {
         $effective = $product->effectivePriceCents();
 
         return new self(
@@ -60,7 +75,7 @@ class ProductCardData extends Data
             slug: $product->slug,
             sku: $product->sku,
             brandName: $product->brand?->name,
-            image: self::cover($product),
+            image: $image,
             priceCents: $product->price,
             salePriceCents: $product->sale_price,
             effectivePriceCents: $effective,

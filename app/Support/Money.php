@@ -6,9 +6,14 @@ use App\Settings\CurrencySettings;
 
 /**
  * Single source of truth for rendering money amounts on the storefront and
- * admin. Every monetary column is stored as integer cents (suffixed `_cents`);
- * this honours the store-wide {@see CurrencySettings} (symbol, placement,
- * decimals and separators).
+ * admin. Every monetary column is stored as integer cents; this honours the
+ * store-wide {@see CurrencySettings} (symbol, placement, decimals and
+ * separators).
+ *
+ * Most columns carry a `_cents` suffix, but the catalog tables predate that
+ * convention: `products.price` / `sale_price` / `cost_price` and their
+ * `product_variants` counterparts are cents too, despite reading like major
+ * units.
  */
 class Money
 {

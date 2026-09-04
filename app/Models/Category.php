@@ -3,8 +3,11 @@
 namespace App\Models;
 
 use App\Enums\CategoryStatus;
+use App\Observers\CategoryObserver;
+use App\Support\CategoryTree;
 use Database\Factories\CategoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -46,6 +49,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property-read int|null $media_count
  */
 #[Fillable(['name', 'slug', 'parent_id', 'description', 'icon_svg', 'status', 'sort_order', 'meta_title', 'meta_description'])]
+#[ObservedBy(CategoryObserver::class)]
 class Category extends Model implements HasMedia
 {
     /** @use HasFactory<CategoryFactory> */
@@ -151,32 +155,7 @@ class Category extends Model implements HasMedia
      */
     public function descendantIds(): array
     {
-        /** @var array<int, list<int>> $childrenByParent */
-        $childrenByParent = [];
-
-        foreach (static::query()->whereNotNull('parent_id')->pluck('parent_id', 'id') as $id => $parentId) {
-            $childrenByParent[(int) $parentId][] = (int) $id;
-        }
-
-        $ids = [$this->id];
-        $seen = [$this->id => true];
-        $queue = [$this->id];
-
-        while ($queue !== []) {
-            $current = array_shift($queue);
-
-            foreach ($childrenByParent[$current] ?? [] as $childId) {
-                if (isset($seen[$childId])) {
-                    continue;
-                }
-
-                $seen[$childId] = true;
-                $ids[] = $childId;
-                $queue[] = $childId;
-            }
-        }
-
-        return $ids;
+        return CategoryTree::load()->subtreeIds($this->getKey());
     }
 
     // ==================================================

@@ -7,9 +7,11 @@ use App\Enums\ProductStatus;
 use App\Enums\ProductType;
 use App\Enums\ProductVisibility;
 use App\Enums\StockStatus;
+use App\Observers\ProductObserver;
 use App\Settings\InventorySettings;
 use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -98,6 +100,7 @@ use Spatie\Tags\HasTags;
     'allow_backorder', 'low_stock_threshold', 'min_order_quantity', 'visibility',
     'meta_title', 'meta_description', 'canonical_url', 'sort_order', 'default_variant_id',
 ])]
+#[ObservedBy(ProductObserver::class)]
 class Product extends Model implements HasMedia
 {
     /** @use HasFactory<ProductFactory> */
@@ -156,7 +159,16 @@ class Product extends Model implements HasMedia
         ];
     }
 
-    /** Draft and archived products must never surface in search results. */
+    /**
+     * Draft and archived products must never surface in search results.
+     *
+     * This governs index membership, which the current `database` Scout driver
+     * does not consult — it queries the products table directly, so nothing is
+     * ever "out of the index". The rule is actually enforced by the
+     * `published()` scope SearchController applies in Scout's query callback.
+     * Keep both: this is what starts working the moment the driver becomes
+     * Meilisearch, and that is what holds until then.
+     */
     public function shouldBeSearchable(): bool
     {
         return $this->isPublished();

@@ -3,6 +3,7 @@
 namespace App\Data;
 
 use App\Models\HeroSlide;
+use App\Support\SafeUrl;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
@@ -33,13 +34,18 @@ class HeroSlideData extends Data
         $desktop = $slide->getFirstMedia('desktop');
         $mobile = $slide->getFirstMedia('mobile');
 
+        // The carousel binds this straight to an href, so a URL the client
+        // must not follow is dropped here — and the call to action goes with
+        // it, rather than rendering a button that leads nowhere.
+        $ctaUrl = app(SafeUrl::class)->forLink($slide->cta_url);
+
         return new self(
             id: $slide->getKey(),
             headline: $slide->headline,
             subheadline: $slide->subheadline,
             ctaLabel: $slide->cta_label,
-            ctaUrl: $slide->cta_url,
-            hasCallToAction: $slide->hasCallToAction(),
+            ctaUrl: $ctaUrl,
+            hasCallToAction: $ctaUrl !== null && $slide->hasCallToAction(),
             alignment: $slide->alignment,
             textTheme: $slide->text_theme,
             desktopImage: $desktop === null ? null : ImageData::fromMedia($desktop, $slide->headline, 'wide'),
