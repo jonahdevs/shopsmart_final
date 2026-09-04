@@ -2,7 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\CategorySection;
+use App\Models\CategoryPlacement;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -42,6 +45,37 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'storefront' => [
+                'navCategories' => $this->navCategories(),
+            ],
         ];
+    }
+
+    /**
+     * The categories in the header stripe and footer. Curated through
+     * CategoryPlacement rather than "all top-level categories", so merchandising
+     * decides the navigation.
+     *
+     * Cached because it is shared on every response and changes rarely; the
+     * admin invalidates `storefront.nav-categories` when placements are edited.
+     *
+     * @return array<int, array{name: string, slug: string}>
+     */
+    private function navCategories(): array
+    {
+        return Cache::remember('storefront.nav-categories', now()->addHour(), function (): array {
+            // A placement cannot outlive its category — the foreign key cascades
+            // on delete — so the relation is always present here.
+            return CategoryPlacement::query()
+                ->forLocation(CategorySection::Navbar)
+                ->with('category:id,name,slug')
+                ->get()
+                ->map(fn (CategoryPlacement $placement): array => [
+                    'name' => $placement->category->name,
+                    'slug' => $placement->category->slug,
+                ])
+                ->values()
+                ->all();
+        });
     }
 }

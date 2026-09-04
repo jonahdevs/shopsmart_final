@@ -1,4 +1,184 @@
 declare namespace App {
+namespace Data {
+export type AttributeValueData = {
+id: number,
+attributeId: number,
+value: string,
+label: string,
+slug: string,
+colorCode: string | null,
+};
+export type BrandData = {
+id: number,
+name: string,
+slug: string,
+logoUrl: string | null,
+description: string | null,
+};
+export type BreadcrumbData = {
+name: string,
+slug: string | null,
+};
+export type CatalogFilterData = {
+q: string,
+categories: string[],
+brands: number[],
+priceMin: number,
+priceMax: number,
+inStockOnly: boolean,
+minRating: number,
+tag: string,
+newArrivalsOnly: boolean,
+sort: string,
+hasActiveFilters: boolean,
+};
+export type CategoryData = {
+id: number,
+name: string,
+slug: string,
+description: string | null,
+iconSvg: string | null,
+image: App.Data.ImageData | null,
+productCount: number | null,
+children: App.Data.CategoryData[],
+};
+export type FacetOptionData = {
+id: number,
+name: string,
+slug: string,
+count: number,
+};
+export type HeroSlideData = {
+id: number,
+headline: string,
+subheadline: string | null,
+ctaLabel: string | null,
+ctaUrl: string | null,
+hasCallToAction: boolean,
+alignment: string,
+textTheme: string,
+desktopImage: App.Data.ImageData | null,
+mobileImage: App.Data.ImageData | null,
+};
+export type ImageData = {
+url: string,
+webpUrl: string | null,
+zoomUrl: string | null,
+zoomWebpUrl: string | null,
+thumbUrl: string | null,
+placeholder: string | null,
+alt: string,
+isCover: boolean,
+};
+export type ProductCardData = {
+id: number,
+name: string,
+slug: string,
+sku: string | null,
+brandName: string | null,
+image: App.Data.ImageData | null,
+priceCents: number | null,
+salePriceCents: number | null,
+effectivePriceCents: number | null,
+priceFormatted: string | null,
+salePriceFormatted: string | null,
+effectivePriceFormatted: string | null,
+discountPercent: number | null,
+isOnSale: boolean,
+ratingAverage: number | null,
+ratingCount: number,
+inStock: boolean,
+stockStatus: App.Enums.StockStatus,
+type: App.Enums.ProductType,
+isVariable: boolean,
+requiresOptions: boolean,
+};
+export type ProductDetailData = {
+id: number,
+name: string,
+slug: string,
+sku: string | null,
+modelNumber: string | null,
+shortDescription: string | null,
+description: string | null,
+technicalSpecification: string | null,
+brand: App.Data.BrandData | null,
+primaryCategory: App.Data.CategoryData | null,
+breadcrumbs: App.Data.BreadcrumbData[],
+images: App.Data.ImageData[],
+priceCents: number | null,
+salePriceCents: number | null,
+effectivePriceCents: number | null,
+priceFormatted: string | null,
+salePriceFormatted: string | null,
+effectivePriceFormatted: string | null,
+discountPercent: number | null,
+isOnSale: boolean,
+ratingAverage: number | null,
+ratingCount: number,
+inStock: boolean,
+stockStatus: App.Enums.StockStatus,
+stockQuantity: number | null,
+allowBackorder: boolean,
+minOrderQuantity: number,
+type: App.Enums.ProductType,
+isVariable: boolean,
+requiresOptions: boolean,
+specifications: App.Data.SpecificationData[],
+variants: App.Data.ProductVariantData[],
+variationAttributes: App.Data.VariationAttributeData[],
+defaultVariantId: number | null,
+metaTitle: string | null,
+metaDescription: string | null,
+};
+export type ProductListData = {
+data: App.Data.ProductCardData[],
+currentPage: number,
+lastPage: number,
+perPage: number,
+total: number,
+hasMorePages: boolean,
+};
+export type ProductVariantData = {
+id: number,
+sku: string,
+optionLabel: string,
+priceCents: number | null,
+salePriceCents: number | null,
+effectivePriceCents: number | null,
+priceFormatted: string | null,
+salePriceFormatted: string | null,
+effectivePriceFormatted: string | null,
+discountPercent: number | null,
+isOnSale: boolean,
+inStock: boolean,
+stockStatus: App.Enums.StockStatus,
+stockQuantity: number | null,
+attributeValueIds: number[],
+image: App.Data.ImageData | null,
+};
+export type ReviewData = {
+id: number,
+authorName: string,
+rating: number,
+title: string | null,
+body: string,
+verifiedPurchase: boolean,
+publishedAt: string | null,
+publishedAtForHumans: string | null,
+};
+export type SpecificationData = {
+name: string,
+values: string[],
+};
+export type VariationAttributeData = {
+id: number,
+name: string,
+slug: string,
+type: App.Enums.AttributeType,
+values: App.Data.AttributeValueData[],
+};
+}
 namespace Enums {
 export type AttributeType = 'select' | 'color' | 'button';
 export type CategorySection = 'navbar' | 'homepage_featured' | 'footer';

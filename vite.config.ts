@@ -15,6 +15,11 @@ export default defineConfig({
                 bunny('Instrument Sans', {
                     weights: [400, 500, 600],
                 }),
+                // Storefront display face. Heavy weights only — it is used for
+                // signage-style headers and the price block, never body copy.
+                bunny('Archivo', {
+                    weights: [600, 700, 800, 900],
+                }),
             ],
         }),
         inertia(),

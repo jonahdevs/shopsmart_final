@@ -13,6 +13,20 @@
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
 
+    /* Storefront display face — signage headers and prices only. */
+    --font-display: Archivo, var(--font-sans);
+
+    /*
+      Storefront brand palette. Declared here rather than only inside
+      `.storefront` so the utilities always resolve; `.storefront` maps the
+      shadcn semantic tokens onto them.
+    */
+    --color-ink: var(--ink);
+    --color-electric: var(--electric);
+    --color-sale: var(--sale);
+    --color-rule: var(--rule);
+    --color-field: var(--field);
+
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
@@ -87,6 +101,57 @@
             'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
             'Noto Color Emoji';
     }
+}
+
+/*
+  ---------------------------------------------------------------------------
+  Storefront identity — "matatu signage"
+  ---------------------------------------------------------------------------
+  Drawn from Nairobi matatu livery read structurally, not literally: an ink
+  header band, a pinstripe that tracks the active category, and heavy condensed
+  signage lettering. The palette is deliberately loud, so it is spent in exactly
+  one place — the price block — because price is the most-scanned element in a
+  price-competitive market. `--sale` appears on discounts and nowhere else.
+*/
+:root {
+    --ink: #0b0d12;
+    --electric: #1b4dff;
+    --sale: #ff1f6b;
+    --field: #fcfcfd;
+    --rule: #e6e8ee;
+}
+
+/*
+  Applied by StorefrontLayout. Remaps the shadcn semantic tokens onto the brand
+  palette so every `ui/` primitive inherits the identity without being forked,
+  and pins light mode: dark mode is a staff-only affordance, the storefront is
+  always light.
+*/
+.storefront {
+    color-scheme: light;
+
+    --background: var(--field);
+    --foreground: var(--ink);
+    --card: #ffffff;
+    --card-foreground: var(--ink);
+    --popover: #ffffff;
+    --popover-foreground: var(--ink);
+    --primary: var(--electric);
+    --primary-foreground: #ffffff;
+    --secondary: #f1f2f6;
+    --secondary-foreground: var(--ink);
+    --muted: #f1f2f6;
+    --muted-foreground: #5b6070;
+    --accent: #eef1ff;
+    --accent-foreground: var(--electric);
+    --destructive: var(--sale);
+    --destructive-foreground: #ffffff;
+    --border: var(--rule);
+    --input: var(--rule);
+    --ring: var(--electric);
+
+    /* Signage, not soft furnishing. */
+    --radius: 0.25rem;
 }
 
 :root {

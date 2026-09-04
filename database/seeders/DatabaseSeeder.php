@@ -34,6 +34,7 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             AttributeSeeder::class,
             ProductSeeder::class,
+            HeroSlideSeeder::class,
             TagSeeder::class,
             ReviewSeeder::class,
         ]);
