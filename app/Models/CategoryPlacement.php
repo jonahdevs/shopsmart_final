@@ -1,0 +1,84 @@
+<?php
+
+namespace App\Models;
+
+use App\Enums\CategorySection;
+use App\Enums\CategoryStatus;
+use Database\Factories\CategoryPlacementFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
+
+/**
+ * Pins a category into one storefront location (navbar, home page, footer) at
+ * a given position. A category may appear in each location at most once.
+ *
+ * @property int $id
+ * @property int $category_id
+ * @property CategorySection $location
+ * @property int $sort_order
+ * @property CategoryStatus $status
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Category $category
+ */
+#[Fillable(['category_id', 'location', 'sort_order', 'status'])]
+class CategoryPlacement extends Model
+{
+    /** @use HasFactory<CategoryPlacementFactory> */
+    use HasFactory;
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'location' => CategorySection::class,
+            'status' => CategoryStatus::class,
+            'sort_order' => 'integer',
+        ];
+    }
+
+    // ==================================================
+    // RELATIONSHIPS
+    // ==================================================
+
+    /**
+     * @return BelongsTo<Category, $this>
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    // ==================================================
+    // SCOPES
+    // ==================================================
+
+    /**
+     * Live placements for one storefront location, in display order.
+     *
+     * @param  Builder<static>  $query
+     */
+    #[Scope]
+    protected function forLocation(Builder $query, CategorySection $location): void
+    {
+        $query->where('location', $location)->orderBy('sort_order');
+    }
+
+    /**
+     * @param  Builder<static>  $query
+     */
+    #[Scope]
+    protected function active(Builder $query): void
+    {
+        $query->where('status', CategoryStatus::Active);
+    }
+}

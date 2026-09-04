@@ -1,2 +1,15 @@
 *
 !.gitignore
+
+# Seed source imagery, copied from the reference app. These are the originals
+# the catalog seeders attach to products and categories, so they are committed —
+# `migrate:fresh --seed` needs them to build the demo store on a fresh clone.
+!products/
+!products/*
+!categories/
+!categories/*
+
+# Everything else here is Media Library output: numbered per-media directories
+# holding its own copy of the original plus the generated conversions
+# (thumb, card, zoom, webp, lqip). All of it is derived and rebuilt by
+# re-seeding and `php artisan media-library:regenerate`, so none of it is tracked.

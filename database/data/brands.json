@@ -1,0 +1,506 @@
+[
+  {
+    "slug": "essence",
+    "name": "Essence",
+    "description": "Essence products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "glamour-beauty",
+    "name": "Glamour Beauty",
+    "description": "Glamour Beauty products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "velvet-touch",
+    "name": "Velvet Touch",
+    "description": "Velvet Touch products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "chic-cosmetics",
+    "name": "Chic Cosmetics",
+    "description": "Chic Cosmetics products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "nail-couture",
+    "name": "Nail Couture",
+    "description": "Nail Couture products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "calvin-klein",
+    "name": "Calvin Klein",
+    "description": "Calvin Klein products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "chanel",
+    "name": "Chanel",
+    "description": "Chanel products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "dior",
+    "name": "Dior",
+    "description": "Dior products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "dolce-gabbana",
+    "name": "Dolce & Gabbana",
+    "description": "Dolce & Gabbana products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "gucci",
+    "name": "Gucci",
+    "description": "Gucci products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "annibale-colombo",
+    "name": "Annibale Colombo",
+    "description": "Annibale Colombo products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "furniture-co",
+    "name": "Furniture Co.",
+    "description": "Furniture Co. products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "knoll",
+    "name": "Knoll",
+    "description": "Knoll products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "bath-trends",
+    "name": "Bath Trends",
+    "description": "Bath Trends products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "apple",
+    "name": "Apple",
+    "description": "Apple products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "asus",
+    "name": "Asus",
+    "description": "Asus products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "huawei",
+    "name": "Huawei",
+    "description": "Huawei products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "lenovo",
+    "name": "Lenovo",
+    "description": "Lenovo products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "dell",
+    "name": "Dell",
+    "description": "Dell products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "fashion-trends",
+    "name": "Fashion Trends",
+    "description": "Fashion Trends products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "gigabyte",
+    "name": "Gigabyte",
+    "description": "Gigabyte products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "classic-wear",
+    "name": "Classic Wear",
+    "description": "Classic Wear products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "casual-comfort",
+    "name": "Casual Comfort",
+    "description": "Casual Comfort products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "urban-chic",
+    "name": "Urban Chic",
+    "description": "Urban Chic products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "nike",
+    "name": "Nike",
+    "description": "Nike products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "puma",
+    "name": "Puma",
+    "description": "Puma products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "off-white",
+    "name": "Off White",
+    "description": "Off White products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "fashion-timepieces",
+    "name": "Fashion Timepieces",
+    "description": "Fashion Timepieces products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "longines",
+    "name": "Longines",
+    "description": "Longines products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "rolex",
+    "name": "Rolex",
+    "description": "Rolex products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "amazon",
+    "name": "Amazon",
+    "description": "Amazon products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "beats",
+    "name": "Beats",
+    "description": "Beats products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "techgear",
+    "name": "TechGear",
+    "description": "TechGear products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "gadgetmaster",
+    "name": "GadgetMaster",
+    "description": "GadgetMaster products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "snaptech",
+    "name": "SnapTech",
+    "description": "SnapTech products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "provision",
+    "name": "ProVision",
+    "description": "ProVision products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "generic-motors",
+    "name": "Generic Motors",
+    "description": "Generic Motors products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "kawasaki",
+    "name": "Kawasaki",
+    "description": "Kawasaki products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "motogp",
+    "name": "MotoGP",
+    "description": "MotoGP products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "scootmaster",
+    "name": "ScootMaster",
+    "description": "ScootMaster products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "speedmaster",
+    "name": "SpeedMaster",
+    "description": "SpeedMaster products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "attitude",
+    "name": "Attitude",
+    "description": "Attitude products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "olay",
+    "name": "Olay",
+    "description": "Olay products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "vaseline",
+    "name": "Vaseline",
+    "description": "Vaseline products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "oppo",
+    "name": "Oppo",
+    "description": "Oppo products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "realme",
+    "name": "Realme",
+    "description": "Realme products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "samsung",
+    "name": "Samsung",
+    "description": "Samsung products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "vivo",
+    "name": "Vivo",
+    "description": "Vivo products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "fashion-shades",
+    "name": "Fashion Shades",
+    "description": "Fashion Shades products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "fashion-fun",
+    "name": "Fashion Fun",
+    "description": "Fashion Fun products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "chrysler",
+    "name": "Chrysler",
+    "description": "Chrysler products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "dodge",
+    "name": "Dodge",
+    "description": "Dodge products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "fashionista",
+    "name": "Fashionista",
+    "description": "Fashionista products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "heshe",
+    "name": "Heshe",
+    "description": "Heshe products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "prada",
+    "name": "Prada",
+    "description": "Prada products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "elegance-collection",
+    "name": "Elegance Collection",
+    "description": "Elegance Collection products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "comfort-trends",
+    "name": "Comfort Trends",
+    "description": "Comfort Trends products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "fashion-diva",
+    "name": "Fashion Diva",
+    "description": "Fashion Diva products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "pampi",
+    "name": "Pampi",
+    "description": "Pampi products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "fashion-express",
+    "name": "Fashion Express",
+    "description": "Fashion Express products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "iwc",
+    "name": "IWC",
+    "description": "IWC products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "fashion-gold",
+    "name": "Fashion Gold",
+    "description": "Fashion Gold products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  },
+  {
+    "slug": "fashion-co",
+    "name": "Fashion Co.",
+    "description": "Fashion Co. products available at ShopSmart.",
+    "logo": null,
+    "website_url": null,
+    "is_active": true
+  }
+]

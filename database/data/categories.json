@@ -1,0 +1,558 @@
+[
+  {
+    "name": "Beauty & Personal Care",
+    "description": "Shop Beauty & Personal Care at ShopSmart — quality products at smart prices.",
+    "image": "categories/beauty.webp",
+    "icon": "categories/beauty-personal-care-icon.webp",
+    "sort_order": 1,
+    "placements": [
+      "navbar",
+      "footer"
+    ],
+    "children": [
+      {
+        "name": "Beauty",
+        "image": "categories/beauty.webp",
+        "icon": "categories/beauty-icon.webp",
+        "description": "Browse our selection of beauty.",
+        "sort_order": 1,
+        "placements": []
+      },
+      {
+        "name": "Fragrances",
+        "image": "categories/fragrances.webp",
+        "icon": "categories/fragrances-icon.webp",
+        "description": "Browse our selection of fragrances.",
+        "sort_order": 2,
+        "placements": [
+          "homepage_featured"
+        ]
+      },
+      {
+        "name": "Skin Care",
+        "image": "categories/skin-care.webp",
+        "icon": "categories/skin-care-icon.webp",
+        "description": "Browse our selection of skin care.",
+        "sort_order": 3,
+        "placements": [
+          "homepage_featured"
+        ]
+      },
+      {
+        "name": "Hair Care",
+        "image": "categories/hair-care.webp",
+        "icon": "categories/hair-care-icon.webp",
+        "description": "Browse our selection of hair care.",
+        "sort_order": 4,
+        "placements": []
+      },
+      {
+        "name": "Makeup",
+        "image": "categories/makeup.webp",
+        "icon": "categories/makeup-icon.webp",
+        "description": "Browse our selection of makeup.",
+        "sort_order": 5,
+        "placements": []
+      },
+      {
+        "name": "Grooming",
+        "image": "categories/cat-grooming.webp",
+        "icon": "categories/grooming-icon.webp",
+        "description": "Browse our selection of grooming.",
+        "sort_order": 6,
+        "placements": []
+      },
+      {
+        "name": "Bath & Body",
+        "image": "categories/bath-body.webp",
+        "icon": "categories/bath-body-icon.webp",
+        "description": "Browse our selection of bath & body.",
+        "sort_order": 7,
+        "placements": []
+      },
+      {
+        "name": "Nail Care",
+        "image": "categories/cat-nail-care.webp",
+        "icon": "categories/nail-care-icon.webp",
+        "description": "Browse our selection of nail care.",
+        "sort_order": 8,
+        "placements": []
+      },
+      {
+        "name": "Health & Wellness",
+        "image": "categories/cat-health-wellness.webp",
+        "icon": "categories/health-wellness-icon.webp",
+        "description": "Browse our selection of health & wellness.",
+        "sort_order": 9,
+        "placements": []
+      }
+    ]
+  },
+  {
+    "name": "Women's Fashion",
+    "description": "Shop Women's Fashion at ShopSmart — quality products at smart prices.",
+    "image": "categories/women.webp",
+    "icon": "categories/womens-fashion-icon.webp",
+    "sort_order": 2,
+    "placements": [
+      "navbar",
+      "footer"
+    ],
+    "children": [
+      {
+        "name": "Tops",
+        "image": null,
+        "icon": "categories/tops-icon.webp",
+        "description": "Browse our selection of tops.",
+        "sort_order": 1,
+        "placements": []
+      },
+      {
+        "name": "Women's Dresses",
+        "image": "categories/womens-dresses.webp",
+        "icon": "categories/womens-dresses-icon.webp",
+        "description": "Browse our selection of women's dresses.",
+        "sort_order": 2,
+        "placements": [
+          "homepage_featured"
+        ]
+      },
+      {
+        "name": "Women's Shoes",
+        "image": "categories/womens-shoes.webp",
+        "icon": "categories/womens-shoes-icon.webp",
+        "description": "Browse our selection of women's shoes.",
+        "sort_order": 3,
+        "placements": [
+          "homepage_featured"
+        ]
+      },
+      {
+        "name": "Women's Bags",
+        "image": "categories/womens-bags.webp",
+        "icon": "categories/womens-bags-icon.webp",
+        "description": "Browse our selection of women's bags.",
+        "sort_order": 4,
+        "placements": []
+      },
+      {
+        "name": "Women's Jewellery",
+        "image": "categories/womens-jewellery.webp",
+        "icon": "categories/womens-jewellery-icon.webp",
+        "description": "Browse our selection of women's jewellery.",
+        "sort_order": 5,
+        "placements": []
+      },
+      {
+        "name": "Women's Watches",
+        "image": "categories/womens-watches.webp",
+        "icon": "categories/womens-watches-icon.webp",
+        "description": "Browse our selection of women's watches.",
+        "sort_order": 6,
+        "placements": []
+      },
+      {
+        "name": "Sunglasses",
+        "image": "categories/sunglasses.webp",
+        "icon": "categories/sunglasses-icon.webp",
+        "description": "Browse our selection of sunglasses.",
+        "sort_order": 7,
+        "placements": []
+      },
+      {
+        "name": "Women's Clothing",
+        "image": "categories/womens-jackets.webp",
+        "icon": "categories/womens-clothing-icon.webp",
+        "description": "Browse our selection of women's clothing.",
+        "sort_order": 8,
+        "placements": []
+      }
+    ]
+  },
+  {
+    "name": "Men's Fashion",
+    "description": "Shop Men's Fashion at ShopSmart — quality products at smart prices.",
+    "image": "categories/men.webp",
+    "icon": "categories/mens-fashion-icon.webp",
+    "sort_order": 3,
+    "placements": [
+      "navbar",
+      "footer"
+    ],
+    "children": [
+      {
+        "name": "Men's Shirts",
+        "image": "categories/mens-shirts.webp",
+        "icon": "categories/mens-shirts-icon.webp",
+        "description": "Browse our selection of men's shirts.",
+        "sort_order": 1,
+        "placements": []
+      },
+      {
+        "name": "Men's Shoes",
+        "image": "categories/mens-shoes.webp",
+        "icon": "categories/mens-shoes-icon.webp",
+        "description": "Browse our selection of men's shoes.",
+        "sort_order": 2,
+        "placements": [
+          "homepage_featured"
+        ]
+      },
+      {
+        "name": "Men's Watches",
+        "image": "categories/mens-watches.webp",
+        "icon": "categories/mens-watches-icon.webp",
+        "description": "Browse our selection of men's watches.",
+        "sort_order": 3,
+        "placements": [
+          "homepage_featured"
+        ]
+      },
+      {
+        "name": "Men's Clothing",
+        "image": "categories/cat-men-s-clothing.webp",
+        "icon": "categories/mens-clothing-icon.webp",
+        "description": "Browse our selection of men's clothing.",
+        "sort_order": 4,
+        "placements": []
+      }
+    ]
+  },
+  {
+    "name": "Electronics",
+    "description": "Shop Electronics at ShopSmart — quality products at smart prices.",
+    "image": "categories/electronics.webp",
+    "icon": "categories/electronics-icon.webp",
+    "sort_order": 4,
+    "placements": [
+      "navbar",
+      "footer"
+    ],
+    "children": [
+      {
+        "name": "Smartphones",
+        "image": "categories/smartphones.webp",
+        "icon": "categories/smartphones-icon.webp",
+        "description": "Browse our selection of smartphones.",
+        "sort_order": 1,
+        "placements": [
+          "homepage_featured"
+        ]
+      },
+      {
+        "name": "Laptops",
+        "image": "categories/laptops.webp",
+        "icon": "categories/laptops-icon.webp",
+        "description": "Browse our selection of laptops.",
+        "sort_order": 2,
+        "placements": [
+          "homepage_featured"
+        ]
+      },
+      {
+        "name": "Tablets",
+        "image": "categories/tablets.webp",
+        "icon": "categories/tablets-icon.webp",
+        "description": "Browse our selection of tablets.",
+        "sort_order": 3,
+        "placements": []
+      },
+      {
+        "name": "Mobile Accessories",
+        "image": "categories/mobile-accessories.webp",
+        "icon": "categories/mobile-accessories-icon.webp",
+        "description": "Browse our selection of mobile accessories.",
+        "sort_order": 4,
+        "placements": [
+          "homepage_featured"
+        ]
+      },
+      {
+        "name": "Wearables",
+        "image": "categories/cat-wearables.webp",
+        "icon": "categories/wearables-icon.webp",
+        "description": "Browse our selection of wearables.",
+        "sort_order": 5,
+        "placements": []
+      },
+      {
+        "name": "Cameras",
+        "image": "categories/cat-cameras.webp",
+        "icon": "categories/cameras-icon.webp",
+        "description": "Browse our selection of cameras.",
+        "sort_order": 6,
+        "placements": []
+      },
+      {
+        "name": "Computer Accessories",
+        "image": "categories/laptops.webp",
+        "icon": "categories/computer-accessories-icon.webp",
+        "description": "Browse our selection of computer accessories.",
+        "sort_order": 7,
+        "placements": []
+      }
+    ]
+  },
+  {
+    "name": "Home & Living",
+    "description": "Shop Home & Living at ShopSmart — quality products at smart prices.",
+    "image": "categories/home.webp",
+    "icon": "categories/home-living-icon.webp",
+    "sort_order": 5,
+    "placements": [
+      "navbar",
+      "footer"
+    ],
+    "children": [
+      {
+        "name": "Furniture",
+        "image": "categories/furniture.webp",
+        "icon": "categories/furniture-icon.webp",
+        "description": "Browse our selection of furniture.",
+        "sort_order": 1,
+        "placements": [
+          "homepage_featured"
+        ]
+      },
+      {
+        "name": "Home Decoration",
+        "image": "categories/home-decoration.webp",
+        "icon": "categories/home-decoration-icon.webp",
+        "description": "Browse our selection of home decoration.",
+        "sort_order": 2,
+        "placements": []
+      },
+      {
+        "name": "Bedding",
+        "image": "categories/bedding.webp",
+        "icon": "categories/bedding-icon.webp",
+        "description": "Browse our selection of bedding.",
+        "sort_order": 3,
+        "placements": []
+      }
+    ]
+  },
+  {
+    "name": "Kitchen & Dining",
+    "description": "Shop Kitchen & Dining at ShopSmart — quality products at smart prices.",
+    "image": "categories/kitchen-accessories.webp",
+    "icon": "categories/kitchen-dining-icon.webp",
+    "sort_order": 6,
+    "placements": [
+      "navbar",
+      "footer"
+    ],
+    "children": [
+      {
+        "name": "Kitchen Accessories",
+        "image": "categories/kitchen-accessories.webp",
+        "icon": "categories/kitchen-accessories-icon.webp",
+        "description": "Browse our selection of kitchen accessories.",
+        "sort_order": 1,
+        "placements": [
+          "homepage_featured"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Food & Groceries",
+    "description": "Shop Food & Groceries at ShopSmart — quality products at smart prices.",
+    "image": "categories/groceries.webp",
+    "icon": "categories/food-groceries-icon.webp",
+    "sort_order": 7,
+    "placements": [
+      "navbar",
+      "footer"
+    ],
+    "children": [
+      {
+        "name": "Groceries",
+        "image": "categories/groceries.webp",
+        "icon": "categories/groceries-icon.webp",
+        "description": "Browse our selection of groceries.",
+        "sort_order": 1,
+        "placements": [
+          "homepage_featured"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Sports & Outdoors",
+    "description": "Shop Sports & Outdoors at ShopSmart — quality products at smart prices.",
+    "image": "categories/sports-accessories.webp",
+    "icon": "categories/sports-outdoors-icon.webp",
+    "sort_order": 8,
+    "placements": [
+      "navbar",
+      "footer"
+    ],
+    "children": [
+      {
+        "name": "Sports Accessories",
+        "image": "categories/sports-accessories.webp",
+        "icon": "categories/sports-accessories-icon.webp",
+        "description": "Browse our selection of sports accessories.",
+        "sort_order": 1,
+        "placements": [
+          "homepage_featured"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Automotive",
+    "description": "Shop Automotive at ShopSmart — quality products at smart prices.",
+    "image": "categories/motorcycle.webp",
+    "icon": "categories/automotive-icon.webp",
+    "sort_order": 9,
+    "placements": [
+      "navbar",
+      "footer"
+    ],
+    "children": [
+      {
+        "name": "Motorcycle",
+        "image": "categories/motorcycle.webp",
+        "icon": "categories/motorcycle-icon.webp",
+        "description": "Browse our selection of motorcycle.",
+        "sort_order": 1,
+        "placements": []
+      },
+      {
+        "name": "Vehicle",
+        "image": null,
+        "icon": "categories/vehicle-icon.webp",
+        "description": "Browse our selection of vehicle.",
+        "sort_order": 2,
+        "placements": []
+      }
+    ]
+  },
+  {
+    "name": "TVs & Audio",
+    "description": "Shop TVs & Audio at ShopSmart — quality products at smart prices.",
+    "image": "categories/cat-tvs-audio.webp",
+    "icon": "categories/tvs-audio-icon.webp",
+    "placements": [
+      "navbar",
+      "footer"
+    ],
+    "children": [
+      {
+        "name": "Televisions",
+        "image": "categories/cat-televisions.webp",
+        "icon": "categories/televisions-icon.webp",
+        "description": "Browse our selection of televisions.",
+        "sort_order": 1,
+        "placements": [
+          "homepage_featured"
+        ]
+      },
+      {
+        "name": "Home Audio",
+        "image": "categories/cat-home-audio.webp",
+        "icon": "categories/home-audio-icon.webp",
+        "description": "Browse our selection of home audio.",
+        "sort_order": 2,
+        "placements": []
+      },
+      {
+        "name": "Speakers & Soundbars",
+        "image": "categories/cat-speakers-soundbars.webp",
+        "icon": "categories/speakers-soundbars-icon.webp",
+        "description": "Browse our selection of speakers & soundbars.",
+        "sort_order": 3,
+        "placements": []
+      }
+    ],
+    "sort_order": 10
+  },
+  {
+    "name": "Home Appliances",
+    "description": "Shop Home Appliances at ShopSmart — quality products at smart prices.",
+    "image": "categories/cat-home-appliances.webp",
+    "icon": "categories/home-appliances-icon.webp",
+    "placements": [
+      "navbar",
+      "footer"
+    ],
+    "children": [
+      {
+        "name": "Kitchen Appliances",
+        "image": "categories/cat-kitchen-appliances.webp",
+        "icon": "categories/kitchen-appliances-icon.webp",
+        "description": "Browse our selection of kitchen appliances.",
+        "sort_order": 1,
+        "placements": [
+          "homepage_featured"
+        ]
+      },
+      {
+        "name": "Large Appliances",
+        "image": "categories/cat-large-appliances.webp",
+        "icon": "categories/large-appliances-icon.webp",
+        "description": "Browse our selection of large appliances.",
+        "sort_order": 2,
+        "placements": []
+      }
+    ],
+    "sort_order": 11
+  },
+  {
+    "name": "Health & Fitness",
+    "description": "Shop Health & Fitness at ShopSmart — quality products at smart prices.",
+    "image": "categories/cat-health-fitness.webp",
+    "icon": "categories/health-fitness-icon.webp",
+    "placements": [
+      "navbar",
+      "footer"
+    ],
+    "children": [
+      {
+        "name": "Fitness Equipment",
+        "image": "categories/cat-fitness-equipment.webp",
+        "icon": "categories/fitness-equipment-icon.webp",
+        "description": "Browse our selection of fitness equipment.",
+        "sort_order": 1,
+        "placements": [
+          "homepage_featured"
+        ]
+      },
+      {
+        "name": "Sports Nutrition",
+        "image": "categories/cat-sports-nutrition.webp",
+        "icon": "categories/sports-nutrition-icon.webp",
+        "description": "Browse our selection of sports nutrition.",
+        "sort_order": 2,
+        "placements": []
+      },
+      {
+        "name": "Health Monitors",
+        "image": "categories/cat-health-monitors.webp",
+        "icon": "categories/health-monitors-icon.webp",
+        "description": "Browse our selection of health monitors.",
+        "sort_order": 3,
+        "placements": []
+      },
+      {
+        "name": "First Aid",
+        "image": "categories/cat-first-aid.webp",
+        "icon": "categories/first-aid-icon.webp",
+        "description": "Browse our selection of first aid.",
+        "sort_order": 4,
+        "placements": []
+      },
+      {
+        "name": "Sports Gear",
+        "image": "categories/cat-sports-gear.webp",
+        "icon": "categories/sports-gear-icon.webp",
+        "description": "Browse our selection of sports gear.",
+        "sort_order": 5,
+        "placements": []
+      }
+    ],
+    "sort_order": 12
+  }
+]
