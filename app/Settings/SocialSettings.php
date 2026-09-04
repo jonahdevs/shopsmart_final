@@ -1,0 +1,35 @@
+<?php
+
+namespace App\Settings;
+
+use Spatie\LaravelSettings\Settings;
+
+/**
+ * Social presence: the share image, the profile links rendered in the footer,
+ * and the WhatsApp ordering channel.
+ */
+class SocialSettings extends Settings
+{
+    public ?string $og_image_path;
+
+    public string $twitter_handle;
+
+    public string $facebook_url;
+
+    public string $instagram_url;
+
+    public string $x_url;
+
+    public string $linkedin_url;
+
+    public string $youtube_url;
+
+    public string $whatsapp_number;
+
+    public bool $whatsapp_order_enabled;
+
+    public static function group(): string
+    {
+        return 'social';
+    }
+}

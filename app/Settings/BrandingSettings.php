@@ -1,0 +1,25 @@
+<?php
+
+namespace App\Settings;
+
+use Spatie\LaravelSettings\Settings;
+
+/**
+ * Storefront identity: the name, tagline and image assets used in the header,
+ * emails and browser chrome.
+ */
+class BrandingSettings extends Settings
+{
+    public string $store_name;
+
+    public string $tagline;
+
+    public ?string $logo_path;
+
+    public ?string $favicon_path;
+
+    public static function group(): string
+    {
+        return 'branding';
+    }
+}

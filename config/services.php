@@ -35,4 +35,16 @@ return [
         ],
     ],
 
+    /*
+    | Paystack is the only online gateway this store uses: it covers both cards
+    | and M-Pesa in Kenya, where Stripe is unavailable. These values are the
+    | fallback for App\Settings\PaymentApiSettings, which lets an admin override
+    | them from the settings screen without a redeploy.
+    */
+    'paystack' => [
+        'public_key' => env('PAYSTACK_PUBLIC_KEY'),
+        'secret_key' => env('PAYSTACK_SECRET_KEY'),
+        'base_url' => env('PAYSTACK_BASE_URL', 'https://api.paystack.co'),
+    ],
+
 ];
