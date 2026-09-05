@@ -109,18 +109,25 @@ class CategoryTree
     }
 
     /**
-     * Roll per-category totals up through each subtree.
+     * How many distinct products a subtree holds.
      *
-     * @param  array<int, int>  $counts  category id => count for that category alone
+     * The union of the ids rather than the sum of the tallies: a product filed
+     * in both a parent and one of its children appears under both, and the
+     * listing returns it once, so summing made the facet promise more tiles
+     * than ticking it delivers.
+     *
+     * @param  array<int, list<int>>  $productIdsByCategory  category id => product ids filed directly in it
      */
-    public function subtreeCount(int $categoryId, array $counts): int
+    public function subtreeCount(int $categoryId, array $productIdsByCategory): int
     {
-        $total = 0;
+        $productIds = [];
 
         foreach ($this->subtreeIds($categoryId) as $id) {
-            $total += $counts[$id] ?? 0;
+            foreach ($productIdsByCategory[$id] ?? [] as $productId) {
+                $productIds[$productId] = true;
+            }
         }
 
-        return $total;
+        return count($productIds);
     }
 }

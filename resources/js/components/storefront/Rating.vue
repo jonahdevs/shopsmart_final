@@ -12,13 +12,27 @@ const { average = null, count = 0 } = defineProps<{
 }>();
 
 const rounded = computed(() => Math.round(average ?? 0));
+
+/**
+ * The stars are decorative, so the whole cluster carries the name — which needs
+ * a `role` that permits one. A product can hold reviews with no scored average,
+ * so the score is only stated when there is one.
+ */
+const label = computed(() => {
+    const reviews = `${count} ${count === 1 ? 'review' : 'reviews'}`;
+
+    return average === null || average === undefined
+        ? reviews
+        : `Rated ${average.toFixed(1)} out of 5 from ${reviews}`;
+});
 </script>
 
 <template>
     <div
         v-if="count > 0"
         class="flex items-center gap-1.5"
-        :aria-label="`Rated ${average?.toFixed(1)} out of 5 from ${count} reviews`"
+        role="img"
+        :aria-label="label"
     >
         <div class="flex" aria-hidden="true">
             <Star
@@ -28,14 +42,20 @@ const rounded = computed(() => Math.round(average ?? 0));
                 :class="
                     star <= rounded
                         ? 'fill-amber-400 text-amber-400'
-                        : 'fill-transparent text-rule'
+                        : 'text-rule fill-transparent'
                 "
                 :stroke-width="1.5"
             />
         </div>
-        <span class="text-xs text-muted-foreground tabular-nums">{{ count }}</span>
+        <span class="text-muted-foreground text-xs tabular-nums">{{
+            count
+        }}</span>
     </div>
 
-    <!-- Placeholder keeps the card's vertical rhythm identical to a rated one. -->
-    <div v-else class="h-3.5" aria-hidden="true" />
+    <!--
+      Placeholder keeps the card's vertical rhythm identical to a rated one:
+      the rated row is as tall as the 16px line box of the review count, not as
+      tall as the 14px stars sitting inside it.
+    -->
+    <div v-else class="h-4" aria-hidden="true" />
 </template>

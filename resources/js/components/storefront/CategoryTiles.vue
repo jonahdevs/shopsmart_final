@@ -20,10 +20,10 @@ defineProps<{ categories: App.Data.CategoryData[] }>();
         <li v-for="category in categories" :key="category.id">
             <Link
                 :href="show(category.slug)"
-                class="group block focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-electric"
+                class="group focus-visible:outline-electric block focus-visible:outline-2 focus-visible:outline-offset-4"
             >
                 <div
-                    class="aspect-square overflow-hidden rounded-xs bg-white ring-1 ring-rule transition-[box-shadow] group-hover:ring-2 group-hover:ring-electric"
+                    class="ring-rule group-hover:ring-electric aspect-square overflow-hidden rounded-xs bg-white ring-1 transition-[box-shadow] group-hover:ring-2"
                 >
                     <img
                         v-if="category.image"
@@ -35,12 +35,12 @@ defineProps<{ categories: App.Data.CategoryData[] }>();
                     />
                     <span
                         v-else-if="category.iconSvg"
-                        class="flex size-full items-center justify-center p-4 text-muted-foreground"
+                        class="text-muted-foreground flex size-full items-center justify-center p-4"
                         v-html="category.iconSvg"
                     />
                 </div>
                 <p
-                    class="mt-2 line-clamp-2 text-center text-xs leading-4 text-foreground"
+                    class="text-foreground mt-2 line-clamp-2 text-center text-xs leading-4"
                 >
                     {{ category.name }}
                 </p>
@@ -50,17 +50,19 @@ defineProps<{ categories: App.Data.CategoryData[] }>();
         <li>
             <Link
                 :href="index()"
-                class="group block focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-electric"
+                class="group focus-visible:outline-electric block focus-visible:outline-2 focus-visible:outline-offset-4"
             >
                 <div
-                    class="flex aspect-square items-center justify-center rounded-xs border border-dashed border-rule transition-colors group-hover:border-electric group-hover:bg-accent"
+                    class="border-rule group-hover:border-electric group-hover:bg-accent flex aspect-square items-center justify-center rounded-xs border border-dashed transition-colors"
                 >
                     <ArrowRight
-                        class="size-5 text-muted-foreground transition-colors group-hover:text-electric"
+                        class="text-muted-foreground group-hover:text-electric size-5 transition-colors"
                         aria-hidden="true"
                     />
                 </div>
-                <p class="mt-2 text-center text-xs leading-4 text-muted-foreground">
+                <p
+                    class="text-muted-foreground mt-2 text-center text-xs leading-4"
+                >
                     All categories
                 </p>
             </Link>

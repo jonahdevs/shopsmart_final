@@ -9,6 +9,7 @@ use App\Enums\CategorySection;
 use App\Enums\StockStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Shop\Concerns\FiltersCatalogProducts;
+use App\Models\Category;
 use App\Models\CategoryPlacement;
 use App\Models\HeroSlide;
 use App\Models\Product;
@@ -65,23 +66,37 @@ class HomeController extends Controller
      * The categories staff have pinned to the home page, in the order they
      * pinned them.
      *
+     * `CategoryPlacement::active()` only speaks for the placement's own status,
+     * so a tile survived its category being drafted — and then 404'd on click,
+     * because the category page admits nothing but an active category. The
+     * category's status is checked here too.
+     *
      * @return list<CategoryData>
      */
     private function featuredCategories(): array
     {
-        $counts = $this->catalogCountsByCategory();
+        $productIdsByCategory = $this->catalogProductIdsByCategory();
 
         return array_values(CategoryPlacement::query()
             ->active()
             ->forLocation(CategorySection::HomePageFeatured)
+            ->whereHas('category', $this->constrainToActiveCategory(...))
             ->with(['category' => fn (Relation $category) => $category->with('media')])
             ->take(self::FEATURED_CATEGORY_LIMIT)
             ->get()
             ->map(fn (CategoryPlacement $placement): CategoryData => CategoryData::fromModel(
                 $placement->category,
-                productCount: $counts[$placement->category_id] ?? 0,
+                productCount: count($productIdsByCategory[$placement->category_id] ?? []),
             ))
             ->all());
+    }
+
+    /**
+     * @param  Builder<Category>  $query
+     */
+    private function constrainToActiveCategory(Builder $query): void
+    {
+        $query->active();
     }
 
     /**

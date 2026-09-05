@@ -82,6 +82,18 @@ class CategoryPlacement extends Model
     #[Scope]
     protected function active(Builder $query): void
     {
-        $query->where('status', CategoryStatus::Active);
+        // The placement's own status is not enough: CategoryController::show()
+        // 404s on anything but an active category, so a live placement pointing
+        // at a draft one puts a dead link in the nav and on the home page.
+        $query->where('status', CategoryStatus::Active)
+            ->whereHas('category', $this->constrainToActiveCategory(...));
+    }
+
+    /**
+     * @param  Builder<Category>  $query
+     */
+    private function constrainToActiveCategory(Builder $query): void
+    {
+        $query->active();
     }
 }

@@ -5,12 +5,15 @@ namespace App\Http\Middleware;
 use App\Enums\CategorySection;
 use App\Models\CategoryPlacement;
 use App\Support\StorefrontCache;
+use App\Support\StorefrontSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
+    public function __construct(private StorefrontSession $storefront) {}
+
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -48,6 +51,12 @@ class HandleInertiaRequests extends Middleware
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'storefront' => [
                 'navCategories' => $this->navCategories(),
+                // The header's cart / wishlist / compare state. Read straight
+                // out of the session for guests and signed-in customers alike —
+                // StorefrontSession keeps the session as the live copy
+                // precisely so this costs nothing on a path that runs on every
+                // single request.
+                'shopper' => $this->storefront->shopperState(),
             ],
         ];
     }

@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\HeroSlide;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 /**
  * The six slides the home-page hero opens with.
@@ -152,8 +153,13 @@ class HeroSlideSeeder extends Seeder
             return;
         }
 
-        $slide->addMedia(Storage::disk('public')->path($relativePath))
+        $media = $slide->addMedia(Storage::disk('public')->path($relativePath))
             ->preservingOriginal()
             ->toMediaCollection($collection);
+
+        // Seeders run with model events muted, so medialibrary's HasUuid
+        // `creating` hook never fires and the nullable column stays null.
+        $media->uuid ??= (string) Str::uuid();
+        $media->save();
     }
 }

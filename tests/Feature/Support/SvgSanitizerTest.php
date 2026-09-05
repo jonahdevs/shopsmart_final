@@ -79,3 +79,37 @@ test('it rejects markup that is not rooted in an svg element', function (?string
     'whitespace' => '   ',
     'null' => null,
 ]);
+
+test('it refuses a document carrying a doctype, closing the XXE file-read path', function () {
+    $secret = tempnam(sys_get_temp_dir(), 'svg');
+    file_put_contents($secret, 'APP_KEY=base64:super-secret');
+
+    $svg = '<?xml version="1.0"?><!DOCTYPE svg [<!ENTITY x SYSTEM "file://'
+        .str_replace(chr(92), '/', $secret)
+        .'">]><svg xmlns="http://www.w3.org/2000/svg"><title>&x;</title><path d="M0 0"/></svg>';
+
+    $clean = $this->sanitizer->sanitize($svg);
+
+    unlink($secret);
+
+    expect($clean)->toBeNull();
+});
+
+test('it still expands predefined and numeric character references', function () {
+    $svg = '<svg xmlns="http://www.w3.org/2000/svg"><title>Tea &amp; Coffee &#8212; hot</title><path d="M0 0"/></svg>';
+
+    $clean = $this->sanitizer->sanitize($svg);
+
+    expect($clean)->toContain('Tea &amp; Coffee')
+        ->and($clean)->toContain('hot');
+});
+
+test('it strips class, so stored markup cannot claim shipped utilities', function () {
+    $svg = '<svg xmlns="http://www.w3.org/2000/svg" class="fixed inset-0 z-50"><rect x="0" y="0" width="100" height="100"/></svg>';
+
+    $clean = $this->sanitizer->sanitize($svg);
+
+    expect($clean)->not->toContain('class')
+        ->and($clean)->not->toContain('fixed')
+        ->and($clean)->toContain('<rect');
+});

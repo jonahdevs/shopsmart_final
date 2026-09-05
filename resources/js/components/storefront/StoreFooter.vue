@@ -11,8 +11,8 @@ const year = new Date().getFullYear();
 </script>
 
 <template>
-    <footer class="mt-20 bg-ink text-white">
-        <div class="h-0.5 bg-electric" aria-hidden="true" />
+    <footer class="bg-ink mt-20 text-white">
+        <div class="bg-electric h-0.5" aria-hidden="true" />
 
         <div class="grid gap-10 px-4 py-14 sm:px-6 lg:grid-cols-4 lg:px-8">
             <div class="lg:col-span-2">
@@ -34,7 +34,10 @@ const year = new Date().getFullYear();
                     Shop
                 </h2>
                 <ul class="mt-4 space-y-2.5 text-sm">
-                    <li v-for="category in categories.slice(0, 6)" :key="category.slug">
+                    <li
+                        v-for="category in categories.slice(0, 6)"
+                        :key="category.slug"
+                    >
                         <Link
                             :href="show(category.slug)"
                             class="text-white/70 transition-colors hover:text-white"

@@ -57,6 +57,33 @@ test('the home page ignores category placements for other locations', function (
         ->assertInertia(fn (AssertableInertia $page) => $page->has('featuredCategories', 0));
 });
 
+test('the home page drops a featured placement whose category is not active', function () {
+    // The placement is live; the category behind it is not. The tile used to
+    // render and then 404 on click, because the category page admits nothing
+    // but an active category.
+    $drafted = Category::factory()->create(['status' => CategoryStatus::Draft]);
+    CategoryPlacement::factory()->create([
+        'category_id' => $drafted->id,
+        'location' => CategorySection::HomePageFeatured,
+        'status' => CategoryStatus::Active,
+    ]);
+
+    $live = Category::factory()->create();
+    CategoryPlacement::factory()->create([
+        'category_id' => $live->id,
+        'location' => CategorySection::HomePageFeatured,
+        'status' => CategoryStatus::Active,
+    ]);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->has('featuredCategories', 1)
+            ->where('featuredCategories.0.id', $live->id));
+
+    $this->get(route('category.show', $drafted))->assertNotFound();
+});
+
 test('the home page defers its product rails', function () {
     Product::factory()->count(3)->published()->create();
 

@@ -17,9 +17,9 @@ defineProps<{
 <template>
     <div class="flex items-end justify-between gap-4">
         <div>
-            <span class="block h-0.5 w-8 bg-electric" aria-hidden="true" />
+            <span class="bg-electric block h-0.5 w-8" aria-hidden="true" />
             <h2
-                class="mt-3 font-display text-xl font-black tracking-[-0.03em] text-foreground uppercase sm:text-2xl"
+                class="font-display text-foreground mt-3 text-xl font-black tracking-[-0.03em] uppercase sm:text-2xl"
             >
                 {{ title }}
             </h2>
@@ -28,7 +28,7 @@ defineProps<{
         <Link
             v-if="viewAllHref"
             :href="viewAllHref"
-            class="shrink-0 border-b border-transparent pb-0.5 font-display text-sm font-bold text-electric transition-colors hover:border-electric focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-electric"
+            class="font-display text-electric hover:border-electric focus-visible:outline-electric shrink-0 border-b border-transparent pb-0.5 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
         >
             {{ viewAllLabel ?? 'View all' }}
         </Link>

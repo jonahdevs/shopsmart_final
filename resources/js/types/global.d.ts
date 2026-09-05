@@ -22,6 +22,13 @@ declare module '@inertiajs/core' {
             sidebarOpen: boolean;
             storefront: {
                 navCategories: NavCategory[];
+                /**
+                 * Read out of the session by HandleInertiaRequests, so it is
+                 * present on every storefront response. The id lists are what
+                 * let a save / compare control pick `store` or `destroy`
+                 * without a round trip.
+                 */
+                shopper: App.Data.ShopperStateData;
             };
             [key: string]: unknown;
         };

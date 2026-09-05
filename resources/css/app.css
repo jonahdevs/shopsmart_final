@@ -5,7 +5,14 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
-@custom-variant dark (&:is(.dark *));
+/*
+  Dark mode is staff-only, but `.dark` lands on `<html>` for any visitor whose
+  OS prefers it — including one who only ever sees the shop. Excluding the
+  storefront subtree at the variant keeps every `dark:` class in `ui/`
+  primitives (carousel arrows, buttons) inert inside `.storefront`, so those
+  components stay light without being forked.
+*/
+@custom-variant dark (&:is(.dark *):not(.storefront, .storefront *));
 
 @theme inline {
     --font-sans:
@@ -159,6 +166,16 @@
 
     /* Signage, not soft furnishing. */
     --radius: 0.25rem;
+}
+
+/*
+  The document background is set inline in the layout head so it paints before
+  the stylesheet arrives, and its `html.dark` rule blacks out the overscroll
+  gutter behind an otherwise-light storefront. Same specificity, later source
+  order, so this reclaims it.
+*/
+html:has(.storefront) {
+    background-color: var(--field);
 }
 
 :root {

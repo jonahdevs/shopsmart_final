@@ -128,9 +128,14 @@ class CategorySeeder extends Seeder
             return;
         }
 
-        $category->addMedia(Storage::disk('public')->path($relativePath))
+        $media = $category->addMedia(Storage::disk('public')->path($relativePath))
             ->preservingOriginal()
             ->toMediaCollection('image');
+
+        // Seeders run with model events muted, so medialibrary's HasUuid
+        // `creating` hook never fires and the nullable column stays null.
+        $media->uuid ??= (string) Str::uuid();
+        $media->save();
     }
 
     /** Pin the category into one storefront location, numbering within it. */

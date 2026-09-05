@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\CategoryPlacement;
 use App\Models\Product;
 use App\Models\ProductLink;
+use App\Models\ProductVariant;
 use App\Models\Review;
 use App\Models\TaxClass;
 use App\Settings\TaxSettings;
@@ -19,6 +20,8 @@ use Database\Seeders\ReviewSeeder;
 use Database\Seeders\TagSeeder;
 use Database\Seeders\TaxClassSeeder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -137,4 +140,58 @@ test('re-running the seeders does not duplicate the catalog', function () {
         ->and(Category::count())->toBe($before['categories'])
         ->and(ProductLink::count())->toBe($before['links'])
         ->and(CategoryPlacement::count())->toBe($before['placements']);
+});
+
+test('the seeded catalog matches the volume in the source data', function () {
+    expect(Product::count())->toBe(264)
+        ->and(Category::count())->toBe(58)
+        ->and(Product::where('type', ProductType::Variable)->count())->toBe(38)
+        ->and(Product::published()->visibleInCatalog()->count())->toBe(264);
+});
+
+test('every seeded product is reachable through a category', function () {
+    // Membership is `primary_category_id` OR the pivot, and the seeder resolves
+    // the primary by a case-folded name match against categories.json. A rename
+    // on either side silently files a product under neither source, which makes
+    // it invisible on every category page while still listing in /shop.
+    expect(Product::whereNull('primary_category_id')->count())->toBe(0);
+
+    $orphaned = Product::query()
+        ->whereNotNull('primary_category_id')
+        ->whereDoesntHave('categories')
+        ->count();
+
+    expect($orphaned)->toBe(0);
+});
+
+test('every seeded price is stored in cents across the whole catalog', function () {
+    // The cheapest source price is KES 102.70 -> 10,270 cents, so a catalog-wide
+    // minimum above 10,000 proves nothing slipped through in major units.
+    expect(Product::whereNotNull('price')->min('price'))->toBeGreaterThan(10_000)
+        ->and(ProductVariant::whereNotNull('price')->min('price'))->toBeGreaterThan(10_000)
+        ->and(Product::whereColumn('sale_price', '>=', 'price')->count())->toBe(0)
+        ->and(ProductVariant::whereColumn('sale_price', '>=', 'price')->count())->toBe(0);
+});
+
+test('seeded media carries the columns the muted model events would have written', function () {
+    // The suite fakes the public disk, so the seeders normally take their
+    // "referenced image is missing" path and attach nothing — which leaves the
+    // whole media branch, and the two columns it has to write by hand,
+    // completely unexercised. Put one real file where the data expects it.
+    $source = base_path('storage/app/public/products');
+    $image = collect(File::files($source))->first();
+
+    Storage::disk('public')->put('products/product-1-0.webp', File::get($image->getPathname()));
+
+    Model::withoutEvents(fn () => $this->seed(ProductSeeder::class));
+
+    $product = Product::query()->where('slug', 'essence-mascara-lash-princess-bea-ess-ess-001')->sole();
+    $media = $product->getFirstMedia('images');
+
+    expect($media)->not->toBeNull()
+        ->and($media->order_column)->toBe(1)
+        ->and($media->uuid)->not->toBeNull()
+        ->and($media->getCustomProperty('is_cover'))->toBeTrue()
+        ->and(DB::table('media')->whereNull('uuid')->count())->toBe(0)
+        ->and(DB::table('media')->whereNull('order_column')->count())->toBe(0);
 });

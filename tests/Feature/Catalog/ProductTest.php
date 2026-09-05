@@ -147,3 +147,37 @@ test('a product resolves by slug for route model binding', function () {
     expect($product->getRouteKeyName())->toBe('slug')
         ->and(Product::where('slug', 'commercial-oven-x40')->first()->id)->toBe($product->id);
 });
+
+test('a variant with no price inherits the parent price without a lazy load', function () {
+    $product = Product::factory()->published()->create(['price' => 250_000]);
+    ProductVariant::factory()->for($product)->create([
+        'price' => null,
+        'sale_price' => null,
+    ]);
+
+    // Reload the way the product page does: variants eager-loaded, parent not
+    // re-queried. Without chaperone() this throws a LazyLoadingViolation.
+    $loaded = Product::query()->with('variants')->findOrFail($product->id);
+
+    expect($loaded->variants->first()->effectivePriceCents())->toBe(250_000);
+});
+
+test('a hidden or catalog-only product is kept out of the search index', function () {
+    $visible = Product::factory()->published()->create(['visibility' => ProductVisibility::Visible]);
+    $searchOnly = Product::factory()->published()->create(['visibility' => ProductVisibility::Search]);
+    $catalogOnly = Product::factory()->published()->create(['visibility' => ProductVisibility::Catalog]);
+    $hidden = Product::factory()->published()->create(['visibility' => ProductVisibility::Hidden]);
+
+    expect($visible->shouldBeSearchable())->toBeTrue()
+        ->and($searchOnly->shouldBeSearchable())->toBeTrue()
+        ->and($catalogOnly->shouldBeSearchable())->toBeFalse()
+        ->and($hidden->shouldBeSearchable())->toBeFalse();
+});
+
+test('the on-sale factory state leaves a price-on-application product alone', function () {
+    $product = Product::factory()->published()->withoutPrice()->onSale()->create();
+
+    expect($product->price)->toBeNull()
+        ->and($product->sale_price)->toBeNull()
+        ->and($product->effectivePriceCents())->toBeNull();
+});

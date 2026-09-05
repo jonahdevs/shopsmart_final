@@ -41,3 +41,11 @@ test('it treats blank values as absent', function (?string $url) {
     'empty' => '',
     'whitespace' => '   ',
 ]);
+
+test('it rejects a backslash-prefixed path, which browsers resolve cross-origin', function () {
+    $safe = new SafeUrl;
+
+    expect($safe->forLink('/\evil.test/promo'))->toBeNull()
+        ->and($safe->forLink('/\/evil.test'))->toBeNull()
+        ->and($safe->forLink('/shop/kettles?sort=newest'))->toBe('/shop/kettles?sort=newest');
+});

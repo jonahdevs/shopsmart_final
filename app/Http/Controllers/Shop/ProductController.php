@@ -7,7 +7,6 @@ use App\Data\ProductCardData;
 use App\Data\ProductDetailData;
 use App\Data\ReviewData;
 use App\Enums\ProductVisibility;
-use App\Enums\StockStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Shop\Concerns\BuildsCategoryBreadcrumbs;
 use App\Http\Controllers\Shop\Concerns\FiltersCatalogProducts;
@@ -30,6 +29,13 @@ class ProductController extends Controller
     /** Products offered in each recommendation rail. */
     private const RAIL_SIZE = 12;
 
+    /**
+     * Accessories offered in the prompt that follows an add-to-cart. Far
+     * shorter than a rail: this one interrupts the shopper, so it has to be
+     * scannable in one glance.
+     */
+    private const ACCESSORY_LIMIT = 4;
+
     /** Approved reviews shown before the shopper asks for more. */
     private const REVIEW_LIMIT = 10;
 
@@ -51,7 +57,10 @@ class ProductController extends Controller
 
         $product->load([
             'brand',
-            'primaryCategory',
+            // ProductDetailData builds a CategoryData from the primary
+            // category, which resolves a cover image: without the media here
+            // that is a second query on every product page.
+            'primaryCategory.media',
             'media',
             'productAttributes' => fn ($query) => $query->visible(),
             'productAttributes.attribute',
@@ -73,6 +82,7 @@ class ProductController extends Controller
 
         return Inertia::render('shop/Product', [
             'product' => ProductDetailData::fromModel($product, $this->breadcrumbs($product)),
+            'accessories' => $this->accessories($product),
             'related' => $this->rail($pools['related']),
             'brandProducts' => $this->rail($pools['brand']),
             'alsoViewed' => $this->rail($pools['alsoViewed']),
@@ -200,10 +210,34 @@ class ProductController extends Controller
         return Product::query()
             ->published()
             ->visibleInCatalog()
-            ->where('stock_status', StockStatus::InStock)
-            ->whereNotNull('price')
-            ->where('price', '>', 0)
+            ->inStockAndPriced()
             ->whereKeyNot($product->getKey());
+    }
+
+    /**
+     * The accessories curated for this product, for the prompt that follows a
+     * successful add-to-cart.
+     *
+     * Composed onto the model's own `accessories` relation, so the curator's
+     * ordering and the accessory link type are stated in one place — the join
+     * carries the gate and the cap, which is what keeps a hidden or sold-out
+     * accessory from silently eating one of the four slots. An empty list is
+     * the signal the client uses to leave the prompt shut altogether.
+     *
+     * @return list<ProductCardData>
+     */
+    private function accessories(Product $product): array
+    {
+        return array_values($product->accessories()
+            ->with(['brand:id,name,slug', 'media'])
+            ->withReviewStats()
+            ->published()
+            ->visibleInCatalog()
+            ->inStockAndPriced()
+            ->take(self::ACCESSORY_LIMIT)
+            ->get()
+            ->map(fn (Product $accessory): ProductCardData => ProductCardData::fromModel($accessory))
+            ->all());
     }
 
     /**

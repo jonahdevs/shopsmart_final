@@ -31,7 +31,7 @@ class SvgSanitizer
 
     /** @var list<string> */
     private const ALLOWED_ATTRIBUTES = [
-        'viewbox', 'xmlns', 'width', 'height', 'class', 'role', 'aria-hidden', 'focusable',
+        'viewbox', 'xmlns', 'width', 'height', 'role', 'aria-hidden', 'focusable',
         'd', 'points', 'transform',
         'x', 'y', 'x1', 'y1', 'x2', 'y2', 'cx', 'cy', 'r', 'rx', 'ry',
         'fill', 'fill-rule', 'fill-opacity', 'clip-rule', 'opacity',
@@ -54,11 +54,16 @@ class SvgSanitizer
         // Suppress libxml's own warnings: malformed markup is an expected input
         // here, and it is answered by returning null rather than by a log line.
         $previous = libxml_use_internal_errors(true);
-        $parsed = $document->loadXML($markup, LIBXML_NONET | LIBXML_NOENT);
+        // LIBXML_NOENT is deliberately absent: it substitutes entity values
+        // into text nodes *before* clean() runs, and libxml resolves `file://`
+        // from an internal DTD subset even under LIBXML_NONET, which turns a
+        // stored icon into an arbitrary local-file read. Predefined and numeric
+        // character references (&amp;, &#8212;) expand without it.
+        $parsed = $document->loadXML($markup, LIBXML_NONET);
         libxml_clear_errors();
         libxml_use_internal_errors($previous);
 
-        if ($parsed === false) {
+        if ($parsed === false || $document->doctype !== null) {
             return null;
         }
 

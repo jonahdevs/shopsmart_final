@@ -112,3 +112,16 @@ test('enum casts round-trip through the database', function () {
         ->and(DB::table('category_placements')->where('id', $placement->id)->value('location'))
         ->toBe('homepage_featured');
 });
+
+test('an active placement pointing at an inactive category is not active', function () {
+    $live = Category::factory()->create(['status' => CategoryStatus::Active]);
+    $draft = Category::factory()->create(['status' => CategoryStatus::Draft]);
+
+    CategoryPlacement::factory()->forCategory($live)->create();
+    CategoryPlacement::factory()->forCategory($draft)->create();
+
+    $active = CategoryPlacement::query()->active()->get();
+
+    expect($active)->toHaveCount(1)
+        ->and($active->first()->category_id)->toBe($live->id);
+});

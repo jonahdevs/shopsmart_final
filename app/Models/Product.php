@@ -171,7 +171,8 @@ class Product extends Model implements HasMedia
      */
     public function shouldBeSearchable(): bool
     {
-        return $this->isPublished();
+        return $this->isPublished()
+            && in_array($this->visibility, [ProductVisibility::Visible, ProductVisibility::Search], true);
     }
 
     // ==================================================
@@ -266,7 +267,11 @@ class Product extends Model implements HasMedia
     /** @return HasMany<ProductVariant, $this> */
     public function variants(): HasMany
     {
-        return $this->hasMany(ProductVariant::class)->orderBy('sort_order');
+        // Chaperoned so an eager-loaded variant already knows its parent:
+        // ProductVariant::effectivePriceCents() falls back to the product when
+        // the variant price is null, and without this that fallback is a lazy
+        // load — a LazyLoadingViolationException outside production.
+        return $this->hasMany(ProductVariant::class)->orderBy('sort_order')->chaperone();
     }
 
     /** @return BelongsTo<ProductVariant, $this> */
@@ -390,6 +395,26 @@ class Product extends Model implements HasMedia
     protected function visibleInSearch(Builder $query): void
     {
         $query->whereIn('visibility', [ProductVisibility::Visible, ProductVisibility::Search]);
+    }
+
+    /**
+     * Stock a shopper can act on right now: on the shelf and carrying a price.
+     *
+     * Stricter than {@see honorStockVisibility()} on purpose — that one obeys a
+     * display setting, this one is the gate for places that offer a product
+     * rather than merely list it (recommendation rails, the accessory prompt),
+     * where a tile nobody can buy is worse than one tile fewer. Columns are
+     * qualified so the scope survives being composed onto a relation that joins
+     * the link table.
+     *
+     * @param  Builder<Product>  $query
+     */
+    #[Scope]
+    protected function inStockAndPriced(Builder $query): void
+    {
+        $query->where($query->qualifyColumn('stock_status'), StockStatus::InStock)
+            ->whereNotNull($query->qualifyColumn('price'))
+            ->where($query->qualifyColumn('price'), '>', 0);
     }
 
     /**

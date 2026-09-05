@@ -253,6 +253,11 @@ class ProductSeeder extends Seeder
                 ->withCustomProperties(['is_cover' => $order === 0])
                 ->toMediaCollection('images');
 
+            // `uuid` is assigned by medialibrary's HasUuid `creating` hook,
+            // which the muted model events swallow just like `order_column`.
+            // The column is nullable, so a missing uuid fails silently and
+            // only surfaces later as a media row nothing can address by uuid.
+            $media->uuid ??= (string) Str::uuid();
             $media->order_column = ++$order;
             $media->save();
         }

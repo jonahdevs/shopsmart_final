@@ -127,22 +127,81 @@ test('the categories index lists active categories with their product counts', f
         ->assertOk()
         ->assertInertia(fn (AssertableInertia $page) => $page
             ->component('shop/Categories')
-            ->has('categories', 2)
+            // Roots only. The child is present once, nested under its parent —
+            // sending it at the top level as well put it in the payload twice.
+            ->has('categories', 1)
             ->where('categories.0.name', 'Active')
-            ->where('categories.0.productCount', 1)
+            // Rolled up over the subtree: one product of its own plus the
+            // child's. The category page lists 2 when this is clicked, so
+            // reporting 1 here was a number the shopper could catch us on.
+            ->where('categories.0.productCount', 2)
             ->has('categories.0.children', 1)
             ->where('categories.0.children.0.productCount', 1));
 });
 
+test('an active category under an inactive parent is still listed as a root', function () {
+    // Otherwise it would vanish from the index while remaining reachable at its
+    // own URL, because the parent that would have nested it is filtered out.
+    $drafted = Category::factory()->create([
+        'name' => 'Drafted parent',
+        'status' => CategoryStatus::Draft,
+    ]);
+    Category::factory()->child($drafted)->create(['name' => 'Orphaned child']);
+
+    $this->get(route('categories.index'))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->has('categories', 1)
+            ->where('categories.0.name', 'Orphaned child'));
+});
+
+test('a child tile carries the copy and cover art the grid renders', function () {
+    $parent = Category::factory()->create();
+    Category::factory()->child($parent)->create([
+        'name' => 'Kettles',
+        'description' => 'Everything that boils.',
+    ]);
+
+    $this->get(route('category.show', $parent))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->has('category.children', 1)
+            ->where('category.children.0.name', 'Kettles')
+            // A narrowed column list on the child query handed the tile a null
+            // description and icon on every render.
+            ->where('category.children.0.description', 'Everything that boils.'));
+});
+
+test('a product filed in both a parent and its child is counted once in the subtree facet', function () {
+    $root = Category::factory()->create();
+    $parent = Category::factory()->child($root)->create(['name' => 'Kitchen']);
+    $child = Category::factory()->child($parent)->create();
+
+    $product = Product::factory()->published()->create(['primary_category_id' => $parent->id]);
+    $product->categories()->attach($child);
+
+    $this->get(route('category.show', $root))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            // Summing per-category tallies said two; the grid returns one.
+            ->has('products.data', 1)
+            ->where('category.productCount', 1)
+            ->has('categoryFacets', 1)
+            ->where('categoryFacets.0.slug', $parent->slug)
+            ->where('categoryFacets.0.count', 1));
+});
+
 test('a category page issues a bounded number of queries for a page of products', function () {
     $parent = Category::factory()->create();
-    $child = Category::factory()->child($parent)->create();
+    // Several children, not one: a media read per child tile is an N+1 that a
+    // single-child fixture cannot tell apart from a single eager load.
+    $children = Category::factory()->count(6)->child($parent)->create();
     $brand = Brand::factory()->create();
 
     Product::factory()
         ->count(30)
         ->published()
-        ->create(['primary_category_id' => $child->id, 'brand_id' => $brand->id]);
+        ->create(['primary_category_id' => $children->first()->id, 'brand_id' => $brand->id]);
 
     $queries = 0;
     DB::listen(function () use (&$queries): void {
@@ -151,11 +210,14 @@ test('a category page issues a bounded number of queries for a page of products'
 
     $this->get(route('category.show', $parent))
         ->assertOk()
-        ->assertInertia(fn (AssertableInertia $page) => $page->has('products.data', 24));
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->has('products.data', 24)
+            ->has('category.children', 6));
 
     // The category tree is read once and walked in memory for all three of the
     // subtree scope, the child counts and the breadcrumbs. Anything that grows
-    // this with the page size is an N+1; anything that adds a flat query is
-    // probably a second read of a list already in hand.
+    // this with the page size or the number of children is an N+1; anything
+    // that adds a flat query is probably a second read of a list already in
+    // hand.
     expect($queries)->toBeLessThanOrEqual(15);
 });

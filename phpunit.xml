@@ -32,6 +32,7 @@
              points their local SCOUT_DRIVER at Meilisearch. -->
         <env name="SCOUT_DRIVER" value="database"/>
         <env name="SESSION_DRIVER" value="array"/>
+        <env name="SESSION_SECURE_COOKIE" value="false"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>

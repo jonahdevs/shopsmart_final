@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Shop\Concerns\FiltersCatalogProducts;
 use App\Http\Requests\Shop\CatalogFilterRequest;
 use App\Models\Category;
+use App\Support\CategoryTree;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -26,10 +27,18 @@ class CatalogController extends Controller
     {
         $filters = $this->filtersFrom($request->validated());
 
+        // One tree read serves both the category scope and the rolled-up facet
+        // counts, the same way the category page uses it.
+        $tree = CategoryTree::load();
+
         $query = $this->catalogQuery();
 
-        if ($filters->categories !== []) {
-            $this->scopeToCategories($query, $this->selectedCategoryIds($filters->categories));
+        $selectedIds = $filters->categories === []
+            ? null
+            : $this->selectedCategoryIds($filters->categories, $tree);
+
+        if ($selectedIds !== null) {
+            $this->scopeToCategories($query, $selectedIds);
         }
 
         $this->applyFilters($query, $filters);
@@ -39,27 +48,34 @@ class CatalogController extends Controller
                 fn (): ProductListData => ProductListData::fromPaginator($this->paginateCatalog($query)),
             )->append('data', 'id'),
             'filters' => $filters,
-            'categoryFacets' => $this->categoryFacets($this->catalogCountsByCategory()),
-            'brandFacets' => $this->brandFacets(),
+            'categoryFacets' => $this->categoryFacets($this->catalogProductIdsByCategory(), $tree),
+            // The same ids the listing is pinned to, so a brand's number is
+            // what ticking it returns rather than its store-wide total.
+            'brandFacets' => $this->brandFacets($selectedIds),
         ]);
     }
 
     /**
-     * Resolve the ticked category slugs to ids. An unknown slug resolves to
-     * nothing, which correctly empties the grid rather than being ignored.
+     * Resolve the ticked category slugs to ids, each expanded through its whole
+     * subtree. A top-level category holds no products of its own, so resolving
+     * the slug alone returned an empty grid for a box the sidebar offered.
+     *
+     * An unknown slug resolves to nothing, which correctly empties the grid
+     * rather than being ignored.
      *
      * @param  list<string>  $slugs
      * @return list<int>
      */
-    private function selectedCategoryIds(array $slugs): array
+    private function selectedCategoryIds(array $slugs, CategoryTree $tree): array
     {
-        /** @var list<int> $ids */
-        $ids = Category::query()
-            ->whereIn('slug', $slugs)
-            ->pluck('id')
-            ->map(fn (mixed $id): int => (int) $id)
-            ->all();
+        $expanded = [];
 
-        return $ids;
+        foreach (Category::query()->whereIn('slug', $slugs)->pluck('id') as $id) {
+            foreach ($tree->subtreeIds((int) $id) as $descendantId) {
+                $expanded[$descendantId] = true;
+            }
+        }
+
+        return array_keys($expanded);
     }
 }

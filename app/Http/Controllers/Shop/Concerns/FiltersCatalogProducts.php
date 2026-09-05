@@ -9,6 +9,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Review;
+use App\Support\CategoryTree;
 use App\Support\Money;
 use App\Support\StorefrontCache;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -73,7 +74,9 @@ trait FiltersCatalogProducts
         $brands = array_values(array_map('intval', (array) ($validated['brand'] ?? [])));
 
         $priceMin = (int) ($validated['pmin'] ?? 0);
-        $priceMax = (int) ($validated['pmax'] ?? self::PRICE_CEILING);
+        // Null, not the ceiling: a defaulted upper bound is a filter nobody
+        // asked for, and it silently hid every product priced above it.
+        $priceMax = isset($validated['pmax']) ? (int) $validated['pmax'] : null;
         $inStockOnly = (bool) ($validated['stock'] ?? false);
         $minRating = (int) ($validated['rating'] ?? 0);
         $tag = trim((string) ($validated['tag'] ?? ''));
@@ -86,6 +89,7 @@ trait FiltersCatalogProducts
             brands: $brands,
             priceMin: $priceMin,
             priceMax: $priceMax,
+            priceCeiling: self::PRICE_CEILING,
             inStockOnly: $inStockOnly,
             minRating: $minRating,
             tag: $tag,
@@ -96,7 +100,7 @@ trait FiltersCatalogProducts
                 || $inStockOnly
                 || $minRating > 0
                 || $priceMin > 0
-                || $priceMax < self::PRICE_CEILING
+                || $priceMax !== null
                 || $tag !== ''
                 || $newArrivalsOnly
                 || $term !== '',
@@ -151,13 +155,66 @@ trait FiltersCatalogProducts
      */
     private function applySearchTerm(Builder $query, string $term): void
     {
-        $query->where(function (Builder $match) use ($term): void {
+        $pattern = $this->containsPattern($term);
+
+        $query->where(function (Builder $match) use ($pattern): void {
             $match
-                ->where('name', 'like', "%{$term}%")
-                ->orWhere('sku', 'like', "%{$term}%")
-                ->orWhere('model_number', 'like', "%{$term}%")
-                ->orWhereHas('brand', fn (Builder $brand) => $brand->where('name', 'like', "%{$term}%"));
+                ->whereRaw($this->likeExpression('name'), [$pattern])
+                ->orWhereRaw($this->likeExpression('sku'), [$pattern])
+                ->orWhereRaw($this->likeExpression('model_number'), [$pattern])
+                ->orWhereHas('brand', fn (Builder $brand) => $brand->whereRaw($this->likeExpression('name'), [$pattern]));
         });
+    }
+
+    /**
+     * The escape character for every LIKE this application builds.
+     *
+     * Deliberately not a backslash. MySQL treats `\` as LIKE's default escape
+     * while SQLite has none, so a backslash-escaped wildcard matches itself on
+     * one driver and nothing at all on the other — and the suite runs on
+     * SQLite while production runs on MySQL. Naming the character explicitly
+     * makes both dialects agree.
+     */
+    private const LIKE_ESCAPE = '!';
+
+    /**
+     * A `column LIKE ? ESCAPE '!'` fragment.
+     *
+     * The column is constrained to a literal from a closed set rather than an
+     * arbitrary string, so the result is a `literal-string` and PHPStan's
+     * guard against assembling SQL out of runtime values still holds. The
+     * pattern itself is bound.
+     *
+     * @param  'name'|'sku'|'model_number'  $column
+     * @return literal-string
+     */
+    protected function likeExpression(string $column): string
+    {
+        return $column." LIKE ? ESCAPE '".self::LIKE_ESCAPE."'";
+    }
+
+    /**
+     * Wrap a shopper's term as a LIKE "contains" pattern.
+     *
+     * The term is bound, so the wildcards were never an injection risk — they
+     * were a correctness one: `?q=%` matched the entire catalog and `a_b`
+     * matched "axb". Escaped against {@see self::LIKE_ESCAPE}, a typed `%` or
+     * `_` matches itself on both drivers — so searching "100%" finds the
+     * product actually called "100% Cotton".
+     */
+    protected function containsPattern(string $term): string
+    {
+        $escape = self::LIKE_ESCAPE;
+
+        // The escape character itself has to be escaped first, or escaping the
+        // wildcards would produce sequences this pass then re-escapes.
+        $escaped = str_replace(
+            [$escape, '%', '_'],
+            [$escape.$escape, $escape.'%', $escape.'_'],
+            $term,
+        );
+
+        return '%'.$escaped.'%';
     }
 
     /**
@@ -182,15 +239,22 @@ trait FiltersCatalogProducts
      * survive the upper bound (they are quote-on-request, not expensive) but
      * drop out as soon as the shopper sets a floor.
      *
+     * Only a bound the shopper actually supplied is applied. Defaulting the
+     * ceiling to PRICE_CEILING put `price <= 600_000_000` on every listing
+     * query, so anything dearer than the slider's top stop vanished from the
+     * whole storefront with nothing on the page to say a filter was on.
+     *
      * @param  Builder<Product>  $query
      */
     private function applyPriceRange(Builder $query, CatalogFilterData $filters): void
     {
         $money = app(Money::class);
 
-        $query->where(fn (Builder $ceiling) => $ceiling
-            ->whereNull('price')
-            ->orWhere('price', '<=', $money->toMinor($filters->priceMax)));
+        if ($filters->priceMax !== null) {
+            $query->where(fn (Builder $ceiling) => $ceiling
+                ->whereNull('price')
+                ->orWhere('price', '<=', $money->toMinor($filters->priceMax)));
+        }
 
         if ($filters->priceMin > 0) {
             $query->whereNotNull('price')->where('price', '>=', $money->toMinor($filters->priceMin));
@@ -247,12 +311,17 @@ trait FiltersCatalogProducts
     }
 
     /**
-     * How many live catalog products sit directly in each category, keyed by
-     * category id.
+     * The ids of the live catalog products filed directly in each category,
+     * keyed by category id.
+     *
+     * Ids rather than a tally, because every consumer rolls these up a subtree
+     * and a product may be filed in a parent and one of its children at once.
+     * Summing tallies counted it twice, so the facet promised more tiles than
+     * ticking it returned; a union of ids counts it once.
      *
      * One query: the two membership sources are UNIONed (which de-duplicates)
-     * and counted in the database, rather than paying a correlated subquery per
-     * category row or a count query per facet.
+     * rather than paying a correlated subquery per category row or a count
+     * query per facet.
      *
      * Cached because it scans the whole catalog, depends on nothing in the
      * request, and is read by four pages. ProductObserver and CategoryObserver
@@ -261,24 +330,24 @@ trait FiltersCatalogProducts
      * serves the stale value and refreshes after the response rather than
      * making one unlucky shopper wait for the rebuild.
      *
-     * @return array<int, int>
+     * @return array<int, list<int>> category id => live product ids
      */
-    protected function catalogCountsByCategory(): array
+    protected function catalogProductIdsByCategory(): array
     {
-        /** @var array<int, int> $cached */
-        $cached = Cache::flexible(
-            StorefrontCache::CATEGORY_PRODUCT_COUNTS,
+        /** @var array<int, list<int>> $idsByCategory */
+        $idsByCategory = Cache::flexible(
+            StorefrontCache::CATEGORY_PRODUCT_IDS,
             [self::COUNTS_FRESH_SECONDS, self::COUNTS_STALE_SECONDS],
-            fn (): array => $this->freshCatalogCountsByCategory(),
+            fn (): array => $this->freshCatalogProductIdsByCategory(),
         );
 
-        return $cached;
+        return $idsByCategory;
     }
 
     /**
-     * @return array<int, int>
+     * @return array<int, list<int>>
      */
-    private function freshCatalogCountsByCategory(): array
+    private function freshCatalogProductIdsByCategory(): array
     {
         $liveProducts = Product::query()
             ->published()
@@ -296,52 +365,76 @@ trait FiltersCatalogProducts
             ->whereIn('product_id', $liveProducts)
             ->union($primary);
 
-        /** @var array<int, int> $counts */
-        $counts = DB::query()
-            ->fromSub($membership, 'membership')
-            ->select('category_id')
-            ->selectRaw('COUNT(DISTINCT product_id) as total')
-            ->groupBy('category_id')
-            ->pluck('total', 'category_id')
-            ->map(fn (mixed $total): int => (int) $total)
-            ->all();
+        /** @var array<int, array<int, true>> $seen */
+        $seen = [];
 
-        return $counts;
+        foreach (DB::query()->fromSub($membership, 'membership')->get() as $row) {
+            $seen[(int) $row->category_id][(int) $row->product_id] = true;
+        }
+
+        /** @var array<int, list<int>> $idsByCategory */
+        $idsByCategory = [];
+
+        foreach ($seen as $categoryId => $productIds) {
+            $idsByCategory[$categoryId] = array_keys($productIds);
+        }
+
+        return $idsByCategory;
     }
 
     /**
-     * Active categories that actually hold live catalog products, as sidebar
-     * facets. Categories with no products are dropped — ticking such a box
+     * Active categories whose subtree holds live catalog products, as sidebar
+     * facets. A category with an empty subtree is dropped — ticking such a box
      * could only ever empty the grid.
      *
-     * @param  array<int, int>  $counts  category id => product count
-     * @param  list<int>|null  $restrictToIds  Narrow the facets to a subtree.
+     * Counts are rolled up the subtree because ticking the box scopes the
+     * listing to the subtree: a top-level category holds no products of its
+     * own, so a direct tally would either hide it from the sidebar or advertise
+     * zero next to a box that returns fifty.
+     *
+     * @param  array<int, list<int>>  $productIdsByCategory  category id => live product ids
      * @return list<FacetOptionData>
      */
-    protected function categoryFacets(array $counts, ?array $restrictToIds = null): array
+    protected function categoryFacets(array $productIdsByCategory, CategoryTree $tree): array
     {
-        $ids = array_keys(array_filter($counts, fn (int $count): bool => $count > 0));
+        $ids = [];
 
-        if ($restrictToIds !== null) {
-            $ids = array_values(array_intersect($ids, $restrictToIds));
+        foreach (array_keys($productIdsByCategory) as $categoryId) {
+            $ids[$categoryId] = true;
+
+            foreach ($tree->ancestorIds($categoryId) as $ancestorId) {
+                $ids[$ancestorId] = true;
+            }
         }
 
         if ($ids === []) {
             return [];
         }
 
-        return array_values(Category::query()
+        $facets = [];
+
+        $categories = Category::query()
             ->active()
-            ->whereIn('id', $ids)
+            ->whereIn('id', array_keys($ids))
             ->orderBy('name')
-            ->get(['id', 'name', 'slug'])
-            ->map(fn (Category $category): FacetOptionData => new FacetOptionData(
+            ->get(['id', 'name', 'slug']);
+
+        foreach ($categories as $category) {
+            $count = $tree->subtreeCount($category->getKey(), $productIdsByCategory);
+
+            if ($count === 0) {
+                continue;
+            }
+
+            $facets[] = new FacetOptionData(
                 id: $category->getKey(),
                 name: $category->name,
                 slug: $category->slug,
-                count: $counts[$category->getKey()] ?? 0,
-            ))
-            ->all());
+                count: $count,
+            );
+        }
+
+        return $facets;
     }
 
     /**

@@ -17,8 +17,16 @@ class StorefrontCache
     /** The curated category list shared on every storefront response. */
     public const NAV_CATEGORIES = 'storefront.nav-categories';
 
-    /** Live catalog product counts per category, behind every facet. */
-    public const CATEGORY_PRODUCT_COUNTS = 'storefront.category-product-counts';
+    /**
+     * Live catalog product ids per category, behind every facet.
+     *
+     * The `.v2` suffix retires entries written when this held a tally per
+     * category rather than an id list: subtree facets roll several categories
+     * up, and summing tallies double-counted a product filed in two of them.
+     * Version the key on any further shape change — a deploy must never read
+     * one shape as another.
+     */
+    public const CATEGORY_PRODUCT_IDS = 'storefront.category-product-ids.v2';
 
     public function forgetNavigation(): void
     {
@@ -27,6 +35,6 @@ class StorefrontCache
 
     public function forgetCategoryCounts(): void
     {
-        Cache::forget(self::CATEGORY_PRODUCT_COUNTS);
+        Cache::forget(self::CATEGORY_PRODUCT_IDS);
     }
 }

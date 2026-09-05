@@ -3,6 +3,7 @@ name: tests
 on:
   push:
     branches:
+      - master
       - main
   pull_request:
 
@@ -31,8 +32,22 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Setup Application
-        run: composer setup
+      # `composer setup` is the local onboarding script: it migrates against the
+      # MySQL in .env.example, which no runner has. The suite itself runs on
+      # sqlite :memory: (phpunit.xml), so CI only needs dependencies and a build.
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Build assets
+        run: npm run build
 
       - name: Run CI Checks
         run: composer ci:check

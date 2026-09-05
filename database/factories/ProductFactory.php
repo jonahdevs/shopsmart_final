@@ -99,7 +99,13 @@ class ProductFactory extends Factory
     public function onSale(): static
     {
         return $this->afterMaking(function (Product $product) {
-            $product->sale_price = (int) round(($product->price ?? 100_000) * 0.8);
+            // A null price is price-on-application; inventing a base to
+            // discount would produce a row that is on sale without a price.
+            if ($product->price === null) {
+                return;
+            }
+
+            $product->sale_price = (int) round($product->price * 0.8);
         });
     }
 

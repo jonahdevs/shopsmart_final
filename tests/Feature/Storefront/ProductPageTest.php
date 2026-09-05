@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\ProductLinkType;
 use App\Enums\ProductVisibility;
 use App\Models\Attribute;
 use App\Models\AttributeValue;
@@ -7,12 +8,27 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductAttribute;
+use App\Models\ProductLink;
 use App\Models\ProductVariant;
 use App\Models\ProductView;
 use App\Models\RecentlyViewed;
 use App\Models\Review;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
+
+/**
+ * Curate a typed link from one product to another, the way the admin side does.
+ */
+function curateProductLink(Product $product, Product $linked, ProductLinkType $type, int $sortOrder = 0): ProductLink
+{
+    return ProductLink::create([
+        'product_id' => $product->id,
+        'linked_product_id' => $linked->id,
+        'type' => $type,
+        'sort_order' => $sortOrder,
+    ]);
+}
 
 /**
  * The product detail page: the payload it hands the client, who is allowed to
@@ -177,6 +193,94 @@ test('a product page recommends what was viewed in the same session', function (
         ->assertInertia(fn (AssertableInertia $page) => $page
             ->has('alsoViewed', 1)
             ->where('alsoViewed.0.id', $alsoViewed->id));
+});
+
+test('a product page offers its curated accessories in the order they were curated', function () {
+    $product = Product::factory()->published()->create();
+
+    $second = Product::factory()->published()->create(['name' => 'Descaler']);
+    $first = Product::factory()->published()->create(['name' => 'Filter cartridge']);
+    $crossSell = Product::factory()->published()->create();
+
+    curateProductLink($product, $second, ProductLinkType::Accessory, sortOrder: 1);
+    curateProductLink($product, $first, ProductLinkType::Accessory, sortOrder: 0);
+    // Another product's accessory, and a link of a different type on this one:
+    // neither belongs in this product's prompt.
+    curateProductLink($product, $crossSell, ProductLinkType::CrossSell);
+    curateProductLink($crossSell, Product::factory()->published()->create(), ProductLinkType::Accessory);
+
+    $this->get(route('product.show', $product))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->has('accessories', 2)
+            ->where('accessories.0.name', 'Filter cartridge')
+            ->where('accessories.1.name', 'Descaler')
+            ->where('accessories.0.effectivePriceFormatted', fn ($price) => is_string($price)));
+});
+
+test('a product with nothing curated against it offers no accessories', function () {
+    $product = Product::factory()->published()->create();
+    Product::factory()->published()->create();
+
+    $this->get(route('product.show', $product))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page->has('accessories', 0));
+});
+
+test('an accessory a shopper could not buy is never offered', function () {
+    $product = Product::factory()->published()->create();
+
+    $offered = Product::factory()->published()->create(['name' => 'Filter cartridge']);
+
+    $unbuyable = [
+        Product::factory()->draft()->create(),
+        Product::factory()->published()->hidden()->create(),
+        Product::factory()->published()->outOfStock()->create(),
+        Product::factory()->published()->withoutPrice()->create(),
+        Product::factory()->scheduled(now()->addDay())->create(),
+    ];
+
+    foreach ([$offered, ...$unbuyable] as $index => $accessory) {
+        curateProductLink($product, $accessory, ProductLinkType::Accessory, sortOrder: $index);
+    }
+
+    $this->get(route('product.show', $product))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->has('accessories', 1)
+            ->where('accessories.0.id', $offered->id));
+});
+
+test('a product page issues a bounded number of queries however much hangs off it', function () {
+    $category = Category::factory()->create();
+    $brand = Brand::factory()->create();
+
+    $product = Product::factory()->published()->create([
+        'primary_category_id' => $category->id,
+        'brand_id' => $brand->id,
+    ]);
+
+    Product::factory()->published()->count(5)->create([
+        'primary_category_id' => $category->id,
+        'brand_id' => $brand->id,
+    ])->each(fn (Product $accessory) => curateProductLink($product, $accessory, ProductLinkType::Accessory));
+
+    Review::factory()->approved()->count(3)->for($product)->create();
+
+    // The recommendation pools are cached per product, so the run being
+    // measured must be the cold one that actually resolves them.
+    $queries = 0;
+    DB::listen(function () use (&$queries): void {
+        $queries++;
+    });
+
+    $this->get(route('product.show', $product))->assertOk();
+
+    // 23 with nothing curated against the product, 26 with accessories: the
+    // prompt costs one join over the link table plus the brand and media eager
+    // loads every other product tile on this page already pays for. Flat in the
+    // number of accessories — five are linked here and four are offered.
+    expect($queries)->toBeLessThanOrEqual(26);
 });
 
 test('a product page defers its reviews', function () {

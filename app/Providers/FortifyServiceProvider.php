@@ -5,12 +5,15 @@ namespace App\Providers;
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Password as PasswordBroker;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
+use Laravel\Fortify\Contracts\FailedPasswordResetLinkRequestResponse;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
 
@@ -41,6 +44,20 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::createUsersUsing(CreateNewUser::class);
+
+        // Fortify answers an unknown address with "We can't find a user with
+        // that email address", which turns the public reset form into an
+        // account-enumeration oracle. Answer every request identically.
+        $this->app->singleton(FailedPasswordResetLinkRequestResponse::class, fn (): FailedPasswordResetLinkRequestResponse => new class implements FailedPasswordResetLinkRequestResponse
+        {
+            /**
+             * @param  Request  $request
+             */
+            public function toResponse($request): RedirectResponse
+            {
+                return back()->with('status', trans(PasswordBroker::RESET_LINK_SENT));
+            }
+        });
     }
 
     /**
@@ -95,6 +112,19 @@ class FortifyServiceProvider extends ServiceProvider
             return Limit::perMinute(10)->by(
                 ($request->input('credential.id') ?: $request->session()->getId()).'|'.$request->ip(),
             );
+        });
+
+        RateLimiter::for('registration', function (Request $request) {
+            return Limit::perMinute(6)->by((string) $request->ip());
+        });
+
+        RateLimiter::for('password-reset-link', function (Request $request) {
+            $email = Str::transliterate(Str::lower((string) $request->input('email')));
+
+            return [
+                Limit::perMinute(5)->by($email.'|'.$request->ip()),
+                Limit::perMinute(10)->by((string) $request->ip()),
+            ];
         });
     }
 }

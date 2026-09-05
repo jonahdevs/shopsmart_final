@@ -30,8 +30,10 @@ class SafeUrl
         }
 
         // A protocol-relative URL (`//evil.test`) reads as a path but resolves
-        // to another origin, so it is not treated as same-site.
-        if (Str::startsWith($url, '/') && ! Str::startsWith($url, '//')) {
+        // to another origin, so it is not treated as same-site — and browsers
+        // normalise a leading backslash to a slash, so `/\evil.test` is the
+        // same trick wearing a different hat.
+        if (Str::startsWith($url, '/') && ! Str::startsWith($url, ['//', '/\\'])) {
             return $url;
         }
 

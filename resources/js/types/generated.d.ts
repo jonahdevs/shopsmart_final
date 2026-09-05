@@ -19,12 +19,43 @@ export type BreadcrumbData = {
 name: string,
 slug: string | null,
 };
+export type CartData = {
+items: App.Data.CartItemData[],
+itemCount: number,
+lineCount: number,
+subtotalCents: number,
+subtotalFormatted: string,
+isEmpty: boolean,
+hasPriceChanges: boolean,
+};
+export type CartItemData = {
+key: string,
+productId: number,
+variantId: number | null,
+name: string,
+slug: string,
+sku: string | null,
+brandName: string | null,
+optionLabel: string | null,
+image: App.Data.ImageData | null,
+quantity: number,
+unitPriceCents: number,
+unitPriceFormatted: string,
+lineTotalCents: number,
+lineTotalFormatted: string,
+currentUnitPriceCents: number,
+currentUnitPriceFormatted: string,
+priceChanged: boolean,
+inStock: boolean,
+maxQuantity: number | null,
+};
 export type CatalogFilterData = {
 q: string,
 categories: string[],
 brands: number[],
 priceMin: number,
-priceMax: number,
+priceMax: number | null,
+priceCeiling: number,
 inStockOnly: boolean,
 minRating: number,
 tag: string,
@@ -41,6 +72,15 @@ iconSvg: string | null,
 image: App.Data.ImageData | null,
 productCount: number | null,
 children: App.Data.CategoryData[],
+};
+export type CompareAttributeData = {
+name: string,
+values: (string| null)[],
+};
+export type CompareData = {
+products: App.Data.ProductCardData[],
+attributes: App.Data.CompareAttributeData[],
+limit: number,
 };
 export type FacetOptionData = {
 id: number,
@@ -167,6 +207,14 @@ verifiedPurchase: boolean,
 publishedAt: string | null,
 publishedAtForHumans: string | null,
 };
+export type ShopperStateData = {
+cartCount: number,
+wishlistCount: number,
+compareCount: number,
+wishlistProductIds: number[],
+compareProductIds: number[],
+compareLimit: number,
+};
 export type SpecificationData = {
 name: string,
 values: string[],
@@ -191,6 +239,7 @@ export type ProductStatus = 'draft' | 'published' | 'scheduled' | 'archived';
 export type ProductType = 'simple' | 'variable' | 'grouped' | 'bundled';
 export type ProductVisibility = 'visible' | 'hidden' | 'catalog' | 'search';
 export type ReviewStatus = 'pending' | 'approved' | 'rejected';
+export type SavedProductList = 'wishlist' | 'compare';
 export type StockStatus = 'in_stock' | 'out_of_stock' | 'backorder';
 }
 }

@@ -23,7 +23,9 @@ const categories = computed<NavCategory[]>(
       pins light mode; see resources/css/app.css. Dark mode stays a staff-only
       affordance in the admin.
     -->
-    <div class="storefront flex min-h-screen flex-col bg-background text-foreground">
+    <div
+        class="storefront bg-background text-foreground flex min-h-screen flex-col"
+    >
         <StoreHeader :categories="categories" />
 
         <main class="flex-1">

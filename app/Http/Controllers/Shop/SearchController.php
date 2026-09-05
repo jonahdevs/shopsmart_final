@@ -97,7 +97,7 @@ class SearchController extends Controller
     {
         return array_values(Category::query()
             ->active()
-            ->where('name', 'like', "%{$term}%")
+            ->whereRaw($this->likeExpression('name'), [$this->containsPattern($term)])
             ->orderBy('name')
             ->take(self::TAXONOMY_LIMIT)
             ->get(['id', 'name', 'slug'])
@@ -117,7 +117,7 @@ class SearchController extends Controller
     {
         return array_values(Brand::query()
             ->active()
-            ->where('name', 'like', "%{$term}%")
+            ->whereRaw($this->likeExpression('name'), [$this->containsPattern($term)])
             ->whereHas('products', $this->constrainToSearchableProducts(...))
             ->orderBy('name')
             ->take(self::TAXONOMY_LIMIT)

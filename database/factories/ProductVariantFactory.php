@@ -52,7 +52,13 @@ class ProductVariantFactory extends Factory
     public function onSale(): static
     {
         return $this->afterMaking(function (ProductVariant $variant) {
-            $variant->sale_price = (int) round(($variant->price ?? 100_000) * 0.8);
+            // A null variant price inherits the parent product's, so inventing
+            // a base here would silently pre-empt that fallback.
+            if ($variant->price === null) {
+                return;
+            }
+
+            $variant->sale_price = (int) round($variant->price * 0.8);
         });
     }
 }

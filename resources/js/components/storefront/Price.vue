@@ -13,7 +13,10 @@ import { cn } from '@/lib/utils';
  *
  * Amounts arrive preformatted from the server (`money()`), which joins the
  * symbol and the number with a single space — that is what lets this split the
- * unit off the amount without knowing anything about currency rules.
+ * unit off the amount without knowing anything about currency rules. The
+ * currency's `symbol_position` setting decides which side the symbol lands on
+ * (`KES 24,000` or `24,000 KES`), so which token is the unit is worked out from
+ * the content rather than assumed to be the first.
  */
 const {
     formatted,
@@ -32,14 +35,29 @@ const parts = computed(() => {
         return null;
     }
 
-    const index = formatted.indexOf(' ');
+    const first = formatted.indexOf(' ');
 
-    return index === -1
-        ? { unit: null, amount: formatted }
-        : {
-              unit: formatted.slice(0, index),
-              amount: formatted.slice(index + 1),
-          };
+    if (first === -1) {
+        return { unit: null, amount: formatted };
+    }
+
+    /*
+      A leading token carrying a digit is the amount, so the unit trails it.
+      Splitting on the *last* space also keeps a space-grouped amount intact.
+    */
+    if (/\d/.test(formatted.slice(0, first))) {
+        const last = formatted.lastIndexOf(' ');
+
+        return {
+            unit: formatted.slice(last + 1),
+            amount: formatted.slice(0, last),
+        };
+    }
+
+    return {
+        unit: formatted.slice(0, first),
+        amount: formatted.slice(first + 1),
+    };
 });
 
 const amountSize = computed(
@@ -57,14 +75,14 @@ const amountSize = computed(
         <p class="flex flex-col leading-none">
             <span
                 v-if="parts.unit"
-                class="text-[0.625rem] font-semibold tracking-[0.18em] text-muted-foreground uppercase"
+                class="text-muted-foreground text-[0.625rem] font-semibold tracking-[0.18em] uppercase"
             >
                 {{ parts.unit }}
             </span>
             <span
                 :class="
                     cn(
-                        'font-display font-extrabold tabular-nums tracking-[-0.02em] text-foreground',
+                        'font-display text-foreground font-extrabold tracking-[-0.02em] tabular-nums',
                         amountSize,
                     )
                 "
@@ -75,14 +93,14 @@ const amountSize = computed(
 
         <span
             v-if="compareFormatted"
-            class="pb-0.5 text-sm text-muted-foreground line-through tabular-nums"
+            class="text-muted-foreground pb-0.5 text-sm tabular-nums line-through"
         >
             {{ compareFormatted }}
         </span>
 
         <span
             v-if="discountPercent"
-            class="mb-0.5 rounded-xs bg-sale px-1.5 py-0.5 font-display text-[0.6875rem] font-bold tracking-wide text-white tabular-nums"
+            class="bg-sale font-display mb-0.5 rounded-xs px-1.5 py-0.5 text-[0.6875rem] font-bold tracking-wide text-white tabular-nums"
         >
             &minus;{{ discountPercent }}%
         </span>
@@ -91,7 +109,7 @@ const amountSize = computed(
     <!-- No price set: the product is sold on request rather than off the shelf. -->
     <p
         v-else
-        class="font-display text-sm font-bold tracking-[-0.01em] text-muted-foreground"
+        class="font-display text-muted-foreground text-sm font-bold tracking-[-0.01em]"
     >
         Price on request
     </p>

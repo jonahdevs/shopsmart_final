@@ -49,16 +49,16 @@ test('renaming a category drops the cached navigation', function () {
 
 test('publishing a product drops the cached category counts', function () {
     $category = Category::factory()->create();
-    Product::factory()->published()->create(['primary_category_id' => $category->id]);
+    $live = Product::factory()->published()->create(['primary_category_id' => $category->id]);
     $draft = Product::factory()->draft()->create(['primary_category_id' => $category->id]);
 
     $this->get(route('catalog'))->assertOk();
 
-    expect(Cache::get(StorefrontCache::CATEGORY_PRODUCT_COUNTS))->toBe([$category->id => 1]);
+    expect(Cache::get(StorefrontCache::CATEGORY_PRODUCT_IDS))->toBe([$category->id => [$live->id]]);
 
     $draft->update(['status' => ProductStatus::Published]);
 
-    expect(Cache::get(StorefrontCache::CATEGORY_PRODUCT_COUNTS))->toBeNull();
+    expect(Cache::get(StorefrontCache::CATEGORY_PRODUCT_IDS))->toBeNull();
 
     $this->get(route('catalog'))
         ->assertInertia(fn (AssertableInertia $page) => $page->where('categoryFacets.0.count', 2));
@@ -74,5 +74,5 @@ test('an edit that cannot change a total leaves the cached counts alone', functi
     // every save would leave the cache cold in a store that syncs inventory.
     $product->update(['price' => 999_00]);
 
-    expect(Cache::get(StorefrontCache::CATEGORY_PRODUCT_COUNTS))->toBe([$category->id => 1]);
+    expect(Cache::get(StorefrontCache::CATEGORY_PRODUCT_IDS))->toBe([$category->id => [$product->id]]);
 });
