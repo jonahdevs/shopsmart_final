@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -34,6 +35,8 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read int|null $roles_count
  * @property-read Collection<int, Permission> $permissions
  * @property-read int|null $permissions_count
+ * @property-read Collection<int, Address> $addresses
+ * @property-read Collection<int, Order> $orders
  */
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
@@ -71,5 +74,21 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public function isCustomer(): bool
     {
         return ! $this->isStaff();
+    }
+
+    // ==================================================
+    // RELATIONSHIPS
+    // ==================================================
+
+    /** @return HasMany<Address, $this> */
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(Address::class);
+    }
+
+    /** @return HasMany<Order, $this> */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
     }
 }

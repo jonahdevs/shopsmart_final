@@ -37,6 +37,7 @@ class DatabaseSeeder extends Seeder
             HeroSlideSeeder::class,
             TagSeeder::class,
             ReviewSeeder::class,
+            CouponSeeder::class,
         ]);
 
         $this->announceImageConversions();

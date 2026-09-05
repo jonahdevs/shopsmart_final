@@ -1,10 +1,14 @@
 <?php
 
+use App\Http\Controllers\Shop\AddressController;
 use App\Http\Controllers\Shop\CartController;
 use App\Http\Controllers\Shop\CatalogController;
 use App\Http\Controllers\Shop\CategoryController;
+use App\Http\Controllers\Shop\CheckoutController;
+use App\Http\Controllers\Shop\CheckoutCouponController;
 use App\Http\Controllers\Shop\CompareController;
 use App\Http\Controllers\Shop\HomeController;
+use App\Http\Controllers\Shop\OrderController;
 use App\Http\Controllers\Shop\ProductController;
 use App\Http\Controllers\Shop\SearchController;
 use App\Http\Controllers\Shop\WishlistController;
@@ -65,3 +69,34 @@ Route::get('compare', [CompareController::class, 'index'])->name('compare.index'
 Route::post('compare', [CompareController::class, 'store'])->name('compare.store');
 Route::delete('compare', [CompareController::class, 'destroy'])->name('compare.destroy');
 Route::delete('compare/all', [CompareController::class, 'clear'])->name('compare.clear');
+
+/*
+|--------------------------------------------------------------------------
+| Checkout and orders
+|--------------------------------------------------------------------------
+|
+| The one part of the storefront that is not open to guests. `customer` keeps
+| staff out: their accounts exist to run the store, and an order placed by one
+| would pollute the figures it is their job to read.
+|
+| The delivery-vs-collection choice travels in the query string rather than the
+| session, so it is a plain link the shopper can go back through.
+|
+| `orders.show` doubles as the confirmation page — the order IS the receipt, so
+| there is no separate throwaway page that stops working on a refresh.
+|
+*/
+
+Route::middleware(['auth', 'verified', 'customer'])->group(function () {
+    Route::get('checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+    Route::post('checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+
+    Route::post('checkout/coupon', [CheckoutCouponController::class, 'store'])->name('checkout.coupon.store');
+    Route::delete('checkout/coupon', [CheckoutCouponController::class, 'destroy'])->name('checkout.coupon.destroy');
+
+    Route::post('addresses', [AddressController::class, 'store'])->name('addresses.store');
+    Route::delete('addresses/{address}', [AddressController::class, 'destroy'])->name('addresses.destroy');
+
+    Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('orders/{order:order_number}', [OrderController::class, 'show'])->name('orders.show');
+});

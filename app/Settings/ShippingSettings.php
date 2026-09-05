@@ -5,8 +5,8 @@ namespace App\Settings;
 use Spatie\LaravelSettings\Settings;
 
 /**
- * Fulfilment options: local pickup availability and address, plus the single
- * authoritative order subtotal at which shipping becomes free.
+ * Fulfilment options: local pickup availability and address, plus the flat
+ * delivery rate and the single authoritative subtotal at which it is waived.
  */
 class ShippingSettings extends Settings
 {
@@ -15,7 +15,14 @@ class ShippingSettings extends Settings
     public string $pickup_address;
 
     /**
-     * Order subtotal, in cents, at or above which shipping is free.
+     * Charged on every delivery order, in cents, unless the order has reached
+     * the free-shipping threshold. Pickup is always free.
+     */
+    public int $flat_rate_cents;
+
+    /**
+     * Order subtotal, in cents, at or above which shipping is free. Measured
+     * after any coupon, because that is what the shopper actually pays.
      */
     public int $free_shipping_threshold_cents;
 

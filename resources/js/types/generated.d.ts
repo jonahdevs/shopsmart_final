@@ -1,5 +1,22 @@
 declare namespace App {
 namespace Data {
+export type AddressData = {
+id: number | null,
+label: string | null,
+firstName: string,
+lastName: string,
+fullName: string,
+phone: string | null,
+line1: string,
+line2: string | null,
+city: string,
+county: string | null,
+postalCode: string | null,
+countryCode: string,
+deliveryNotes: string | null,
+isDefault: boolean,
+summary: string,
+};
 export type AttributeValueData = {
 id: number,
 attributeId: number,
@@ -73,6 +90,16 @@ image: App.Data.ImageData | null,
 productCount: number | null,
 children: App.Data.CategoryData[],
 };
+export type CheckoutQuoteData = {
+lines: App.Data.PricedLineData[],
+totals: App.Data.OrderTotalsData,
+minOrderValueCents: number,
+minOrderValueFormatted: string,
+meetsMinimum: boolean,
+freeShippingRemainingCents: number | null,
+freeShippingRemainingFormatted: string | null,
+blockers: string[],
+};
 export type CompareAttributeData = {
 name: string,
 values: (string| null)[],
@@ -109,6 +136,67 @@ thumbUrl: string | null,
 placeholder: string | null,
 alt: string,
 isCover: boolean,
+};
+export type OrderData = {
+id: number,
+orderNumber: string,
+status: App.Enums.OrderStatus,
+statusLabel: string,
+statusVariant: string,
+paymentStatus: App.Enums.PaymentStatus,
+paymentStatusLabel: string,
+paymentStatusVariant: string,
+paymentMethod: string | null,
+customerName: string,
+customerEmail: string,
+customerPhone: string | null,
+lines: App.Data.PricedLineData[],
+itemCount: number,
+totals: App.Data.OrderTotalsData,
+shippingAddress: App.Data.AddressData | null,
+customerNote: string | null,
+placedAt: string,
+paidAt: string | null,
+awaitsPayment: boolean,
+};
+export type OrderTotalsData = {
+subtotalCents: number,
+subtotalFormatted: string,
+discountCents: number,
+discountFormatted: string,
+shippingCents: number,
+shippingFormatted: string,
+taxCents: number,
+taxFormatted: string,
+totalCents: number,
+totalFormatted: string,
+pricesIncludeTax: boolean,
+taxLabel: string,
+couponCode: string | null,
+deliveryMethod: App.Enums.DeliveryMethod,
+shippingIsFree: boolean,
+};
+export type PricedLineData = {
+productId: number | null,
+variantId: number | null,
+name: string,
+slug: string | null,
+sku: string | null,
+brandName: string | null,
+optionLabel: string | null,
+image: App.Data.ImageData | null,
+quantity: number,
+unitPriceCents: number,
+unitPriceFormatted: string,
+subtotalCents: number,
+subtotalFormatted: string,
+discountCents: number,
+discountFormatted: string,
+taxRate: number,
+taxCents: number,
+taxFormatted: string,
+totalCents: number,
+totalFormatted: string,
 };
 export type ProductCardData = {
 id: number,
@@ -232,6 +320,7 @@ export type AttributeType = 'select' | 'color' | 'button';
 export type CategorySection = 'navbar' | 'homepage_featured' | 'footer';
 export type CategoryStatus = 'draft' | 'active' | 'inactive' | 'archived';
 export type CouponType = 'fixed' | 'percent';
+export type DeliveryMethod = 'delivery' | 'pickup';
 export type OrderStatus = 'pending' | 'processing' | 'out_for_delivery' | 'completed' | 'cancelled' | 'refunded';
 export type PaymentStatus = 'pending' | 'success' | 'failed' | 'cancelled' | 'refunded';
 export type ProductLinkType = 'upsell' | 'cross_sell' | 'accessory' | 'spare_part';

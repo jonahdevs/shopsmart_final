@@ -3,13 +3,14 @@ import { Link } from '@inertiajs/vue3';
 import { ArrowRight } from '@lucide/vue';
 import Price from '@/components/storefront/Price.vue';
 import { catalog } from '@/routes';
+import { index as checkout } from '@/routes/checkout';
 
 /**
  * The money panel.
  *
  * The subtotal is the sum of the captured line prices and nothing else —
- * delivery, tax and coupons belong to checkout, which is a later phase, so the
- * panel says that out loud instead of implying this is the amount due.
+ * delivery, tax and coupons are worked out by the checkout pricer, so the panel
+ * says that out loud instead of implying this is the amount due.
  */
 defineProps<{ cart: App.Data.CartData }>();
 </script>
@@ -38,26 +39,23 @@ defineProps<{ cart: App.Data.CartData }>();
             </div>
 
             <p class="text-muted-foreground text-xs leading-relaxed">
-                Delivery and taxes are worked out at checkout, so this is the
-                goods total only.
+                This is the goods total only. Delivery and taxes are worked out
+                at checkout, on the next page.
             </p>
 
             <!--
-              Checkout is Phase 4. The button is present and plainly disabled
-              rather than absent, because a cart with no visible next step reads
-              as broken rather than as unfinished.
+              The same link for guests and signed-in shoppers: checkout sits
+              behind the auth middleware, which parks the intended URL and
+              returns them here-onwards after they sign in. Branching on auth
+              state would only duplicate that, and get it wrong.
             -->
-            <button
-                type="button"
-                disabled
-                class="bg-ink font-display flex h-11 w-full items-center justify-center gap-2 rounded-xs text-sm font-bold tracking-[0.08em] text-white uppercase disabled:cursor-not-allowed disabled:opacity-40"
+            <Link
+                :href="checkout()"
+                class="bg-ink font-display focus-visible:outline-electric flex h-11 w-full items-center justify-center gap-2 rounded-xs text-sm font-bold tracking-[0.08em] text-white uppercase transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2"
             >
                 Checkout
                 <ArrowRight class="size-4" aria-hidden="true" />
-            </button>
-            <p class="text-muted-foreground -mt-3 text-xs">
-                Checkout opens in the next phase of the build.
-            </p>
+            </Link>
 
             <Link
                 :href="catalog()"

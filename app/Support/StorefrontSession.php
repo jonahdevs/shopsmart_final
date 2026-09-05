@@ -49,6 +49,8 @@ class StorefrontSession
 
     private const COMPARE_KEY = 'storefront.compare';
 
+    private const COUPON_KEY = 'storefront.coupon';
+
     /**
      * Separates the product id from the variant id in a cart line key. Ids are
      * numeric, so the pipe can never occur inside one half.
@@ -258,6 +260,23 @@ class StorefrontSession
     public function clearCart(): void
     {
         $this->putCart([]);
+        $this->clearCoupon();
+    }
+
+    /**
+     * The cart as stored, without touching the catalog.
+     *
+     * Checkout prices from this rather than from {@see Cart()} because it has
+     * to resolve each product's tax class, which the rendered cart does not
+     * carry. `unit_price_cents` travels with each line for the price-changed
+     * banner only — it is a record of what the shopper was shown, never an
+     * authority for what they are charged.
+     *
+     * @return array<string, array{product_id: int, variant_id: int|null, quantity: int, unit_price_cents: int}>
+     */
+    public function cartLines(): array
+    {
+        return $this->rawCart();
     }
 
     /**
@@ -299,6 +318,36 @@ class StorefrontSession
         }
 
         return $product->allow_backorder ? null : $product->stock_quantity;
+    }
+
+    // ==================================================
+    // COUPON
+    // ==================================================
+
+    /**
+     * Hold a coupon code against this session.
+     *
+     * Only the code is kept, never the resolved discount: a coupon's worth
+     * depends on the cart, and a cached figure goes stale the moment a line
+     * changes. Every read re-resolves and re-validates it, so what the shopper
+     * is shown is always what checkout will honour.
+     */
+    public function applyCoupon(string $code): void
+    {
+        Session::put(self::COUPON_KEY, mb_strtoupper(trim($code)));
+    }
+
+    public function couponCode(): ?string
+    {
+        /** @var string|null $code */
+        $code = Session::get(self::COUPON_KEY);
+
+        return $code === '' ? null : $code;
+    }
+
+    public function clearCoupon(): void
+    {
+        Session::forget(self::COUPON_KEY);
     }
 
     // ==================================================

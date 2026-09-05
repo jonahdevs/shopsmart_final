@@ -11,9 +11,10 @@ use Spatie\LaravelSettings\Settings;
 class CheckoutSettings extends Settings
 {
     /**
-     * Minimum order value in whole KES.
+     * Minimum order subtotal, in cents, below which an order cannot be placed.
+     * Zero disables the floor.
      */
-    public int $min_order_value;
+    public int $min_order_value_cents;
 
     public string $order_prefix;
 
