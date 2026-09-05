@@ -35,6 +35,7 @@ class PlaceOrderRequest extends FormRequest
             'delivery_method' => $this->deliveryMethodRules(),
             'address_id' => $this->addressIdRules(),
             'customer_note' => $this->customerNoteRules(),
+            'payment_method' => $this->paymentMethodRules(),
             'quoted_total_cents' => ['required', 'integer', 'min:0'],
         ];
     }

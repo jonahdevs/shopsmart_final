@@ -21,9 +21,19 @@ import {
  * than racing a toggle into the state nobody asked for. The button is also held
  * disabled while a submission is in flight.
  */
-const { productId, list } = defineProps<{
+const {
+    productId,
+    list,
+    iconOnly = false,
+} = defineProps<{
     productId: number;
     list: 'wishlist' | 'compare';
+    /**
+     * Renders the control as the circular glyph that floats on a product
+     * card's artwork. The label moves to `aria-label`, so the button keeps its
+     * name; everywhere else the text stays visible.
+     */
+    iconOnly?: boolean;
 }>();
 
 const page = usePage();
@@ -77,25 +87,31 @@ const atCompareLimit = computed(
             type="submit"
             :disabled="processing"
             :aria-pressed="saved"
+            :aria-label="iconOnly ? label : undefined"
             :title="
                 atCompareLimit
                     ? `You are already comparing ${shopper.compareLimit} products. Adding this one drops the oldest.`
                     : undefined
             "
-            class="focus-visible:outline-electric inline-flex items-center gap-1.5 rounded-xs text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 disabled:opacity-50"
-            :class="
+            class="focus-visible:outline-electric inline-flex items-center transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
+            :class="[
+                iconOnly
+                    ? 'border-rule shadow-card hover:border-electric size-9 justify-center rounded-full border bg-white'
+                    : 'gap-1.5 rounded-xs text-xs focus-visible:outline-offset-4',
                 saved
                     ? 'text-electric'
-                    : 'text-muted-foreground hover:text-electric'
-            "
+                    : 'text-muted-foreground hover:text-electric',
+            ]"
         >
             <component
                 :is="list === 'wishlist' ? Heart : Scale"
-                class="size-3.5"
-                :class="saved && list === 'wishlist' ? 'fill-current' : ''"
+                :class="[
+                    iconOnly ? 'size-4' : 'size-3.5',
+                    saved && list === 'wishlist' ? 'fill-current' : '',
+                ]"
                 aria-hidden="true"
             />
-            {{ label }}
+            <template v-if="!iconOnly">{{ label }}</template>
         </button>
     </Form>
 </template>

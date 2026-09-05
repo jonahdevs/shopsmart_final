@@ -10,7 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Shop\PlaceOrderRequest;
 use App\Models\Address;
 use App\Models\Coupon;
-use App\Settings\PaymentSettings;
+use App\Services\PaymentCredentials;
 use App\Settings\ShippingSettings;
 use App\Support\CheckoutPricer;
 use App\Support\StorefrontSession;
@@ -78,6 +78,7 @@ class CheckoutController extends Controller
             address: $delivery->requiresAddress() ? $request->address() : null,
             coupon: $coupon,
             customerNote: $request->customerNote(),
+            paymentMethod: $request->paymentMethod(),
         );
 
         // Cleared at placement, not at payment: the order is now the shopper's
@@ -90,7 +91,12 @@ class CheckoutController extends Controller
             'message' => __('Order :number placed.', ['number' => $order->order_number]),
         ]);
 
-        return to_route('orders.show', $order);
+        // An online payment goes straight to the gateway page; the offline
+        // methods have nothing to collect right now, so they land on the order
+        // itself, which carries the instructions for what happens next.
+        return $request->paymentMethod() === 'paystack'
+            ? to_route('payment.show', $order)
+            : to_route('orders.show', $order);
     }
 
     /**
@@ -148,17 +154,19 @@ class CheckoutController extends Controller
     /**
      * The ways this store will take money, in the order they are offered.
      *
-     * Phase 5 turns Paystack into a live gateway; until then every method here
-     * leaves the order pending and tells the shopper what happens next.
+     * Paystack sends the shopper on to the gateway page; the offline methods
+     * leave the order pending with instructions on it. The same source decides
+     * what is offered here and what PlaceOrderRequest will accept, so a method
+     * that is switched off cannot be submitted anyway.
      *
      * @return list<array{value: string, label: string, description: string}>
      */
     private function paymentMethods(): array
     {
-        $settings = app(PaymentSettings::class);
+        $settings = app(PaymentCredentials::class);
         $methods = [];
 
-        if ($settings->paystack_enabled) {
+        if ($settings->paystackEnabled()) {
             $methods[] = [
                 'value' => 'paystack',
                 'label' => __('Card or mobile money'),
@@ -166,7 +174,7 @@ class CheckoutController extends Controller
             ];
         }
 
-        if ($settings->bank_transfer_enabled) {
+        if ($settings->bankTransferEnabled()) {
             $methods[] = [
                 'value' => 'bank_transfer',
                 'label' => __('Bank transfer'),
@@ -174,7 +182,7 @@ class CheckoutController extends Controller
             ];
         }
 
-        if ($settings->cash_on_delivery_enabled) {
+        if ($settings->cashOnDeliveryEnabled()) {
             $methods[] = [
                 'value' => 'cash_on_delivery',
                 'label' => __('Pay on delivery'),

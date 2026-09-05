@@ -20,8 +20,8 @@
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
 
-    /* Storefront display face — signage headers and prices only. */
-    --font-display: Archivo, var(--font-sans);
+    /* Storefront display face — headings, the wordmark and prices only. */
+    --font-display: 'Plus Jakarta Sans', var(--font-sans);
 
     /*
       Storefront brand palette. Declared here rather than only inside
@@ -33,6 +33,28 @@
     --color-sale: var(--sale);
     --color-rule: var(--rule);
     --color-field: var(--field);
+
+    /* Chrome. Three related darks, lightest at the top of the page. */
+    --color-utility: var(--utility);
+    --color-header: var(--header);
+    --color-panel: var(--panel);
+    --color-footer: var(--footer);
+
+    /* The pale blue band that separates a section from the white page. */
+    --color-tint: var(--tint);
+    --color-tint-strong: var(--tint-strong);
+
+    /* Review stars. Not an accent — it appears on ratings and nowhere else. */
+    --color-star: var(--star);
+
+    /*
+      Cards lift off the page rather than being ruled off it. Kept as tokens so
+      the whole storefront changes depth in one place.
+    */
+    --shadow-card:
+        0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.06);
+    --shadow-card-hover:
+        0 4px 12px rgb(16 24 40 / 0.08), 0 2px 4px rgb(16 24 40 / 0.04);
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -112,27 +134,76 @@
 
 /*
   ---------------------------------------------------------------------------
-  Storefront identity — "matatu signage"
+  Storefront identity — "Kenyan marketplace"
   ---------------------------------------------------------------------------
-  Drawn from Nairobi matatu livery read structurally, not literally: an ink
-  header band, a pinstripe that tracks the active category, and heavy condensed
-  signage lettering. The palette is deliberately loud, so it is spent in exactly
-  one place — the price block — because price is the most-scanned element in a
-  price-competitive market. `--sale` appears on discounts and nowhere else.
+  A mainstream retail language: a white page, content carried on bordered cards
+  that lift very slightly off it, and one confident blue doing the pointing.
+
+  The blue is the whole system. It marks every eyebrow, link, icon tile, badge
+  and button, so a shopper learns in one screen that blue means "go here". Ink
+  carries the headings, a single muted grey carries everything secondary, and
+  the three darks below are the chrome. Nothing else is introduced.
+
+  `--sale` is reserved for discounts and appears nowhere else; `--star` likewise
+  belongs to ratings alone. Keeping those two out of the general palette is what
+  stops a page of blue from swallowing the two signals a shopper scans for.
 */
 :root {
-    --ink: #0b0d12;
-    --electric: #1b4dff;
-    --sale: #ff1f6b;
-    --field: #fcfcfd;
-    --rule: #e6e8ee;
+    --ink: #101828;
+    --electric: #0a57eb;
+    --sale: #ef1f6b;
+    --field: #ffffff;
+    --rule: #e6eaf0;
+
+    /*
+      Chrome, lightest at the top: the utility strip is darkest, the header sits
+      just above it in value, and the footer closes the page between the two.
+    */
+    --utility: #111925;
+    --header: #172536;
+    --panel: #162639;
+    --footer: #131a25;
+
+    /* Pale blue bands that separate a section from the white page. */
+    --tint: #f3f9fe;
+    --tint-strong: #e9f0fe;
+
+    --star: #ffb800;
 
     /*
       Errors are loud but they are not discounts. A true red reads as a warning
-      where the magenta `--sale` would read as a price, so the two never share a
+      where the rose `--sale` would read as a price, so the two never share a
       token — see the `--destructive` mapping below.
     */
     --alert: #d92d20;
+}
+
+/*
+  The one measure the storefront is written to.
+
+  Overrides Tailwind's built-in `container`, which centres nothing and pads
+  nothing by default. Content runs fluid with growing gutters up to 80rem and is
+  then centred, so a wide monitor gets margins instead of a line of product
+  cards stretched across a metre of glass.
+
+  Full-bleed elements — the hero, and the coloured bands behind the utility bar,
+  newsletter and footer — stay outside this and put a `container` on their own
+  inner content instead. That is what gives a band edge-to-edge colour with its
+  text still aligned to everything above it.
+*/
+@utility container {
+    margin-inline: auto;
+    width: 100%;
+    max-width: 80rem;
+    padding-inline: 1rem;
+
+    @media (width >= 40rem) {
+        padding-inline: 1.5rem;
+    }
+
+    @media (width >= 64rem) {
+        padding-inline: 2rem;
+    }
 }
 
 /*
@@ -152,11 +223,11 @@
     --popover-foreground: var(--ink);
     --primary: var(--electric);
     --primary-foreground: #ffffff;
-    --secondary: #f1f2f6;
+    --secondary: #f2f5f9;
     --secondary-foreground: var(--ink);
-    --muted: #f1f2f6;
-    --muted-foreground: #5b6070;
-    --accent: #eef1ff;
+    --muted: #f2f5f9;
+    --muted-foreground: #667085;
+    --accent: var(--tint-strong);
     --accent-foreground: var(--electric);
     --destructive: var(--alert);
     --destructive-foreground: #ffffff;
@@ -164,8 +235,12 @@
     --input: var(--rule);
     --ring: var(--electric);
 
-    /* Signage, not soft furnishing. */
-    --radius: 0.25rem;
+    /*
+      Soft, not sharp. Cards, inputs and buttons round at this radius; anything
+      that should read as a pill (eyebrows, badges, the search field) rounds
+      fully instead, which is a deliberate contrast rather than a second scale.
+    */
+    --radius: 0.625rem;
 }
 
 /*

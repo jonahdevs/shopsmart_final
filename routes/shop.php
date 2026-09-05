@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Payments\PaystackWebhookController;
 use App\Http\Controllers\Shop\AddressController;
 use App\Http\Controllers\Shop\CartController;
 use App\Http\Controllers\Shop\CatalogController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\Shop\CheckoutCouponController;
 use App\Http\Controllers\Shop\CompareController;
 use App\Http\Controllers\Shop\HomeController;
 use App\Http\Controllers\Shop\OrderController;
+use App\Http\Controllers\Shop\PaymentController;
 use App\Http\Controllers\Shop\ProductController;
 use App\Http\Controllers\Shop\SearchController;
 use App\Http\Controllers\Shop\WishlistController;
@@ -99,4 +101,34 @@ Route::middleware(['auth', 'verified', 'customer'])->group(function () {
 
     Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('orders/{order:order_number}', [OrderController::class, 'show'])->name('orders.show');
+
+    // Paying is its own step, repeatable for as long as the order is unpaid: a
+    // closed popup or a dropped connection must not cost the shopper the order
+    // they already committed to.
+    //
+    // `start` and `verify` are throttled because each one reaches the gateway,
+    // and a loop here would be both a bill and a way to probe references.
+    Route::get('pay/{order:order_number}', [PaymentController::class, 'show'])->name('payment.show');
+    Route::post('pay/{order:order_number}/start', [PaymentController::class, 'start'])
+        ->middleware('throttle:10,1')
+        ->name('payment.start');
+    Route::post('pay/{order:order_number}/verify', [PaymentController::class, 'verify'])
+        ->middleware('throttle:20,1')
+        ->name('payment.verify');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Gateway webhook
+|--------------------------------------------------------------------------
+|
+| Server-to-server, so it carries no session and no CSRF token — the HMAC
+| signature over the raw body is the only thing authenticating it, and
+| bootstrap/app.php exempts this path from CSRF for that reason.
+|
+| It sits outside every auth group on purpose: Paystack is not a user.
+|
+*/
+
+Route::post('api/webhooks/paystack', PaystackWebhookController::class)
+    ->name('webhooks.paystack');

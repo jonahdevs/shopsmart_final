@@ -15,7 +15,6 @@ use App\Models\User;
 use App\Settings\CheckoutSettings;
 use App\Settings\TaxSettings;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -50,6 +49,7 @@ class PlaceOrder
         ?Address $address = null,
         ?Coupon $coupon = null,
         ?string $customerNote = null,
+        ?string $paymentMethod = null,
     ): Order {
         $this->guard($quote, $delivery, $address, $user);
 
@@ -57,10 +57,9 @@ class PlaceOrder
         // while it hands out a number, and holding that across every line
         // insert below would serialise the whole checkout.
         $orderNumber = $this->nextOrderNumber();
-        $paymentReference = $orderNumber.'-'.Str::lower(Str::random(6));
 
         return DB::transaction(function () use (
-            $user, $quote, $delivery, $address, $coupon, $customerNote, $orderNumber, $paymentReference
+            $user, $quote, $delivery, $address, $coupon, $customerNote, $orderNumber, $paymentMethod
         ): Order {
             $order = Order::query()->create([
                 'order_number' => $orderNumber,
@@ -72,6 +71,7 @@ class PlaceOrder
                 'customer_phone' => $address?->phone,
                 'status' => OrderStatus::Pending,
                 'payment_status' => PaymentStatus::Pending,
+                'payment_method' => $paymentMethod,
                 // The store trades in one currency. CurrencySettings holds the
                 // display symbol, which is not an ISO code, so the code is
                 // stated here and matches the column default.
@@ -93,15 +93,16 @@ class PlaceOrder
 
             $order->items()->createMany($this->itemRows($quote));
 
-            Payment::query()->create([
-                'order_id' => $order->getKey(),
-                'reference' => $paymentReference,
-                'gateway' => 'paystack',
-                'status' => PaymentStatus::Pending,
-                'amount_cents' => $quote->totals->totalCents,
-                'currency' => $order->currency,
-            ]);
-
+            // No `payments` row is written here. A payment record means "an
+            // attempt to collect", and it is the collecting mechanism that
+            // creates one — the gateway when it initialises a transaction, or a
+            // staff member when they bank a transfer. What the order is owed is
+            // already stated by the order itself.
+            //
+            // It also matters that a reference is never reused or rewritten: if
+            // a shopper pays, then re-opens the gateway before the webhook
+            // lands, a mutated reference would leave the first payment with
+            // nothing to match against and real money unrecorded.
             return $order;
         });
     }

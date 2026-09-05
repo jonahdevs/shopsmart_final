@@ -8,10 +8,12 @@ import { show } from '@/routes/product';
 /**
  * The catalog's repeating unit.
  *
- * Everything here is deliberately quiet so the price block carries the
- * identity: no card border, no shadow, photography sitting straight on white.
- * The only flourish is a pinstripe that draws itself under the card on hover,
- * echoing the header's category rule.
+ * A white card on the white page, held apart from it by a hairline `--rule`
+ * border and `shadow-card`, which deepens to `shadow-card-hover` when the card
+ * is hovered or holds focus. The artwork sits on generous white padding so
+ * photography shot on different backgrounds still reads as one shelf, and the
+ * two things a shopper scans for — the discount and the price — are the only
+ * coloured marks on the tile.
  */
 const {
     product,
@@ -31,13 +33,15 @@ const {
 </script>
 
 <template>
-    <article class="group relative">
+    <article
+        class="group border-rule shadow-card hover:shadow-card-hover focus-within:shadow-card-hover relative flex h-full flex-col rounded-lg border bg-white transition-shadow duration-200"
+    >
         <Link
             :href="show(product.slug)"
-            class="focus-visible:outline-electric block rounded-xs outline-offset-4 focus-visible:outline-2"
+            class="focus-visible:outline-electric flex flex-1 flex-col rounded-lg outline-offset-2 focus-visible:outline-2"
         >
             <div
-                class="relative aspect-square overflow-hidden rounded-xs bg-white"
+                class="relative aspect-square overflow-hidden rounded-t-lg bg-white p-4 sm:p-5"
                 :style="
                     product.image?.placeholder
                         ? {
@@ -59,7 +63,7 @@ const {
                         :loading="eager ? 'eager' : 'lazy'"
                         :fetchpriority="eager ? 'high' : 'auto'"
                         decoding="async"
-                        class="size-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                        class="size-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.04] motion-reduce:transition-none"
                     />
                 </picture>
 
@@ -71,16 +75,16 @@ const {
                 </div>
             </div>
 
-            <div class="mt-3 space-y-1.5">
+            <div class="flex flex-1 flex-col gap-1.5 px-4 pt-1 pb-4">
                 <p
                     v-if="product.brandName"
-                    class="font-display text-muted-foreground text-[0.6875rem] font-bold tracking-[0.14em] uppercase"
+                    class="text-muted-foreground truncate text-xs"
                 >
                     {{ product.brandName }}
                 </p>
-                <!-- Two lines reserved so prices align across the row. -->
+                <!-- Lines reserved so prices align across the row. -->
                 <h3
-                    class="text-foreground line-clamp-2 min-h-10 text-sm leading-5"
+                    class="text-ink line-clamp-3 min-h-10 text-sm leading-5 font-medium"
                 >
                     {{ product.name }}
                 </h3>
@@ -93,34 +97,36 @@ const {
                 <!--
                   The struck-through original only appears when there is a real
                   discount; otherwise the two formatted prices are identical and
-                  showing both would be noise.
+                  showing both would be noise. The percentage itself is not
+                  repeated here — it is already the pill on the artwork.
                 -->
-                <Price
-                    size="sm"
-                    :formatted="product.effectivePriceFormatted"
-                    :compare-formatted="
-                        product.isOnSale ? product.priceFormatted : null
-                    "
-                    :discount-percent="product.discountPercent"
-                />
+                <div class="mt-auto pt-0.5">
+                    <Price
+                        size="sm"
+                        :formatted="product.effectivePriceFormatted"
+                        :compare-formatted="
+                            product.isOnSale ? product.priceFormatted : null
+                        "
+                    />
+                </div>
             </div>
         </Link>
 
-        <!--
-          Sits outside the <Link> on purpose: a <form> nested inside an <a> is
-          invalid markup and would swallow the card's own click target. The
-          article is already `relative`, so this anchors to the image corner.
-        -->
+        <!-- Discount and save both sit outside the <Link>: a <form> nested in an
+             <a> is invalid markup, and the pill must not be part of its label. -->
+        <span
+            v-if="product.isOnSale && product.discountPercent"
+            class="bg-sale font-display pointer-events-none absolute top-3 left-3 rounded-full px-2 py-0.5 text-[0.6875rem] leading-4 font-bold text-white tabular-nums"
+        >
+            &minus;{{ product.discountPercent }}%
+        </span>
+
         <SavedToggleButton
             v-if="savable"
             :product-id="product.id"
             list="wishlist"
-            class="absolute top-2 right-2"
-        />
-
-        <span
-            aria-hidden="true"
-            class="bg-electric mt-3 block h-0.5 w-0 transition-[width] duration-300 ease-out group-hover:w-full motion-reduce:transition-none"
+            icon-only
+            class="absolute top-3 right-3"
         />
     </article>
 </template>

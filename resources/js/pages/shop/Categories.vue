@@ -20,7 +20,7 @@ const { categories: roots } = defineProps<{
 <template>
     <Head title="All categories" />
 
-    <div class="px-4 py-8 sm:px-6 lg:px-8">
+    <div class="container py-8">
         <header>
             <span class="bg-electric block h-0.5 w-8" aria-hidden="true" />
             <h1

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PaymentStatus;
+use App\Services\Paystack\PaystackPaymentService;
 use Database\Factories\PaymentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -17,11 +18,16 @@ use Spatie\Activitylog\Support\LogOptions;
 /**
  * One attempt to collect the money for an {@see Order}.
  *
- * A pending row is created at placement carrying the reference we will hand to
- * the gateway; phase 5 fills in the rest when Paystack answers. `reference` is
- * unique because it is the idempotency key shared by the browser's verify call
- * and the asynchronous webhook — whichever arrives first settles the payment,
- * and the other finds it already final.
+ * A row is written by whatever is doing the collecting — one per attempt, by
+ * {@see PaystackPaymentService::initialize()} — never at
+ * placement. What an order is owed is stated by the order itself; a payment row
+ * means somebody tried to take the money.
+ *
+ * `reference` is ours, unique, and written once. It is the idempotency key
+ * shared by the browser's verify call and the asynchronous webhook — whichever
+ * arrives first settles the payment, and the other finds it already final.
+ * Rewriting or reusing one would leave a settled transaction with nothing to
+ * match against, and real money unrecorded.
  *
  * `amount_cents` is frozen at creation and is what a verification is checked
  * against, never the live order total: that is what stops an order edit between
@@ -53,6 +59,9 @@ class Payment extends Model
 {
     /** @use HasFactory<PaymentFactory> */
     use HasFactory, LogsActivity;
+
+    /** Set by {@see withAccessCode()}; never a column, never serialised. */
+    protected ?string $accessCode = null;
 
     /**
      * Get the attributes that should be cast.
@@ -113,5 +122,25 @@ class Payment extends Model
     public function isFinal(): bool
     {
         return $this->status !== PaymentStatus::Pending;
+    }
+
+    /**
+     * Carry the gateway's access code back to the caller in memory only.
+     *
+     * The code is what the inline popup resumes. It is a short-lived credential
+     * that grants a payment session, so it is deliberately never persisted and
+     * never serialised onto a model that might be cast to an array — it travels
+     * from the service to the page that opens the popup and no further.
+     */
+    public function withAccessCode(string $accessCode): static
+    {
+        $this->accessCode = $accessCode;
+
+        return $this;
+    }
+
+    public function accessCode(): ?string
+    {
+        return $this->accessCode;
     }
 }

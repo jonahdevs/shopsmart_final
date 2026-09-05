@@ -44,7 +44,7 @@ const currentPage = computed(() => {
 <template>
     <Head title="Your orders" />
 
-    <div class="flex flex-col gap-16 px-4 py-8 sm:px-6 lg:px-8">
+    <div class="container flex flex-col gap-16 py-8">
         <section aria-labelledby="orders-heading">
             <StoreBreadcrumbs :items="breadcrumbs" />
 

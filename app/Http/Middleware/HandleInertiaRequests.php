@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Enums\CategorySection;
 use App\Models\CategoryPlacement;
+use App\Settings\SocialSettings;
 use App\Support\StorefrontCache;
 use App\Support\StorefrontSession;
 use Illuminate\Http\Request;
@@ -51,6 +52,13 @@ class HandleInertiaRequests extends Middleware
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'storefront' => [
                 'navCategories' => $this->navCategories(),
+                // A closure, not a value: `share()` runs on every request that
+                // passes through this middleware, including plain JSON ones
+                // like search-suggest, but Inertia only resolves prop closures
+                // when it is actually building a page response. Resolved eagerly
+                // this put a settings read on an endpoint that fires on every
+                // keystroke.
+                'socialLinks' => fn (): array => $this->socialLinks(),
                 // The header's cart / wishlist / compare state. Read straight
                 // out of the session for guests and signed-in customers alike —
                 // StorefrontSession keeps the session as the live copy
@@ -59,6 +67,39 @@ class HandleInertiaRequests extends Middleware
                 'shopper' => $this->storefront->shopperState(),
             ],
         ];
+    }
+
+    /**
+     * The store's social profiles, for the footer.
+     *
+     * Only the ones actually filled in are sent, so the footer renders what
+     * exists rather than a fixed row with dead icons in it. `icon` is a key the
+     * footer maps to its own mark — lucide dropped brand icons in v1, so the
+     * glyphs are inline SVGs there.
+     *
+     * Cached like the nav: settings caching is off by default, and this is
+     * shared on every response.
+     *
+     * @return array<int, array{icon: string, label: string, url: string}>
+     */
+    private function socialLinks(): array
+    {
+        return Cache::remember(StorefrontCache::SOCIAL_LINKS, now()->addHour(), function (): array {
+            $social = app(SocialSettings::class);
+
+            $profiles = [
+                ['icon' => 'facebook', 'label' => 'Facebook', 'url' => $social->facebook_url],
+                ['icon' => 'instagram', 'label' => 'Instagram', 'url' => $social->instagram_url],
+                ['icon' => 'x', 'label' => 'X', 'url' => $social->x_url],
+                ['icon' => 'youtube', 'label' => 'YouTube', 'url' => $social->youtube_url],
+                ['icon' => 'linkedin', 'label' => 'LinkedIn', 'url' => $social->linkedin_url],
+            ];
+
+            return array_values(array_filter(
+                $profiles,
+                fn (array $profile): bool => trim($profile['url']) !== '',
+            ));
+        });
     }
 
     /**

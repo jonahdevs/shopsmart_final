@@ -5,42 +5,44 @@ import { index } from '@/routes/categories';
 import { show } from '@/routes/category';
 
 /**
- * Category entry points. Square tiles rather than the usual circles: the
- * storefront's geometry is signage-flat throughout, and a square crop wastes
- * none of the product photography.
+ * Category entry points.
+ *
+ * Each tile is the storefront's card — hairline border, `shadow-card`, lifting
+ * on hover — with the artwork inset inside it at a landscape crop and the name
+ * left-aligned underneath. Six across at the widest, halving down to two on a
+ * phone, so a tile never gets so small the photography stops being readable.
  */
 defineProps<{ categories: App.Data.CategoryData[] }>();
+
+const TILE_CLASS =
+    'group border-rule shadow-card hover:shadow-card-hover focus-visible:outline-electric flex h-full flex-col rounded-lg border bg-white p-2 transition-shadow duration-200 focus-visible:outline-2 focus-visible:outline-offset-2';
 </script>
 
 <template>
     <ul
         v-if="categories.length"
-        class="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-8"
+        class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6"
     >
         <li v-for="category in categories" :key="category.id">
-            <Link
-                :href="show(category.slug)"
-                class="group focus-visible:outline-electric block focus-visible:outline-2 focus-visible:outline-offset-4"
-            >
-                <div
-                    class="ring-rule group-hover:ring-electric aspect-square overflow-hidden rounded-xs bg-white ring-1 transition-[box-shadow] group-hover:ring-2"
-                >
+            <Link :href="show(category.slug)" :class="TILE_CLASS">
+                <div class="bg-tint aspect-[4/3] overflow-hidden rounded-md">
                     <img
                         v-if="category.image"
                         :src="category.image.thumbUrl ?? category.image.url"
                         :alt="category.image.alt"
                         loading="lazy"
                         decoding="async"
-                        class="size-full object-cover"
+                        class="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04] motion-reduce:transition-none"
                     />
                     <span
                         v-else-if="category.iconSvg"
-                        class="text-muted-foreground flex size-full items-center justify-center p-4"
+                        class="text-electric flex size-full items-center justify-center p-5"
+                        aria-hidden="true"
                         v-html="category.iconSvg"
                     />
                 </div>
                 <p
-                    class="text-foreground mt-2 line-clamp-2 text-center text-xs leading-4"
+                    class="text-ink line-clamp-2 px-1 pt-2.5 pb-1 text-sm leading-5 font-medium"
                 >
                     {{ category.name }}
                 </p>
@@ -48,12 +50,9 @@ defineProps<{ categories: App.Data.CategoryData[] }>();
         </li>
 
         <li>
-            <Link
-                :href="index()"
-                class="group focus-visible:outline-electric block focus-visible:outline-2 focus-visible:outline-offset-4"
-            >
+            <Link :href="index()" :class="TILE_CLASS">
                 <div
-                    class="border-rule group-hover:border-electric group-hover:bg-accent flex aspect-square items-center justify-center rounded-xs border border-dashed transition-colors"
+                    class="border-rule group-hover:border-electric group-hover:bg-tint flex aspect-[4/3] items-center justify-center rounded-md border border-dashed transition-colors"
                 >
                     <ArrowRight
                         class="text-muted-foreground group-hover:text-electric size-5 transition-colors"
@@ -61,7 +60,7 @@ defineProps<{ categories: App.Data.CategoryData[] }>();
                     />
                 </div>
                 <p
-                    class="text-muted-foreground mt-2 text-center text-xs leading-4"
+                    class="text-muted-foreground px-1 pt-2.5 pb-1 text-sm leading-5 font-medium"
                 >
                     All categories
                 </p>

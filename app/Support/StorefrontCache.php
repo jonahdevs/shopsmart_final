@@ -18,6 +18,19 @@ class StorefrontCache
     public const NAV_CATEGORIES = 'storefront.nav-categories';
 
     /**
+     * The footer's social profile links, read off SocialSettings.
+     *
+     * Cached for the same reason as the nav: it is shared on every response and
+     * settings caching is off by default, so resolving the settings object
+     * inline would put a query on every single request.
+     *
+     * Unlike the nav, nothing invalidates this — settings have no observer — so
+     * an edit takes up to an hour to appear. The admin settings screen must
+     * forget this key when it saves the social group.
+     */
+    public const SOCIAL_LINKS = 'storefront.social-links';
+
+    /**
      * Live catalog product ids per category, behind every facet.
      *
      * The `.v2` suffix retires entries written when this held a tally per

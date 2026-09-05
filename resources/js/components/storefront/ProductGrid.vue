@@ -18,7 +18,7 @@ const { products, eagerCount = 4 } = defineProps<{
 
 <template>
     <ul
-        class="grid grid-cols-2 gap-x-4 gap-y-9 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+        class="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4 2xl:grid-cols-5"
     >
         <li v-for="(product, index) in products" :key="product.id">
             <ProductCard :product="product" :eager="index < eagerCount" />

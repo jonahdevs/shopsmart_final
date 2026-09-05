@@ -219,5 +219,9 @@ test('a category page issues a bounded number of queries for a page of products'
     // this with the page size or the number of children is an N+1; anything
     // that adds a flat query is probably a second read of a list already in
     // hand.
-    expect($queries)->toBeLessThanOrEqual(15);
+    //
+    // Sixteen rather than fifteen since the footer's social links joined the
+    // shared props: one settings read, on a cold cache, once an hour in
+    // production.
+    expect($queries)->toBeLessThanOrEqual(16);
 });

@@ -280,7 +280,10 @@ test('a product page issues a bounded number of queries however much hangs off i
     // prompt costs one join over the link table plus the brand and media eager
     // loads every other product tile on this page already pays for. Flat in the
     // number of accessories — five are linked here and four are offered.
-    expect($queries)->toBeLessThanOrEqual(26);
+    //
+    // The 27th is the footer's social links joining the shared props: one
+    // settings read, on a cold cache, once an hour in production.
+    expect($queries)->toBeLessThanOrEqual(27);
 });
 
 test('a product page defers its reviews', function () {

@@ -5,6 +5,9 @@ import { computed } from 'vue';
 /**
  * Star rating. Height is reserved even at zero reviews so price baselines stay
  * aligned across a grid of cards, some rated and some not.
+ *
+ * Gold is `--star` and belongs to this component alone: spending it as a
+ * general accent would cost a shopper the one signal they scan a listing for.
  */
 const { average = null, count = 0 } = defineProps<{
     average?: number | null;
@@ -34,22 +37,22 @@ const label = computed(() => {
         role="img"
         :aria-label="label"
     >
-        <div class="flex" aria-hidden="true">
+        <div class="flex gap-px" aria-hidden="true">
             <Star
                 v-for="star in 5"
                 :key="star"
                 class="size-3.5"
                 :class="
                     star <= rounded
-                        ? 'fill-amber-400 text-amber-400'
+                        ? 'fill-star text-star'
                         : 'text-rule fill-transparent'
                 "
                 :stroke-width="1.5"
             />
         </div>
-        <span class="text-muted-foreground text-xs tabular-nums">{{
-            count
-        }}</span>
+        <span class="text-muted-foreground text-xs tabular-nums">
+            ({{ count }})
+        </span>
     </div>
 
     <!--

@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { CircleCheck, Clock, MapPin, PackageCheck, Truck } from '@lucide/vue';
+import {
+    CircleCheck,
+    Clock,
+    CreditCard,
+    MapPin,
+    PackageCheck,
+    Truck,
+} from '@lucide/vue';
 import { computed } from 'vue';
 import CheckoutLineItem from '@/components/storefront/CheckoutLineItem.vue';
 import CheckoutSummary from '@/components/storefront/CheckoutSummary.vue';
@@ -9,6 +16,7 @@ import StoreBreadcrumbs from '@/components/storefront/StoreBreadcrumbs.vue';
 import { formatIsoDate } from '@/lib/utils';
 import { catalog } from '@/routes';
 import { index as ordersIndex } from '@/routes/orders';
+import { show as pay } from '@/routes/payment';
 
 /**
  * One order: the confirmation the shopper lands on, and the page they come back
@@ -32,12 +40,39 @@ const paymentMethodLabel = computed(() =>
         ? null
         : order.paymentMethod.replace(/_/g, ' '),
 );
+
+/**
+ * Only the gateway has something to press.
+ *
+ * A bank transfer or a cash-on-delivery order is equally unpaid, but nothing on
+ * this site can settle it — offering a "pay now" button for either would send
+ * the shopper to a page that cannot take their money.
+ */
+const canPayNow = computed(
+    () => order.awaitsPayment && order.paymentMethod === 'paystack',
+);
+
+/** What "still owes money" actually means for the method that was chosen. */
+const outstandingCopy = computed(() => {
+    switch (order.paymentMethod) {
+        case 'paystack':
+            return 'Payment is still outstanding. Settle it here and we will start packing straight away.';
+        case 'bank_transfer':
+            return `Payment is still outstanding. Transfer the total to the account details we sent to ${order.customerEmail}, quoting ${order.orderNumber} as the reference.`;
+        case 'cash_on_delivery':
+            return isCollection.value
+                ? 'Payment is still outstanding. Have the total ready in cash when you collect.'
+                : 'Payment is still outstanding. Have the total ready in cash when your order arrives.';
+        default:
+            return 'Payment is still outstanding. We will be in touch with how to settle it.';
+    }
+});
 </script>
 
 <template>
     <Head :title="`Order ${order.orderNumber}`" />
 
-    <div class="flex flex-col gap-16 px-4 py-8 sm:px-6 lg:px-8">
+    <div class="container flex flex-col gap-16 py-8">
         <section aria-labelledby="order-heading">
             <StoreBreadcrumbs :items="breadcrumbs" />
 
@@ -98,10 +133,11 @@ const paymentMethodLabel = computed(() =>
                             </li>
 
                             <!--
-                              Payment is Phase 5. Until the gateway lands, an
-                              order that still owes money says so plainly rather
-                              than pretending it is settled; the Pay button goes
-                              here, driven by the same `awaitsPayment` flag.
+                              An order that still owes money says so plainly
+                              rather than pretending it is settled, and says
+                              what settling it involves — which is a button
+                              only for the gateway; the offline methods have
+                              nothing to press.
                             -->
                             <li
                                 v-if="order.awaitsPayment"
@@ -111,11 +147,23 @@ const paymentMethodLabel = computed(() =>
                                     class="text-muted-foreground mt-0.5 size-4 shrink-0"
                                     aria-hidden="true"
                                 />
-                                <span class="text-foreground">
-                                    Payment is still outstanding. We will be in
-                                    touch with how to settle it, and paying from
-                                    this page is coming shortly.
-                                </span>
+                                <div class="flex flex-col items-start gap-3">
+                                    <span class="text-foreground">
+                                        {{ outstandingCopy }}
+                                    </span>
+
+                                    <Link
+                                        v-if="canPayNow"
+                                        :href="pay(order.orderNumber)"
+                                        class="bg-ink font-display focus-visible:outline-electric inline-flex h-10 items-center justify-center gap-2 rounded-xs px-6 text-sm font-bold tracking-[0.08em] text-white uppercase transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2"
+                                    >
+                                        <CreditCard
+                                            class="size-4"
+                                            aria-hidden="true"
+                                        />
+                                        Pay {{ order.totals.totalFormatted }}
+                                    </Link>
+                                </div>
                             </li>
                             <li v-else class="flex items-start gap-3">
                                 <CircleCheck

@@ -33,7 +33,7 @@ function hrefFor(query: QueryParams): string {
 <template>
     <Head :title="category.name" />
 
-    <div class="px-4 py-6 sm:px-6 lg:px-8">
+    <div class="container py-6">
         <StoreBreadcrumbs :items="breadcrumbs" />
 
         <div class="mt-6">

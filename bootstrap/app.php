@@ -24,6 +24,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'customer' => EnsureUserIsCustomer::class,
         ]);
 
+        // The gateway webhook is server-to-server and carries no session, so it
+        // has no CSRF token to send. Its HMAC signature over the raw body is
+        // what authenticates it — see PaystackPaymentService::handleWebhook().
+        $middleware->validateCsrfTokens(except: [
+            'api/webhooks/paystack',
+        ]);
+
         $middleware->web(append: [
             AuthenticateSession::class,
             ThrottleFortifyMailEndpoints::class,

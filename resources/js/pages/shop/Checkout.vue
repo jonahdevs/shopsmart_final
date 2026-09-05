@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Form, Head, Link } from '@inertiajs/vue3';
+import { Form, Head, Link, usePage } from '@inertiajs/vue3';
 import { ArrowLeft, Loader2, ShieldCheck, TriangleAlert } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import CheckoutAddressFields from '@/components/storefront/CheckoutAddressFields.vue';
@@ -7,6 +7,7 @@ import CheckoutAddressPicker from '@/components/storefront/CheckoutAddressPicker
 import CheckoutCouponForm from '@/components/storefront/CheckoutCouponForm.vue';
 import CheckoutDeliveryPicker from '@/components/storefront/CheckoutDeliveryPicker.vue';
 import CheckoutLineItem from '@/components/storefront/CheckoutLineItem.vue';
+import CheckoutPaymentPicker from '@/components/storefront/CheckoutPaymentPicker.vue';
 import CheckoutSummary from '@/components/storefront/CheckoutSummary.vue';
 import StoreBreadcrumbs from '@/components/storefront/StoreBreadcrumbs.vue';
 import { store as storeAddress } from '@/routes/addresses';
@@ -28,7 +29,7 @@ import { store } from '@/routes/checkout';
  * disagree, which is what stops a catalogue price that moved mid-checkout from
  * being charged silently.
  */
-const { quote, addresses, deliveryMethod } = defineProps<{
+const { quote, addresses, deliveryMethod, paymentMethods } = defineProps<{
     quote: App.Data.CheckoutQuoteData;
     addresses: App.Data.AddressData[];
     deliveryMethod: App.Enums.DeliveryMethod;
@@ -88,12 +89,31 @@ watch(
 const placing = ref(false);
 
 const blocked = computed(() => quote.blockers.length > 0);
+
+/**
+ * The store's first offered method, which is the one most shoppers want — the
+ * server orders the list on purpose, online first.
+ */
+const paymentMethod = ref<string>(paymentMethods[0]?.value ?? '');
+
+const page = usePage();
+
+/**
+ * The payment radios live outside `#checkout-form` in the markup, so they are
+ * out of reach of its `errors` slot prop. The page's own error bag carries the
+ * same message, and is what the picker is shown.
+ */
+const paymentMethodError = computed<string | undefined>(() => {
+    const message: unknown = page.props.errors.payment_method;
+
+    return typeof message === 'string' ? message : undefined;
+});
 </script>
 
 <template>
     <Head title="Checkout" />
 
-    <div class="flex flex-col gap-16 px-4 py-8 sm:px-6 lg:px-8">
+    <div class="container flex flex-col gap-16 py-8">
         <section aria-labelledby="checkout-heading">
             <StoreBreadcrumbs :items="breadcrumbs" />
 
@@ -312,23 +332,14 @@ const blocked = computed(() => quote.blockers.length > 0);
                             take you through payment on the order itself.
                         </p>
 
-                        <ul
-                            v-if="paymentMethods.length > 0"
-                            class="mt-4 flex flex-col gap-3"
-                        >
-                            <li
-                                v-for="method in paymentMethods"
-                                :key="method.value"
-                                class="border-rule rounded-xs border p-4"
-                            >
-                                <p class="text-foreground text-sm font-medium">
-                                    {{ method.label }}
-                                </p>
-                                <p class="text-muted-foreground mt-1 text-sm">
-                                    {{ method.description }}
-                                </p>
-                            </li>
-                        </ul>
+                        <div class="mt-4">
+                            <CheckoutPaymentPicker
+                                v-model="paymentMethod"
+                                :methods="paymentMethods"
+                                form="checkout-form"
+                                :error="paymentMethodError"
+                            />
+                        </div>
                     </section>
 
                     <section aria-labelledby="checkout-items-heading">

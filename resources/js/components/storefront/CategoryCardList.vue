@@ -4,9 +4,9 @@ import { groupNumber } from '@/components/storefront/catalogFilters';
 import { show } from '@/routes/category';
 
 /**
- * A row of category entry points, wider than the home page's square tiles so
- * the count has room to sit under the name. Used for a category's children and
- * for the index's second level.
+ * A grid of category entry points, sharing the home page's tile so a
+ * sub-category reads as the same object as a department. The only addition is
+ * the item count, which sits under the name where a tile has nothing.
  */
 defineProps<{ categories: App.Data.CategoryData[] }>();
 </script>
@@ -19,40 +19,39 @@ defineProps<{ categories: App.Data.CategoryData[] }>();
         <li v-for="category in categories" :key="category.id">
             <Link
                 :href="show(category.slug)"
-                class="group focus-visible:outline-electric flex h-full items-center gap-3 rounded-xs bg-white p-2.5 focus-visible:outline-2 focus-visible:outline-offset-4"
+                class="group border-rule shadow-card hover:shadow-card-hover focus-visible:outline-electric flex h-full flex-col rounded-lg border bg-white p-2 transition-shadow duration-200 focus-visible:outline-2 focus-visible:outline-offset-2"
             >
-                <div
-                    class="ring-rule group-hover:ring-electric size-12 shrink-0 overflow-hidden rounded-xs bg-white ring-1 transition-[box-shadow]"
-                >
+                <div class="bg-tint aspect-[4/3] overflow-hidden rounded-md">
                     <img
                         v-if="category.image"
                         :src="category.image.thumbUrl ?? category.image.url"
                         :alt="category.image.alt"
                         loading="lazy"
                         decoding="async"
-                        class="size-full object-cover"
+                        class="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04] motion-reduce:transition-none"
                     />
                     <span
                         v-else-if="category.iconSvg"
-                        class="text-muted-foreground flex size-full items-center justify-center p-2.5"
+                        class="text-electric flex size-full items-center justify-center p-5"
+                        aria-hidden="true"
                         v-html="category.iconSvg"
                     />
                 </div>
 
-                <span class="min-w-0 flex-1">
-                    <span
-                        class="text-foreground group-hover:text-electric block text-sm leading-5 break-words transition-colors"
+                <div class="px-1 pt-2.5 pb-1">
+                    <p
+                        class="text-ink line-clamp-2 text-sm leading-5 font-medium"
                     >
                         {{ category.name }}
-                    </span>
-                    <span
+                    </p>
+                    <p
                         v-if="category.productCount !== null"
-                        class="text-muted-foreground block text-xs tabular-nums"
+                        class="text-muted-foreground mt-0.5 text-xs tabular-nums"
                     >
                         {{ groupNumber(category.productCount) }}
                         {{ category.productCount === 1 ? 'item' : 'items' }}
-                    </span>
-                </span>
+                    </p>
+                </div>
             </Link>
         </li>
     </ul>

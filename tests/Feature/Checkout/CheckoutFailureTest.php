@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\TaxClass;
 use App\Models\User;
 use App\Settings\CheckoutSettings;
+use App\Settings\PaymentSettings;
 use App\Settings\ShippingSettings;
 use App\Settings\TaxSettings;
 use Illuminate\Testing\TestResponse;
@@ -40,6 +41,14 @@ beforeEach(function () {
     $checkout->order_prefix = 'SS-';
     $checkout->save();
 
+    // An offline method, so nothing in this file needs a gateway: what is under
+    // test is the refusal, not how the money would have been taken.
+    $payments = app(PaymentSettings::class);
+    $payments->paystack_enabled = false;
+    $payments->bank_transfer_enabled = false;
+    $payments->cash_on_delivery_enabled = true;
+    $payments->save();
+
     $this->customer = User::factory()->create();
     $this->address = Address::factory()->isDefault()->create(['user_id' => $this->customer->id]);
 
@@ -60,6 +69,7 @@ beforeEach(function () {
         ->post(route('checkout.store'), [
             'delivery_method' => 'delivery',
             'address_id' => $this->address->id,
+            'payment_method' => 'cash_on_delivery',
             'quoted_total_cents' => 330_000,
             ...$payload,
         ]);
@@ -71,6 +81,7 @@ beforeEach(function () {
         ->post(route('checkout.store'), [
             'delivery_method' => 'delivery',
             'address_id' => $this->address->id,
+            'payment_method' => 'cash_on_delivery',
             'quoted_total_cents' => 330_000,
         ]);
 });
@@ -222,6 +233,27 @@ test('collection is refused when the store has switched it off', function () {
 
     ($this->placeOrder)(['delivery_method' => 'pickup', 'quoted_total_cents' => 300_000])
         ->assertSessionHasErrors('delivery_method');
+
+    expect(Order::count())->toBe(0);
+});
+
+test('a payment method the store does not accept refuses the order', function () {
+    ($this->fillCart)();
+
+    // Paystack is switched off in this file, so the page would never have
+    // offered it — and the same list that renders the choices validates the one
+    // that comes back.
+    ($this->placeOrder)(['payment_method' => 'paystack'])
+        ->assertSessionHasErrors('payment_method');
+
+    expect(Order::count())->toBe(0);
+});
+
+test('an order with no payment method chosen is refused', function () {
+    ($this->fillCart)();
+
+    ($this->placeOrder)(['payment_method' => null])
+        ->assertSessionHasErrors(['payment_method' => 'The payment method field is required.']);
 
     expect(Order::count())->toBe(0);
 });

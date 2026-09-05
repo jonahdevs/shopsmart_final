@@ -5,6 +5,7 @@ namespace App\Concerns;
 use App\Enums\DeliveryMethod;
 use App\Models\Address;
 use App\Models\Coupon;
+use App\Services\PaymentCredentials;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
@@ -51,6 +52,23 @@ trait CheckoutValidationRules
     protected function couponCodeRules(): array
     {
         return ['required', 'string', 'max:64'];
+    }
+
+    /**
+     * The method must be one the store currently offers, not merely one the
+     * application knows about — a gateway switched off, or switched on with no
+     * key, must not be selectable however the form was submitted.
+     *
+     * @return list<ValidationRule|string>
+     */
+    protected function paymentMethodRules(): array
+    {
+        return ['required', 'string', Rule::in(app(PaymentCredentials::class)->enabledMethods())];
+    }
+
+    public function paymentMethod(): string
+    {
+        return (string) $this->input('payment_method');
     }
 
     /** @return list<ValidationRule|string> */

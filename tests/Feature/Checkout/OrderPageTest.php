@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\TaxClass;
 use App\Models\User;
 use App\Settings\CheckoutSettings;
+use App\Settings\PaymentSettings;
 use App\Settings\ShippingSettings;
 use App\Settings\TaxSettings;
 use Inertia\Testing\AssertableInertia;
@@ -47,6 +48,11 @@ beforeEach(function () {
     $checkout->order_prefix = 'SS-';
     $checkout->save();
 
+    // An offline method: what is under test is the receipt, not collecting.
+    $payments = app(PaymentSettings::class);
+    $payments->cash_on_delivery_enabled = true;
+    $payments->save();
+
     $this->customer = User::factory()->create();
     $this->address = Address::factory()->isDefault()->create(['user_id' => $this->customer->id]);
 });
@@ -61,6 +67,7 @@ test('the confirmation shows the order that was just placed', function () {
     $this->actingAs($this->customer)->post(route('checkout.store'), [
         'delivery_method' => 'delivery',
         'address_id' => $this->address->id,
+        'payment_method' => 'cash_on_delivery',
         'quoted_total_cents' => 330_000,
     ])->assertSessionHasNoErrors();
 
@@ -94,6 +101,7 @@ test('the order page reads the snapshot, not the catalog', function () {
     $this->actingAs($this->customer)->post(route('checkout.store'), [
         'delivery_method' => 'delivery',
         'address_id' => $this->address->id,
+        'payment_method' => 'cash_on_delivery',
         'quoted_total_cents' => 180_000,
     ])->assertSessionHasNoErrors();
 

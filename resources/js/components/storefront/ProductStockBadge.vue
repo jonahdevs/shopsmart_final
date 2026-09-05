@@ -52,7 +52,7 @@ const state = computed(() => {
         };
     }
 
-    return { icon: Check, label: 'In stock', tone: 'text-foreground' };
+    return { icon: Check, label: 'In stock', tone: 'text-ink' };
 });
 
 const lowStockNote = computed<string | null>(() => {
@@ -68,18 +68,19 @@ const lowStockNote = computed<string | null>(() => {
 
 <template>
     <p
-        class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm"
+        class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium"
         :class="state.tone"
     >
         <component
             :is="state.icon"
             class="size-4 shrink-0"
+            :stroke-width="2.25"
             aria-hidden="true"
         />
         <span>{{ state.label }}</span>
         <span
             v-if="lowStockNote"
-            class="font-display text-foreground text-[0.6875rem] font-bold tracking-[0.12em] uppercase"
+            class="font-display text-ink text-[0.6875rem] font-bold tracking-[0.12em] uppercase"
         >
             &middot; {{ lowStockNote }}
         </span>

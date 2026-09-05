@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\TaxClass;
 use App\Models\User;
 use App\Settings\CheckoutSettings;
+use App\Settings\PaymentSettings;
 use App\Settings\ShippingSettings;
 use App\Settings\TaxSettings;
 
@@ -17,9 +18,10 @@ use App\Settings\TaxSettings;
  * Placing an order: what gets written, what gets frozen onto the row, and what
  * deliberately does NOT happen yet.
  *
- * An order comes out pending. No stock moves and no coupon is redeemed until
- * payment confirms, so an abandoned checkout cannot eat a limited coupon's
- * budget or hold stock nobody paid for.
+ * An order comes out pending. No stock moves, no coupon is redeemed and no
+ * payment row is written until a gateway is actually asked for the money, so an
+ * abandoned checkout cannot eat a limited coupon's budget or hold stock nobody
+ * paid for.
  */
 beforeEach(function () {
     $this->standardVat = TaxClass::factory()->standardVat()->create();
@@ -41,11 +43,16 @@ beforeEach(function () {
     $checkout->order_prefix = 'SS-';
     $checkout->save();
 
+    // An offline method: placement is what is under test here, not collecting.
+    $payments = app(PaymentSettings::class);
+    $payments->cash_on_delivery_enabled = true;
+    $payments->save();
+
     $this->customer = User::factory()->create();
     $this->address = Address::factory()->isDefault()->create(['user_id' => $this->customer->id]);
 });
 
-test('a delivery order writes one order, its lines and one pending payment', function () {
+test('a delivery order writes one order and its lines, and no payment', function () {
     $first = Product::factory()->published()->create([
         'price' => 150_000, 'sale_price' => null, 'stock_quantity' => 10,
     ]);
@@ -60,6 +67,7 @@ test('a delivery order writes one order, its lines and one pending payment', fun
     $this->actingAs($this->customer)->post(route('checkout.store'), [
         'delivery_method' => 'delivery',
         'address_id' => $this->address->id,
+        'payment_method' => 'cash_on_delivery',
         'quoted_total_cents' => 530_000,
     ])->assertSessionHasNoErrors();
 
@@ -67,9 +75,10 @@ test('a delivery order writes one order, its lines and one pending payment', fun
 
     expect(Order::count())->toBe(1)
         ->and($order->items()->count())->toBe(2)
-        ->and($order->payments()->count())->toBe(1)
+        ->and($order->payments()->count())->toBe(0)
         ->and($order->status)->toBe(OrderStatus::Pending)
         ->and($order->payment_status)->toBe(PaymentStatus::Pending)
+        ->and($order->payment_method)->toBe('cash_on_delivery')
         ->and($order->subtotal_cents)->toBe(500_000)
         ->and($order->shipping_cents)->toBe(30_000)
         ->and($order->total_cents)->toBe(530_000)
@@ -77,12 +86,11 @@ test('a delivery order writes one order, its lines and one pending payment', fun
         ->and($order->customer_name)->toBe($this->customer->name)
         ->and($order->customer_email)->toBe($this->customer->email);
 
-    $this->assertDatabaseHas('payments', [
-        'order_id' => $order->id,
-        'status' => PaymentStatus::Pending->value,
-        'amount_cents' => 530_000,
-        'gateway' => 'paystack',
-    ]);
+    // A payment row means "an attempt to collect", and it carries the reference
+    // the gateway is handed. Nothing has been attempted yet, and writing one now
+    // would mean either rewriting its reference later or leaving a settled
+    // transaction with no row to match.
+    $this->assertDatabaseCount('payments', 0);
 });
 
 test('the shopper lands on the order that was just placed', function () {
@@ -95,6 +103,7 @@ test('the shopper lands on the order that was just placed', function () {
     $this->actingAs($this->customer)->post(route('checkout.store'), [
         'delivery_method' => 'delivery',
         'address_id' => $this->address->id,
+        'payment_method' => 'cash_on_delivery',
         'quoted_total_cents' => 180_000,
     ])->assertRedirect(route('orders.show', Order::query()->sole()->order_number));
 });
@@ -109,6 +118,7 @@ test('the order number carries the store prefix and a six digit counter', functi
     $this->actingAs($this->customer)->post(route('checkout.store'), [
         'delivery_method' => 'delivery',
         'address_id' => $this->address->id,
+        'payment_method' => 'cash_on_delivery',
         'quoted_total_cents' => 180_000,
     ]);
 
@@ -126,6 +136,7 @@ test('two orders get consecutive distinct numbers', function () {
         $this->actingAs($this->customer)->post(route('checkout.store'), [
             'delivery_method' => 'delivery',
             'address_id' => $this->address->id,
+            'payment_method' => 'cash_on_delivery',
             'quoted_total_cents' => 180_000,
         ])->assertSessionHasNoErrors();
     }
@@ -147,6 +158,7 @@ test('the cart and the session coupon are emptied by placing the order', functio
     $this->actingAs($this->customer)->post(route('checkout.store'), [
         'delivery_method' => 'delivery',
         'address_id' => $this->address->id,
+        'payment_method' => 'cash_on_delivery',
         'quoted_total_cents' => 280_000,
     ])->assertSessionHasNoErrors();
 
@@ -176,6 +188,7 @@ test('the destination is copied onto the order and survives deleting the address
     $this->actingAs($this->customer)->post(route('checkout.store'), [
         'delivery_method' => 'delivery',
         'address_id' => $address->id,
+        'payment_method' => 'cash_on_delivery',
         'quoted_total_cents' => 180_000,
     ])->assertSessionHasNoErrors();
 
@@ -210,6 +223,7 @@ test('a collection order carries no destination and no delivery charge', functio
 
     $this->actingAs($this->customer)->post(route('checkout.store'), [
         'delivery_method' => 'pickup',
+        'payment_method' => 'cash_on_delivery',
         'quoted_total_cents' => 150_000,
     ])->assertSessionHasNoErrors();
 
@@ -239,6 +253,7 @@ test('placing an order moves no stock and redeems no coupon', function () {
     $this->actingAs($this->customer)->post(route('checkout.store'), [
         'delivery_method' => 'delivery',
         'address_id' => $this->address->id,
+        'payment_method' => 'cash_on_delivery',
         'quoted_total_cents' => 880_000,
     ])->assertSessionHasNoErrors();
 
@@ -269,6 +284,7 @@ test('the order lines add up to the order total', function () {
     $this->actingAs($this->customer)->post(route('checkout.store'), [
         'delivery_method' => 'delivery',
         'address_id' => $this->address->id,
+        'payment_method' => 'cash_on_delivery',
         'quoted_total_cents' => 229_990,
     ])->assertSessionHasNoErrors();
 
@@ -292,6 +308,7 @@ test('deleting the customer leaves the order and its snapshot standing', functio
     $this->actingAs($this->customer)->post(route('checkout.store'), [
         'delivery_method' => 'delivery',
         'address_id' => $this->address->id,
+        'payment_method' => 'cash_on_delivery',
         'quoted_total_cents' => 180_000,
     ])->assertSessionHasNoErrors();
 
