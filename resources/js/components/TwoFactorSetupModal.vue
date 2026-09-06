@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { usePortalTheme } from '@/composables/usePortalTheme';
 import { Form } from '@inertiajs/vue3';
 import { useClipboard } from '@vueuse/core';
 import { Check, Copy, ScanLine } from '@lucide/vue';
@@ -28,6 +29,10 @@ type Props = {
     requiresConfirmation: boolean;
     twoFactorEnabled: boolean;
 };
+
+// Portalled content escapes the `.storefront` wrapper, so it has to be
+// re-themed per audience — see the composable.
+const portalTheme = usePortalTheme();
 
 const { resolvedAppearance } = useAppearance();
 
@@ -111,7 +116,7 @@ watch(
 
 <template>
     <Dialog :open="isOpen" @update:open="isOpen = $event">
-        <DialogContent class="sm:max-w-md">
+        <DialogContent :class="[portalTheme, 'sm:max-w-md']">
             <DialogHeader class="flex items-center justify-center">
                 <div
                     class="border-border bg-card mb-3 w-auto rounded-full border p-0.5 shadow-sm"

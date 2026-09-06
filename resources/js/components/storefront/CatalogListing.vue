@@ -152,9 +152,11 @@ function loadMore(): void {
         </div>
 
         <div class="mt-8 flex items-start gap-8">
-            <aside class="hidden w-56 shrink-0 lg:block xl:w-64">
+            <aside
+                class="border-rule shadow-card hidden w-56 shrink-0 rounded-lg border bg-white p-4 lg:block xl:w-64"
+            >
                 <h2
-                    class="font-display text-foreground pb-4 text-sm font-black tracking-[-0.02em] uppercase"
+                    class="font-display text-ink border-rule mb-4 border-b pb-3 text-base font-extrabold tracking-[-0.02em]"
                 >
                     Filter
                 </h2>
@@ -187,7 +189,7 @@ function loadMore(): void {
                     <button
                         v-if="products.hasMorePages"
                         type="button"
-                        class="border-ink hover:bg-ink focus-visible:outline-electric font-display text-foreground inline-flex items-center gap-2 rounded-xs border px-6 py-2.5 text-sm font-bold tracking-wide transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-60"
+                        class="border-rule shadow-card hover:shadow-card-hover hover:border-electric hover:text-electric focus-visible:outline-electric font-display text-ink inline-flex items-center gap-2 rounded-lg border bg-white px-6 py-2.5 text-sm font-bold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-60"
                         :disabled="loadingMore"
                         @click="loadMore"
                     >
@@ -216,11 +218,19 @@ function loadMore(): void {
           ticked so several can be changed in one go, with the footer reporting
           what the grid behind it now holds.
         -->
+        <!--
+          `storefront` is restated here because the sheet is portalled to the
+          body, outside StoreShell's wrapper: without it the panel resolves the
+          staff palette instead of the brand one.
+        -->
         <Sheet v-model:open="filtersOpen">
-            <SheetContent side="left" class="w-11/12 gap-0 sm:max-w-sm">
+            <SheetContent
+                side="left"
+                class="storefront w-11/12 gap-0 sm:max-w-sm"
+            >
                 <SheetHeader class="border-rule border-b">
                     <SheetTitle
-                        class="font-display text-base font-black tracking-[-0.02em] uppercase"
+                        class="font-display text-ink text-lg font-extrabold tracking-[-0.02em]"
                     >
                         Filter
                     </SheetTitle>
@@ -229,7 +239,7 @@ function loadMore(): void {
                     </SheetDescription>
                 </SheetHeader>
 
-                <div class="min-h-0 flex-1 overflow-y-auto px-4">
+                <div class="min-h-0 flex-1 overflow-y-auto p-4">
                     <CatalogFacets
                         :filters="filters"
                         :category-facets="categoryFacets"
@@ -242,7 +252,7 @@ function loadMore(): void {
                 <div class="border-rule border-t p-4">
                     <button
                         type="button"
-                        class="bg-electric font-display focus-visible:outline-electric w-full rounded-xs px-4 py-2.5 text-sm font-bold tracking-wide text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2"
+                        class="bg-electric focus-visible:outline-electric w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2"
                         @click="filtersOpen = false"
                     >
                         Show {{ products.total }}

@@ -16,6 +16,8 @@ import { index as categoriesIndex } from '@/routes/categories';
  * The dead end shared by the wishlist and the compare tray. Both are opt-in
  * lists, so the copy explains what fills them rather than apologising for being
  * empty.
+ *
+ * Same card as `CartEmptyState`: solid hairline, `shadow-card`, blue icon tile.
  */
 const { list } = defineProps<{ list: 'wishlist' | 'compare' }>();
 
@@ -37,13 +39,18 @@ const copy = computed(() =>
 </script>
 
 <template>
-    <Empty class="border-rule border">
+    <Empty
+        class="border-rule shadow-card rounded-lg border border-solid bg-white"
+    >
         <EmptyHeader>
-            <EmptyMedia variant="icon">
+            <EmptyMedia
+                variant="icon"
+                class="bg-tint text-electric size-12 rounded-lg"
+            >
                 <component :is="copy.icon" aria-hidden="true" />
             </EmptyMedia>
             <EmptyTitle
-                class="font-display text-lg font-black tracking-[-0.02em] uppercase"
+                class="font-display text-ink text-xl font-extrabold tracking-[-0.02em]"
             >
                 {{ copy.title }}
             </EmptyTitle>
@@ -53,14 +60,14 @@ const copy = computed(() =>
         <div class="flex flex-wrap items-center justify-center gap-3">
             <Link
                 :href="catalog()"
-                class="bg-electric font-display focus-visible:outline-electric rounded-xs px-4 py-2 text-sm font-bold tracking-wide text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2"
+                class="bg-electric font-display focus-visible:outline-electric rounded-lg px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2"
             >
                 Browse the shop
             </Link>
 
             <Link
                 :href="categoriesIndex()"
-                class="font-display text-electric hover:border-electric focus-visible:outline-electric border-b border-transparent pb-0.5 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
+                class="border-rule font-display text-ink hover:border-electric hover:text-electric focus-visible:outline-electric rounded-lg border bg-white px-5 py-2.5 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
             >
                 Browse categories
             </Link>

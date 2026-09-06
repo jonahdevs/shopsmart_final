@@ -1,8 +1,9 @@
 import { createInertiaApp } from '@inertiajs/vue3';
 import { initializeTheme } from '@/composables/useAppearance';
+import AccountLayout from '@/layouts/account/AccountLayout.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
-import SettingsLayout from '@/layouts/settings/Layout.vue';
+import SettingsShell from '@/layouts/settings/SettingsShell.vue';
 import StorefrontLayout from '@/layouts/StorefrontLayout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
 
@@ -16,10 +17,17 @@ void createInertiaApp({
                 return null;
             case name.startsWith('shop/'):
                 return StorefrontLayout;
+            case name.startsWith('account/'):
+                return [StorefrontLayout, AccountLayout];
             case name.startsWith('auth/'):
                 return AuthLayout;
+            /*
+              One component, not a pair: the settings pages are shared by staff
+              and customers, and SettingsShell picks the chrome from
+              `auth.isStaff` so neither audience ends up in the other's shell.
+            */
             case name.startsWith('settings/'):
-                return [AppLayout, SettingsLayout];
+                return SettingsShell;
             default:
                 return AppLayout;
         }

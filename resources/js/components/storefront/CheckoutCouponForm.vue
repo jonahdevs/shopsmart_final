@@ -33,9 +33,9 @@ const id = useId();
         >
             <label
                 :for="`${id}-code`"
-                class="text-muted-foreground flex items-center gap-2 text-xs"
+                class="text-muted-foreground flex items-center gap-2 text-xs font-medium"
             >
-                <Tag class="size-3.5" aria-hidden="true" />
+                <Tag class="text-electric size-3.5" aria-hidden="true" />
                 Discount code
             </label>
 
@@ -49,12 +49,12 @@ const id = useId();
                     autocapitalize="characters"
                     spellcheck="false"
                     placeholder="Enter a code"
-                    class="border-rule text-foreground placeholder:text-muted-foreground focus-visible:outline-electric h-10 min-w-0 flex-1 rounded-xs border bg-white px-3 text-sm uppercase focus-visible:outline-2 focus-visible:-outline-offset-2"
+                    class="border-rule text-foreground placeholder:text-muted-foreground focus-visible:outline-electric h-10 min-w-0 flex-1 rounded-lg border bg-white px-3 text-sm uppercase focus-visible:outline-2 focus-visible:-outline-offset-2"
                 />
                 <button
                     type="submit"
                     :disabled="processing"
-                    class="border-ink hover:bg-ink font-display focus-visible:outline-electric text-foreground h-10 shrink-0 rounded-xs border px-4 text-sm font-bold tracking-wide transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
+                    class="border-ink hover:bg-ink font-display focus-visible:outline-electric text-foreground h-10 shrink-0 rounded-lg border px-4 text-sm font-bold tracking-wide transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
                 >
                     Apply
                 </button>
@@ -71,9 +71,12 @@ const id = useId();
             class="flex flex-wrap items-center justify-between gap-3"
         >
             <p class="text-foreground flex items-center gap-2 text-sm">
-                <Tag class="size-3.5 shrink-0" aria-hidden="true" />
+                <Tag
+                    class="text-electric size-3.5 shrink-0"
+                    aria-hidden="true"
+                />
                 <span
-                    class="font-display text-sm font-bold tracking-[0.08em] uppercase"
+                    class="bg-tint-strong text-electric font-display rounded-full px-2 py-0.5 text-[0.6875rem] font-bold tracking-[0.1em] uppercase"
                 >
                     {{ couponCode }}
                 </span>
@@ -83,7 +86,7 @@ const id = useId();
             <button
                 type="submit"
                 :disabled="processing"
-                class="text-muted-foreground hover:text-destructive focus-visible:outline-electric inline-flex items-center gap-1.5 rounded-xs text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 disabled:opacity-50"
+                class="text-muted-foreground hover:text-destructive focus-visible:outline-electric inline-flex items-center gap-1.5 rounded-sm text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 disabled:opacity-50"
             >
                 <X class="size-3.5" aria-hidden="true" />
                 Remove

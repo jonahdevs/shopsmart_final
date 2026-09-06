@@ -56,7 +56,7 @@ function hrefFor(
                 <Link
                     v-else
                     :href="hrefFor(item, position)"
-                    class="text-muted-foreground hover:text-electric focus-visible:outline-electric rounded-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
+                    class="text-muted-foreground hover:text-electric focus-visible:outline-electric rounded-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
                 >
                     {{ item.name }}
                 </Link>

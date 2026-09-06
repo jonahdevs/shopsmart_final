@@ -190,7 +190,7 @@ function selectRating(rating: number): void {
                         :max="filters.priceCeiling"
                         step="1"
                         placeholder="Any"
-                        class="mt-1 rounded-xs"
+                        class="mt-1 rounded-lg"
                         :aria-invalid="priceError !== null"
                         :aria-describedby="
                             priceError === null ? undefined : priceErrorId
@@ -222,7 +222,7 @@ function selectRating(rating: number): void {
                         :max="filters.priceCeiling"
                         step="1"
                         placeholder="Any"
-                        class="mt-1 rounded-xs"
+                        class="mt-1 rounded-lg"
                         :aria-invalid="priceError !== null"
                         :aria-describedby="
                             priceError === null ? undefined : priceErrorId
@@ -244,7 +244,7 @@ function selectRating(rating: number): void {
                 <Button
                     type="button"
                     size="sm"
-                    class="rounded-xs"
+                    class="rounded-lg font-semibold"
                     :disabled="priceError !== null || !priceChanged"
                     @click="applyPrice"
                 >
@@ -255,7 +255,7 @@ function selectRating(rating: number): void {
                     type="button"
                     size="sm"
                     variant="ghost"
-                    class="rounded-xs"
+                    class="text-muted-foreground hover:text-ink rounded-lg"
                     @click="clearPrice"
                 >
                     Reset

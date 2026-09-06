@@ -76,14 +76,19 @@ function restoreFocus(event: Event): void {
           keeps every `dark:` variant in the primitives inert.
         -->
         <DialogContent
-            class="storefront max-h-[85vh] gap-0 overflow-y-auto rounded-xs p-0 sm:max-w-lg"
+            class="storefront max-h-[85vh] gap-0 overflow-y-auto rounded-lg p-0 sm:max-w-lg"
             @close-auto-focus="restoreFocus"
         >
             <DialogHeader class="border-rule border-b p-6 text-left">
                 <DialogTitle
-                    class="font-display flex items-center gap-2 text-base font-black tracking-[-0.02em] uppercase"
+                    class="font-display text-ink flex items-center gap-2 text-lg font-extrabold tracking-[-0.02em]"
                 >
-                    <Check class="text-electric size-4" aria-hidden="true" />
+                    <span
+                        class="bg-tint text-electric flex size-7 shrink-0 items-center justify-center rounded-full"
+                        aria-hidden="true"
+                    >
+                        <Check class="size-4" />
+                    </span>
                     Added to your cart
                 </DialogTitle>
                 <DialogDescription>
@@ -98,7 +103,7 @@ function restoreFocus(event: Event): void {
 
             <div class="p-6">
                 <h3
-                    class="font-display text-muted-foreground text-[0.6875rem] font-bold tracking-[0.14em] uppercase"
+                    class="text-electric font-display text-[0.625rem] font-bold tracking-[0.18em] uppercase"
                 >
                     Goes with it
                 </h3>
@@ -114,7 +119,7 @@ function restoreFocus(event: Event): void {
                           thumbnail is decoration rather than a second link.
                         -->
                         <div
-                            class="size-16 shrink-0 overflow-hidden rounded-xs bg-white"
+                            class="border-rule shadow-card size-16 shrink-0 overflow-hidden rounded-lg border bg-white p-1.5"
                         >
                             <img
                                 v-if="accessory.image"
@@ -133,16 +138,16 @@ function restoreFocus(event: Event): void {
                         <div class="min-w-0 flex-1">
                             <p
                                 v-if="accessory.brandName"
-                                class="font-display text-muted-foreground text-[0.625rem] font-bold tracking-[0.14em] uppercase"
+                                class="text-muted-foreground truncate text-xs"
                             >
                                 {{ accessory.brandName }}
                             </p>
                             <p
-                                class="text-foreground line-clamp-2 text-sm leading-5"
+                                class="text-ink line-clamp-2 text-sm leading-5 font-medium"
                             >
                                 <Link
                                     :href="productShow(accessory.slug)"
-                                    class="hover:text-electric focus-visible:outline-electric rounded-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
+                                    class="hover:text-electric focus-visible:outline-electric rounded-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
                                 >
                                     {{ accessory.name }}
                                 </Link>
@@ -175,7 +180,7 @@ function restoreFocus(event: Event): void {
                             as-child
                             variant="outline"
                             size="sm"
-                            class="shrink-0 rounded-xs"
+                            class="border-rule hover:border-electric hover:text-electric shrink-0 rounded-lg bg-white font-semibold"
                         >
                             <Link :href="productShow(accessory.slug)">
                                 <SlidersHorizontal
@@ -206,7 +211,7 @@ function restoreFocus(event: Event): void {
                                 type="submit"
                                 variant="outline"
                                 size="sm"
-                                class="rounded-xs"
+                                class="border-rule hover:border-electric hover:text-electric rounded-lg bg-white font-semibold"
                                 :disabled="processing"
                             >
                                 <component
@@ -223,12 +228,15 @@ function restoreFocus(event: Event): void {
 
             <DialogFooter class="border-rule border-t p-6">
                 <DialogClose as-child>
-                    <Button variant="ghost" class="rounded-xs">
+                    <Button
+                        variant="ghost"
+                        class="text-muted-foreground hover:text-ink rounded-lg"
+                    >
                         Keep shopping
                     </Button>
                 </DialogClose>
 
-                <Button as-child class="rounded-xs">
+                <Button as-child class="rounded-lg font-semibold">
                     <Link :href="cartIndex()">Go to cart</Link>
                 </Button>
             </DialogFooter>

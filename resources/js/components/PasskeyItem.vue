@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { usePortalTheme } from '@/composables/usePortalTheme';
 import { KeyRound, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,10 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import type { Passkey } from '@/types/auth';
+
+// Portalled content escapes the `.storefront` wrapper, so it has to be
+// re-themed per audience — see the composable.
+const portalTheme = usePortalTheme();
 
 const props = defineProps<{
     passkey: Passkey;
@@ -71,7 +76,7 @@ const handleDelete = () => {
                 </Button>
             </DialogTrigger>
 
-            <DialogContent>
+            <DialogContent :class="portalTheme">
                 <DialogTitle>Remove passkey</DialogTitle>
                 <DialogDescription>
                     Are you sure you want to remove the "{{ passkey.name }}"

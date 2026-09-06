@@ -99,7 +99,7 @@ function onThumbKeydown(event: KeyboardEvent, index: number): void {
 <template>
     <div class="flex flex-col gap-4">
         <div
-            class="relative aspect-square w-full overflow-hidden rounded-xs bg-white"
+            class="border-rule shadow-card relative aspect-square w-full overflow-hidden rounded-lg border bg-white p-4 sm:p-6"
             :style="
                 active?.placeholder
                     ? {
@@ -149,11 +149,11 @@ function onThumbKeydown(event: KeyboardEvent, index: number): void {
                     :ref="(el) => setThumb(el, index)"
                     type="button"
                     :aria-pressed="index === activeIndex"
-                    class="focus-visible:outline-electric block size-16 shrink-0 overflow-hidden rounded-xs bg-white transition-[box-shadow] ring-inset focus-visible:outline-2 focus-visible:outline-offset-2 sm:size-20"
+                    class="focus-visible:outline-electric block size-16 shrink-0 overflow-hidden rounded-lg bg-white p-1.5 transition-[box-shadow] ring-inset focus-visible:outline-2 focus-visible:outline-offset-2 sm:size-20"
                     :class="
                         index === activeIndex
                             ? 'ring-electric ring-2'
-                            : 'ring-rule hover:ring-ink ring-1'
+                            : 'ring-rule hover:ring-electric shadow-card ring-1'
                     "
                     @click="selectThumb(index)"
                     @keydown="onThumbKeydown($event, index)"

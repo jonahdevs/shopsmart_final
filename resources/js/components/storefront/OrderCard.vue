@@ -35,11 +35,11 @@ const summary = computed(() => {
         <div class="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
             <div class="min-w-0">
                 <h3
-                    class="font-display text-foreground text-lg font-black tracking-[-0.02em] uppercase"
+                    class="font-display text-ink text-lg font-extrabold tracking-[-0.02em]"
                 >
                     <Link
                         :href="show(order.orderNumber)"
-                        class="hover:text-electric focus-visible:outline-electric rounded-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
+                        class="hover:text-electric focus-visible:outline-electric rounded-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
                     >
                         {{ order.orderNumber }}
                     </Link>
@@ -83,11 +83,14 @@ const summary = computed(() => {
 
         <Link
             :href="show(order.orderNumber)"
-            class="font-display text-electric hover:border-electric focus-visible:outline-electric inline-flex w-fit items-center gap-1.5 border-b border-transparent pb-0.5 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
+            class="text-electric focus-visible:outline-electric group inline-flex w-fit items-center gap-1.5 rounded-sm text-sm font-bold transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4"
         >
             View order
             <span class="sr-only">{{ order.orderNumber }}</span>
-            <ArrowRight class="size-4" aria-hidden="true" />
+            <ArrowRight
+                class="size-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
+                aria-hidden="true"
+            />
         </Link>
     </li>
 </template>

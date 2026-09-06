@@ -46,11 +46,11 @@ const id = useId();
             >
                 <label
                     :for="`${id}-address-${address.id}`"
-                    class="flex cursor-pointer items-start gap-3 rounded-xs border p-4 transition-colors"
+                    class="shadow-card hover:shadow-card-hover focus-within:shadow-card-hover flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-shadow duration-200"
                     :class="
                         selection === address.id
-                            ? 'border-ink bg-card'
-                            : 'border-rule hover:border-ink'
+                            ? 'border-electric bg-tint'
+                            : 'border-rule bg-white'
                     "
                 >
                     <input
@@ -77,7 +77,7 @@ const id = useId();
                             </span>
                             <span
                                 v-if="address.isDefault"
-                                class="text-electric flex items-center gap-1 text-xs"
+                                class="bg-tint-strong text-electric flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
                             >
                                 <Check class="size-3.5" aria-hidden="true" />
                                 Default
@@ -102,11 +102,11 @@ const id = useId();
         <label
             v-if="addresses.length > 0"
             :for="`${id}-address-new`"
-            class="flex cursor-pointer items-center gap-3 rounded-xs border border-dashed p-4 text-sm transition-colors"
+            class="hover:border-electric flex cursor-pointer items-center gap-3 rounded-lg border border-dashed p-4 text-sm transition-colors"
             :class="
                 selection === 'new'
-                    ? 'border-ink bg-card'
-                    : 'border-rule hover:border-ink'
+                    ? 'border-electric bg-tint'
+                    : 'border-rule bg-white'
             "
         >
             <input

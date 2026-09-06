@@ -11,23 +11,29 @@ import { index as checkout } from '@/routes/checkout';
  * The subtotal is the sum of the captured line prices and nothing else —
  * delivery, tax and coupons are worked out by the checkout pricer, so the panel
  * says that out loud instead of implying this is the amount due.
+ *
+ * It is the storefront's card, and the one blue button on the page: checkout is
+ * the single primary action here, so nothing else beside it is filled.
  */
 defineProps<{ cart: App.Data.CartData }>();
 </script>
 
 <template>
-    <section class="bg-card rounded-xs" aria-labelledby="cart-summary-heading">
-        <span class="bg-ink block h-0.5 w-full" aria-hidden="true" />
-
+    <section
+        class="border-rule shadow-card rounded-lg border bg-white"
+        aria-labelledby="cart-summary-heading"
+    >
         <div class="flex flex-col gap-5 p-6">
             <h2
                 id="cart-summary-heading"
-                class="font-display text-foreground text-lg font-black tracking-[-0.03em] uppercase"
+                class="font-display text-ink text-xl font-extrabold tracking-[-0.02em]"
             >
                 Summary
             </h2>
 
-            <div class="flex items-end justify-between gap-4">
+            <div
+                class="border-rule flex items-end justify-between gap-4 border-t pt-5"
+            >
                 <p class="text-muted-foreground text-sm">
                     Subtotal
                     <span class="tabular-nums">
@@ -51,7 +57,7 @@ defineProps<{ cart: App.Data.CartData }>();
             -->
             <Link
                 :href="checkout()"
-                class="bg-ink font-display focus-visible:outline-electric flex h-11 w-full items-center justify-center gap-2 rounded-xs text-sm font-bold tracking-[0.08em] text-white uppercase transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2"
+                class="bg-electric font-display focus-visible:outline-electric flex h-11 w-full items-center justify-center gap-2 rounded-lg text-sm font-bold text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2"
             >
                 Checkout
                 <ArrowRight class="size-4" aria-hidden="true" />
@@ -59,7 +65,7 @@ defineProps<{ cart: App.Data.CartData }>();
 
             <Link
                 :href="catalog()"
-                class="font-display text-electric hover:border-electric focus-visible:outline-electric self-start border-b border-transparent pb-0.5 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
+                class="font-display text-electric focus-visible:outline-electric self-start rounded-sm text-sm font-bold transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4"
             >
                 Keep shopping
             </Link>

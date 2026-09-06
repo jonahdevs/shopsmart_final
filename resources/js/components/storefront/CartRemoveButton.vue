@@ -10,6 +10,9 @@ import { destroy } from '@/routes/cart';
  * product has since gone out of stock or off the catalogue — that is exactly
  * the line a shopper most needs to get rid of, and the server's remove endpoint
  * deliberately validates nothing beyond the ids.
+ *
+ * Rendered as a pill so it reads as a chip beside the `--radius` quantity
+ * stepper rather than as another box of the same shape.
  */
 const { item } = defineProps<{ item: App.Data.CartItemData }>();
 </script>
@@ -31,7 +34,7 @@ const { item } = defineProps<{ item: App.Data.CartItemData }>();
         <button
             type="submit"
             :disabled="processing"
-            class="text-muted-foreground hover:text-destructive focus-visible:outline-electric inline-flex items-center gap-1.5 rounded-xs text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 disabled:opacity-50"
+            class="border-rule text-muted-foreground hover:border-destructive hover:text-destructive focus-visible:outline-electric inline-flex items-center gap-1.5 rounded-full border bg-white px-3 py-2 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
         >
             <Trash2 class="size-3.5" aria-hidden="true" />
             Remove

@@ -13,6 +13,9 @@ import {
 /**
  * The bar above the grid: how much is showing, how it is ordered, and — below
  * `lg`, where the sidebar is behind a sheet — the way into the filters.
+ *
+ * It is one of the storefront's cards rather than a floating row, so the
+ * listing reads as a panel of controls sitting above a shelf of tiles.
  */
 defineProps<{
     shown: number;
@@ -44,7 +47,9 @@ function onSortChange(event: Event): void {
 </script>
 
 <template>
-    <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+    <div
+        class="border-rule shadow-card flex flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-lg border bg-white px-4 py-3"
+    >
         <!--
           The count is the only thing on the page that reports the result of a
           filter change, so it is the live region: a partial reload swaps the
@@ -68,14 +73,14 @@ function onSortChange(event: Event): void {
         <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
             <button
                 type="button"
-                class="border-rule hover:border-electric focus-visible:outline-electric inline-flex items-center gap-2 rounded-xs border px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 lg:hidden"
+                class="border-rule hover:border-electric hover:text-electric focus-visible:outline-electric text-ink inline-flex items-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 lg:hidden"
                 @click="emit('openFilters')"
             >
                 <SlidersHorizontal class="size-4" aria-hidden="true" />
                 Filters
                 <span
                     v-if="activeFilterCount > 0"
-                    class="bg-electric font-display rounded-xs px-1.5 py-0.5 text-[0.625rem] font-bold text-white tabular-nums"
+                    class="bg-electric font-display rounded-full px-1.5 py-0.5 text-[0.625rem] font-bold text-white tabular-nums"
                 >
                     {{ activeFilterCount }}
                 </span>
@@ -91,7 +96,7 @@ function onSortChange(event: Event): void {
                 <NativeSelect
                     :id="sortId"
                     :model-value="sort"
-                    class="rounded-xs"
+                    class="rounded-lg bg-white"
                     @change="onSortChange"
                 >
                     <NativeSelectOption

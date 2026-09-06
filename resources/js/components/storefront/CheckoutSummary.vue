@@ -35,7 +35,7 @@ defineProps<{ totals: App.Data.OrderTotalsData }>();
                 Discount
                 <span
                     v-if="totals.couponCode"
-                    class="font-display text-foreground text-[0.6875rem] font-bold tracking-[0.12em] uppercase"
+                    class="bg-muted text-muted-foreground font-display rounded-full px-2 py-0.5 text-[0.625rem] font-bold tracking-[0.12em] uppercase"
                 >
                     {{ totals.couponCode }}
                 </span>
@@ -70,7 +70,7 @@ defineProps<{ totals: App.Data.OrderTotalsData }>();
             class="border-rule flex items-end justify-between gap-4 border-t pt-4"
         >
             <dt
-                class="font-display text-foreground text-sm font-black tracking-[0.02em] uppercase"
+                class="font-display text-ink text-sm font-extrabold tracking-[-0.01em]"
             >
                 Total
             </dt>

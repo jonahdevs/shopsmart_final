@@ -5,8 +5,11 @@ import { groupNumber } from '@/components/storefront/catalogFilters';
  * The name board for one category.
  *
  * The image sits beside the name rather than behind it: text over photography
- * needs a scrim to stay legible, and the storefront's rule is solid slabs and
- * straight-on product art, never a wash.
+ * needs a scrim to stay legible, and the storefront's rule is bordered cards
+ * and straight-on product art, never a wash.
+ *
+ * The name carries the same rhythm SectionHeading owns for the sections below
+ * it — blue eyebrow, heavy display line, muted subtitle.
  */
 defineProps<{ category: App.Data.CategoryData }>();
 </script>
@@ -15,7 +18,7 @@ defineProps<{ category: App.Data.CategoryData }>();
     <div class="flex items-start gap-5 sm:gap-8">
         <div
             v-if="category.image"
-            class="ring-rule hidden size-24 shrink-0 overflow-hidden rounded-xs bg-white ring-1 sm:block sm:size-32"
+            class="border-rule shadow-card hidden size-24 shrink-0 overflow-hidden rounded-lg border bg-white sm:block sm:size-32"
         >
             <img
                 :src="category.image.thumbUrl ?? category.image.url"
@@ -28,9 +31,13 @@ defineProps<{ category: App.Data.CategoryData }>();
         </div>
 
         <div class="min-w-0 flex-1">
-            <span class="bg-electric block h-0.5 w-8" aria-hidden="true" />
+            <p
+                class="text-electric font-display text-[0.625rem] font-bold tracking-[0.18em] uppercase"
+            >
+                Category
+            </p>
             <h1
-                class="font-display text-foreground mt-3 text-2xl font-black tracking-[-0.035em] uppercase sm:text-4xl"
+                class="font-display text-ink mt-1 text-2xl font-extrabold tracking-[-0.03em] sm:text-4xl"
             >
                 {{ category.name }}
             </h1>

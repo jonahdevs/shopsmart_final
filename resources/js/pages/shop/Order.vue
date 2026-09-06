@@ -4,6 +4,7 @@ import {
     CircleCheck,
     Clock,
     CreditCard,
+    Download,
     MapPin,
     PackageCheck,
     Truck,
@@ -12,10 +13,12 @@ import { computed } from 'vue';
 import CheckoutLineItem from '@/components/storefront/CheckoutLineItem.vue';
 import CheckoutSummary from '@/components/storefront/CheckoutSummary.vue';
 import OrderStatusBadge from '@/components/storefront/OrderStatusBadge.vue';
+import OrderTimeline from '@/components/storefront/OrderTimeline.vue';
+import SectionHeading from '@/components/storefront/SectionHeading.vue';
 import StoreBreadcrumbs from '@/components/storefront/StoreBreadcrumbs.vue';
 import { formatIsoDate } from '@/lib/utils';
 import { catalog } from '@/routes';
-import { index as ordersIndex } from '@/routes/orders';
+import { index as ordersIndex, receipt } from '@/routes/orders';
 import { show as pay } from '@/routes/payment';
 
 /**
@@ -33,6 +36,11 @@ const { order } = defineProps<{
 }>();
 
 const isCollection = computed(() => order.totals.deliveryMethod === 'pickup');
+
+/** Stated once so the heading and the list cannot disagree about the count. */
+const itemCountLabel = computed(
+    () => `${order.itemCount} ${order.itemCount === 1 ? 'item' : 'items'}`,
+);
 
 /** "bank_transfer" is a column value, not something to show a shopper. */
 const paymentMethodLabel = computed(() =>
@@ -77,10 +85,14 @@ const outstandingCopy = computed(() => {
             <StoreBreadcrumbs :items="breadcrumbs" />
 
             <div class="mt-6">
-                <span class="bg-electric block h-0.5 w-8" aria-hidden="true" />
+                <p
+                    class="text-electric font-display text-[0.625rem] font-bold tracking-[0.18em] uppercase"
+                >
+                    Your order
+                </p>
                 <h1
                     id="order-heading"
-                    class="font-display text-foreground mt-3 text-2xl font-black tracking-[-0.035em] uppercase sm:text-4xl"
+                    class="font-display text-ink mt-1 text-2xl font-extrabold tracking-[-0.03em] sm:text-4xl"
                 >
                     Order {{ order.orderNumber }}
                 </h1>
@@ -108,14 +120,26 @@ const outstandingCopy = computed(() => {
             <div
                 class="mt-10 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]"
             >
-                <div class="flex min-w-0 flex-col gap-10">
+                <div class="flex min-w-0 flex-col gap-12">
+                    <section aria-labelledby="order-progress-heading">
+                        <SectionHeading
+                            eyebrow="Progress"
+                            title="Where it has got to"
+                            heading-id="order-progress-heading"
+                        />
+
+                        <div class="mt-6">
+                            <OrderTimeline :order="order" />
+                        </div>
+                    </section>
+
                     <section
                         aria-labelledby="order-next-heading"
-                        class="bg-card rounded-xs p-6"
+                        class="border-rule shadow-card rounded-lg border bg-white p-5 sm:p-6"
                     >
                         <h2
                             id="order-next-heading"
-                            class="font-display text-foreground text-lg font-black tracking-[-0.03em] uppercase"
+                            class="font-display text-ink text-lg font-extrabold tracking-[-0.02em]"
                         >
                             What happens next
                         </h2>
@@ -155,7 +179,7 @@ const outstandingCopy = computed(() => {
                                     <Link
                                         v-if="canPayNow"
                                         :href="pay(order.orderNumber)"
-                                        class="bg-ink font-display focus-visible:outline-electric inline-flex h-10 items-center justify-center gap-2 rounded-xs px-6 text-sm font-bold tracking-[0.08em] text-white uppercase transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2"
+                                        class="bg-electric font-display focus-visible:outline-electric inline-flex h-10 items-center justify-center gap-2 rounded-lg px-6 text-sm font-bold tracking-wide text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2"
                                     >
                                         <CreditCard
                                             class="size-4"
@@ -196,22 +220,21 @@ const outstandingCopy = computed(() => {
                     </section>
 
                     <section aria-labelledby="order-destination-heading">
-                        <h2
-                            id="order-destination-heading"
-                            class="font-display text-foreground text-lg font-black tracking-[-0.03em] uppercase"
-                        >
-                            {{
+                        <SectionHeading
+                            eyebrow="Where it goes"
+                            :title="
                                 isCollection
                                     ? 'Collection point'
                                     : 'Delivering to'
-                            }}
-                        </h2>
+                            "
+                            heading-id="order-destination-heading"
+                        />
 
                         <div
-                            class="border-rule mt-4 flex items-start gap-3 rounded-xs border p-4 text-sm"
+                            class="border-rule shadow-card mt-6 flex items-start gap-3 rounded-lg border bg-white p-5 text-sm"
                         >
                             <MapPin
-                                class="text-muted-foreground mt-0.5 size-4 shrink-0"
+                                class="text-electric mt-0.5 size-4 shrink-0"
                                 aria-hidden="true"
                             />
 
@@ -260,35 +283,28 @@ const outstandingCopy = computed(() => {
                         v-if="order.customerNote"
                         aria-labelledby="order-note-heading"
                     >
-                        <h2
-                            id="order-note-heading"
-                            class="font-display text-foreground text-lg font-black tracking-[-0.03em] uppercase"
-                        >
-                            Your note
-                        </h2>
+                        <SectionHeading
+                            eyebrow="You told us"
+                            title="Your note"
+                            heading-id="order-note-heading"
+                        />
                         <p
-                            class="text-muted-foreground mt-4 text-sm leading-relaxed whitespace-pre-line"
+                            class="border-rule shadow-card text-muted-foreground mt-6 rounded-lg border bg-white p-5 text-sm leading-relaxed whitespace-pre-line"
                         >
                             {{ order.customerNote }}
                         </p>
                     </section>
 
                     <section aria-labelledby="order-items-heading">
-                        <h2
-                            id="order-items-heading"
-                            class="font-display text-foreground text-lg font-black tracking-[-0.03em] uppercase"
-                        >
-                            What you bought
-                        </h2>
-                        <p
-                            class="text-muted-foreground mt-2 text-sm tabular-nums"
-                        >
-                            {{ order.itemCount }}
-                            {{ order.itemCount === 1 ? 'item' : 'items' }}
-                        </p>
+                        <SectionHeading
+                            eyebrow="In the box"
+                            title="What you bought"
+                            :subtitle="itemCountLabel"
+                            heading-id="order-items-heading"
+                        />
 
                         <ul
-                            class="border-rule divide-rule mt-4 divide-y border-t"
+                            class="border-rule divide-rule shadow-card mt-6 divide-y rounded-lg border bg-white"
                         >
                             <CheckoutLineItem
                                 v-for="(line, position) in order.lines"
@@ -300,18 +316,13 @@ const outstandingCopy = computed(() => {
                 </div>
 
                 <section
-                    class="bg-card rounded-xs lg:sticky lg:top-28"
+                    class="border-rule shadow-card rounded-lg border bg-white lg:sticky lg:top-28"
                     aria-labelledby="order-summary-heading"
                 >
-                    <span
-                        class="bg-ink block h-0.5 w-full"
-                        aria-hidden="true"
-                    />
-
-                    <div class="flex flex-col gap-5 p-6">
+                    <div class="flex flex-col gap-5 p-5 sm:p-6">
                         <h2
                             id="order-summary-heading"
-                            class="font-display text-foreground text-lg font-black tracking-[-0.03em] uppercase"
+                            class="font-display text-ink text-lg font-extrabold tracking-[-0.02em]"
                         >
                             Summary
                         </h2>
@@ -323,7 +334,7 @@ const outstandingCopy = computed(() => {
                             class="border-rule border-t pt-5"
                         >
                             <p
-                                class="text-muted-foreground text-[0.625rem] font-semibold tracking-[0.14em] uppercase"
+                                class="font-display text-muted-foreground text-[0.625rem] font-bold tracking-[0.14em] uppercase"
                             >
                                 Paying by
                             </p>
@@ -334,24 +345,41 @@ const outstandingCopy = computed(() => {
 
                         <p
                             v-if="order.awaitsPayment"
-                            class="bg-accent text-accent-foreground rounded-xs px-3 py-2 text-xs leading-relaxed"
+                            class="bg-tint-strong text-electric rounded-lg px-3 py-2 text-xs leading-relaxed"
                         >
                             This order is not paid for yet.
                         </p>
 
-                        <Link
-                            :href="ordersIndex()"
-                            class="font-display text-electric hover:border-electric focus-visible:outline-electric self-start border-b border-transparent pb-0.5 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
+                        <!--
+                          A plain anchor, not a <Link>: the receipt is a PDF the
+                          browser downloads, and an Inertia visit would ask the
+                          server for a page and get a file it cannot render.
+                        -->
+                        <a
+                            :href="receipt.url(order.orderNumber)"
+                            class="border-ink hover:bg-ink font-display focus-visible:outline-electric text-foreground inline-flex h-10 items-center justify-center gap-2 rounded-lg border text-sm font-bold tracking-wide transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2"
                         >
-                            All your orders
-                        </Link>
+                            <Download class="size-4" aria-hidden="true" />
+                            Download receipt
+                        </a>
 
-                        <Link
-                            :href="catalog()"
-                            class="font-display text-electric hover:border-electric focus-visible:outline-electric self-start border-b border-transparent pb-0.5 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
+                        <div
+                            class="border-rule flex flex-col items-start gap-3 border-t pt-5"
                         >
-                            Keep shopping
-                        </Link>
+                            <Link
+                                :href="ordersIndex()"
+                                class="text-electric focus-visible:outline-electric rounded-sm text-sm font-bold transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4"
+                            >
+                                All your orders
+                            </Link>
+
+                            <Link
+                                :href="catalog()"
+                                class="text-electric focus-visible:outline-electric rounded-sm text-sm font-bold transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4"
+                            >
+                                Keep shopping
+                            </Link>
+                        </div>
                     </div>
                 </section>
             </div>

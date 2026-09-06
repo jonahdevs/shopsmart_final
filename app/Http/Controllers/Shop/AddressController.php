@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Shop;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Shop\StoreAddressRequest;
+use App\Http\Requests\Shop\UpdateAddressRequest;
 use App\Models\Address;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -39,6 +40,26 @@ class AddressController extends Controller
         // spotting the addition in its own `addresses` prop, which works on a
         // plain redirect and needs nothing shared through the session.
         return back(fallback: route('checkout.index'));
+    }
+
+    public function update(UpdateAddressRequest $request, Address $address): RedirectResponse
+    {
+        abort_unless($address->user_id === $request->user()?->getKey(), 404);
+
+        DB::transaction(function () use ($request, $address): void {
+            $address->update($request->addressAttributes());
+
+            if ($address->is_default) {
+                $this->demoteOthers($address);
+            }
+        });
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('Address updated.'),
+        ]);
+
+        return back();
     }
 
     public function destroy(Request $request, Address $address): RedirectResponse

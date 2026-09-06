@@ -27,7 +27,8 @@ import { show } from '@/routes/product';
  * The table sets its own minimum width and scrolls inside `Table`'s own
  * overflow container, so a four-product comparison never gives the document a
  * horizontal scrollbar. The attribute column is pinned so the row label stays
- * on screen while the products slide past it.
+ * on screen while the products slide past it — which is also why the sticky
+ * cells repaint the card's own white behind themselves.
  */
 defineProps<{
     products: App.Data.ProductCardData[];
@@ -36,7 +37,13 @@ defineProps<{
 </script>
 
 <template>
-    <Table class="min-w-3xl border-separate border-spacing-0">
+    <!--
+      The final row's rule would land flush against the card's own bottom
+      border, reading as a double line, so it is dropped.
+    -->
+    <Table
+        class="min-w-3xl border-separate border-spacing-0 [&_tbody_tr:last-child_td]:border-b-0 [&_tbody_tr:last-child_th]:border-b-0"
+    >
         <caption class="sr-only">
             Products side by side, with each specification on its own row.
         </caption>
@@ -45,7 +52,7 @@ defineProps<{
             <TableRow class="hover:bg-transparent">
                 <TableHead
                     scope="col"
-                    class="bg-background border-rule sticky left-0 z-10 h-auto w-36 border-b p-3 align-top"
+                    class="border-rule sticky left-0 z-10 h-auto w-36 border-b bg-white p-3 align-top"
                 >
                     <span class="sr-only">Specification</span>
                 </TableHead>
@@ -59,12 +66,12 @@ defineProps<{
                     <div class="flex flex-col gap-3">
                         <Link
                             :href="show(product.slug)"
-                            class="focus-visible:outline-electric block rounded-xs outline-offset-4 focus-visible:outline-2"
+                            class="focus-visible:outline-electric block rounded-lg outline-offset-4 focus-visible:outline-2"
                             tabindex="-1"
                             aria-hidden="true"
                         >
                             <div
-                                class="aspect-square w-full overflow-hidden rounded-xs bg-white"
+                                class="border-rule aspect-square w-full overflow-hidden rounded-lg border bg-white p-3"
                             >
                                 <img
                                     v-if="product.image"
@@ -77,21 +84,24 @@ defineProps<{
                                     decoding="async"
                                     class="size-full object-contain"
                                 />
-                                <div v-else class="bg-muted size-full" />
+                                <div
+                                    v-else
+                                    class="bg-tint size-full rounded-md"
+                                />
                             </div>
                         </Link>
 
                         <div class="space-y-1.5">
                             <p
                                 v-if="product.brandName"
-                                class="font-display text-muted-foreground text-[0.6875rem] font-bold tracking-[0.14em] uppercase"
+                                class="text-muted-foreground truncate text-xs"
                             >
                                 {{ product.brandName }}
                             </p>
-                            <p class="text-foreground text-sm leading-5">
+                            <p class="text-ink text-sm leading-5 font-medium">
                                 <Link
                                     :href="show(product.slug)"
-                                    class="hover:text-electric focus-visible:outline-electric rounded-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
+                                    class="hover:text-electric focus-visible:outline-electric rounded-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
                                 >
                                     {{ product.name }}
                                 </Link>
@@ -125,9 +135,7 @@ defineProps<{
                             </p>
                         </div>
 
-                        <div
-                            class="flex flex-wrap items-center gap-x-4 gap-y-2"
-                        >
+                        <div class="flex flex-wrap items-center gap-2">
                             <SavedToggleButton
                                 :product-id="product.id"
                                 list="wishlist"
@@ -151,7 +159,7 @@ defineProps<{
             >
                 <TableHead
                     scope="row"
-                    class="bg-background border-rule text-muted-foreground sticky left-0 z-10 h-auto border-b p-3 align-top text-xs font-semibold tracking-[0.08em] whitespace-normal uppercase"
+                    class="border-rule text-muted-foreground sticky left-0 z-10 h-auto border-b bg-white p-3 align-top text-xs font-semibold whitespace-normal"
                 >
                     {{ attribute.name }}
                 </TableHead>
@@ -159,7 +167,7 @@ defineProps<{
                 <TableCell
                     v-for="(value, column) in attribute.values"
                     :key="`${attribute.name}-${column}`"
-                    class="border-rule text-foreground border-b p-3 align-top text-sm whitespace-normal"
+                    class="border-rule text-ink border-b p-3 align-top text-sm whitespace-normal"
                 >
                     <template v-if="value !== null">{{ value }}</template>
                     <template v-else>

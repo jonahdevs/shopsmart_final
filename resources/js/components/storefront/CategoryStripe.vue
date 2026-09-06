@@ -100,7 +100,7 @@ function isActive(slug: string): boolean {
             >
                 <SheetHeader class="border-rule border-b">
                     <SheetTitle
-                        class="font-display text-base font-black tracking-[-0.02em] uppercase"
+                        class="font-display text-base font-extrabold tracking-[-0.01em]"
                     >
                         All categories
                     </SheetTitle>

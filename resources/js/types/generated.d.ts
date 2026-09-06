@@ -1,5 +1,24 @@
 declare namespace App {
 namespace Data {
+export type AccountReviewData = {
+id: number,
+product: App.Data.ProductCardData,
+rating: number,
+title: string | null,
+body: string,
+status: App.Enums.ReviewStatus,
+statusLabel: string,
+statusVariant: string,
+verifiedPurchase: boolean,
+submittedAt: string | null,
+submittedAtForHumans: string | null,
+};
+export type AccountStatsData = {
+orderCount: number,
+addressCount: number,
+wishlistCount: number,
+awaitingReviewCount: number,
+};
 export type AddressData = {
 id: number | null,
 label: string | null,

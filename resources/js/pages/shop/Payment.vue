@@ -13,6 +13,7 @@ import { computed, onMounted, ref } from 'vue';
 import CheckoutLineItem from '@/components/storefront/CheckoutLineItem.vue';
 import CheckoutSummary from '@/components/storefront/CheckoutSummary.vue';
 import Price from '@/components/storefront/Price.vue';
+import SectionHeading from '@/components/storefront/SectionHeading.vue';
 import StoreBreadcrumbs from '@/components/storefront/StoreBreadcrumbs.vue';
 import type { PaystackPopConstructor } from '@/lib/paystack';
 import { loadPaystack, messageFrom } from '@/lib/paystack';
@@ -92,6 +93,11 @@ const showsBankTransfer = computed(
 );
 
 const busy = computed(() => phase.value !== 'idle');
+
+/** Stated once so the heading and the list cannot disagree about the count. */
+const itemCountLabel = computed(
+    () => `${order.itemCount} ${order.itemCount === 1 ? 'item' : 'items'}`,
+);
 
 const buttonLabel = computed(() => {
     if (phase.value === 'confirming') {
@@ -208,13 +214,14 @@ async function pay(): Promise<void> {
                 class="mt-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-3"
             >
                 <div>
-                    <span
-                        class="bg-electric block h-0.5 w-8"
-                        aria-hidden="true"
-                    />
+                    <p
+                        class="text-electric font-display text-[0.625rem] font-bold tracking-[0.18em] uppercase"
+                    >
+                        Payment
+                    </p>
                     <h1
                         id="payment-heading"
-                        class="font-display text-foreground mt-3 text-2xl font-black tracking-[-0.035em] uppercase sm:text-4xl"
+                        class="font-display text-ink mt-1 text-2xl font-extrabold tracking-[-0.03em] sm:text-4xl"
                     >
                         Pay for {{ order.orderNumber }}
                     </h1>
@@ -226,9 +233,12 @@ async function pay(): Promise<void> {
 
                 <Link
                     :href="orderShow(order.orderNumber)"
-                    class="font-display text-electric hover:border-electric focus-visible:outline-electric inline-flex items-center gap-1.5 border-b border-transparent pb-0.5 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
+                    class="text-electric focus-visible:outline-electric group inline-flex shrink-0 items-center gap-1.5 rounded-sm text-sm font-bold transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4"
                 >
-                    <ArrowLeft class="size-4" aria-hidden="true" />
+                    <ArrowLeft
+                        class="size-4 transition-transform group-hover:-translate-x-0.5 motion-reduce:transition-none"
+                        aria-hidden="true"
+                    />
                     Back to the order
                 </Link>
             </div>
@@ -236,17 +246,22 @@ async function pay(): Promise<void> {
             <div
                 class="mt-10 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]"
             >
-                <div class="flex min-w-0 flex-col gap-10">
+                <div class="flex min-w-0 flex-col gap-12">
                     <section
                         v-if="paystackEnabled"
                         aria-labelledby="payment-gateway-heading"
-                        class="bg-card rounded-xs p-6"
+                        class="border-rule shadow-card rounded-lg border bg-white p-5 sm:p-6"
                     >
                         <h2
                             id="payment-gateway-heading"
-                            class="font-display text-foreground flex items-center gap-2 text-lg font-black tracking-[-0.03em] uppercase"
+                            class="font-display text-ink flex items-center gap-2.5 text-lg font-extrabold tracking-[-0.02em]"
                         >
-                            <CreditCard class="size-5" aria-hidden="true" />
+                            <span
+                                class="bg-tint-strong text-electric flex size-9 shrink-0 items-center justify-center rounded-full"
+                                aria-hidden="true"
+                            >
+                                <CreditCard class="size-4" />
+                            </span>
                             Card or mobile money
                         </h2>
                         <p class="text-muted-foreground mt-2 text-sm">
@@ -257,7 +272,7 @@ async function pay(): Promise<void> {
 
                         <div class="mt-6">
                             <p
-                                class="text-muted-foreground text-[0.625rem] font-semibold tracking-[0.14em] uppercase"
+                                class="font-display text-muted-foreground text-[0.625rem] font-bold tracking-[0.14em] uppercase"
                             >
                                 Amount due
                             </p>
@@ -272,7 +287,7 @@ async function pay(): Promise<void> {
                         <button
                             type="button"
                             :disabled="busy"
-                            class="bg-ink font-display focus-visible:outline-electric mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-xs text-sm font-bold tracking-[0.08em] text-white uppercase transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:px-8"
+                            class="bg-electric font-display focus-visible:outline-electric mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-lg text-sm font-bold tracking-wide text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:px-8"
                             @click="pay"
                         >
                             <Loader2
@@ -286,7 +301,7 @@ async function pay(): Promise<void> {
                         <p
                             v-if="failure"
                             role="alert"
-                            class="border-destructive/40 bg-destructive/5 text-foreground mt-4 flex items-start gap-3 rounded-xs border px-4 py-3 text-sm"
+                            class="border-destructive/40 bg-destructive/5 text-foreground mt-4 flex items-start gap-3 rounded-lg border px-4 py-3 text-sm"
                         >
                             <TriangleAlert
                                 class="text-destructive mt-0.5 size-4 shrink-0"
@@ -324,13 +339,18 @@ async function pay(): Promise<void> {
                     <section
                         v-else-if="showsBankTransfer"
                         aria-labelledby="payment-bank-heading"
-                        class="bg-card rounded-xs p-6"
+                        class="border-rule shadow-card rounded-lg border bg-white p-5 sm:p-6"
                     >
                         <h2
                             id="payment-bank-heading"
-                            class="font-display text-foreground flex items-center gap-2 text-lg font-black tracking-[-0.03em] uppercase"
+                            class="font-display text-ink flex items-center gap-2.5 text-lg font-extrabold tracking-[-0.02em]"
                         >
-                            <Landmark class="size-5" aria-hidden="true" />
+                            <span
+                                class="bg-tint-strong text-electric flex size-9 shrink-0 items-center justify-center rounded-full"
+                                aria-hidden="true"
+                            >
+                                <Landmark class="size-4" />
+                            </span>
                             Pay by bank transfer
                         </h2>
                         <p class="text-muted-foreground mt-2 text-sm">
@@ -347,7 +367,7 @@ async function pay(): Promise<void> {
                         </p>
 
                         <p
-                            class="border-rule text-foreground mt-4 rounded-xs border border-dashed p-4 text-sm leading-relaxed whitespace-pre-line"
+                            class="border-rule bg-tint text-foreground mt-4 rounded-lg border border-dashed p-4 text-sm leading-relaxed whitespace-pre-line"
                         >
                             {{ bankInstructions }}
                         </p>
@@ -356,13 +376,18 @@ async function pay(): Promise<void> {
                     <section
                         v-else
                         aria-labelledby="payment-contact-heading"
-                        class="bg-card rounded-xs p-6"
+                        class="border-rule shadow-card rounded-lg border bg-white p-5 sm:p-6"
                     >
                         <h2
                             id="payment-contact-heading"
-                            class="font-display text-foreground flex items-center gap-2 text-lg font-black tracking-[-0.03em] uppercase"
+                            class="font-display text-ink flex items-center gap-2.5 text-lg font-extrabold tracking-[-0.02em]"
                         >
-                            <Mail class="size-5" aria-hidden="true" />
+                            <span
+                                class="bg-tint-strong text-electric flex size-9 shrink-0 items-center justify-center rounded-full"
+                                aria-hidden="true"
+                            >
+                                <Mail class="size-4" />
+                            </span>
                             Paying for this order
                         </h2>
                         <p class="text-muted-foreground mt-2 text-sm">
@@ -377,21 +402,15 @@ async function pay(): Promise<void> {
                     </section>
 
                     <section aria-labelledby="payment-items-heading">
-                        <h2
-                            id="payment-items-heading"
-                            class="font-display text-foreground text-lg font-black tracking-[-0.03em] uppercase"
-                        >
-                            What you are paying for
-                        </h2>
-                        <p
-                            class="text-muted-foreground mt-2 text-sm tabular-nums"
-                        >
-                            {{ order.itemCount }}
-                            {{ order.itemCount === 1 ? 'item' : 'items' }}
-                        </p>
+                        <SectionHeading
+                            eyebrow="On this order"
+                            title="What you are paying for"
+                            :subtitle="itemCountLabel"
+                            heading-id="payment-items-heading"
+                        />
 
                         <ul
-                            class="border-rule divide-rule mt-4 divide-y border-t"
+                            class="border-rule divide-rule shadow-card mt-6 divide-y rounded-lg border bg-white"
                         >
                             <CheckoutLineItem
                                 v-for="(line, position) in order.lines"
@@ -403,18 +422,13 @@ async function pay(): Promise<void> {
                 </div>
 
                 <section
-                    class="bg-card rounded-xs lg:sticky lg:top-28"
+                    class="border-rule shadow-card rounded-lg border bg-white lg:sticky lg:top-28"
                     aria-labelledby="payment-summary-heading"
                 >
-                    <span
-                        class="bg-ink block h-0.5 w-full"
-                        aria-hidden="true"
-                    />
-
-                    <div class="flex flex-col gap-5 p-6">
+                    <div class="flex flex-col gap-5 p-5 sm:p-6">
                         <h2
                             id="payment-summary-heading"
-                            class="font-display text-foreground text-lg font-black tracking-[-0.03em] uppercase"
+                            class="font-display text-ink text-lg font-extrabold tracking-[-0.02em]"
                         >
                             Summary
                         </h2>
@@ -422,7 +436,7 @@ async function pay(): Promise<void> {
                         <CheckoutSummary :totals="order.totals" />
 
                         <p
-                            class="bg-accent text-accent-foreground rounded-xs px-3 py-2 text-xs leading-relaxed"
+                            class="bg-tint-strong text-electric rounded-lg px-3 py-2 text-xs leading-relaxed"
                         >
                             This is the total the order was placed at. It does
                             not change while it waits to be paid.
@@ -430,7 +444,7 @@ async function pay(): Promise<void> {
 
                         <Link
                             :href="orderShow(order.orderNumber)"
-                            class="font-display text-electric hover:border-electric focus-visible:outline-electric self-start border-b border-transparent pb-0.5 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
+                            class="text-electric focus-visible:outline-electric self-start rounded-sm text-sm font-bold transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4"
                         >
                             View the full order
                         </Link>

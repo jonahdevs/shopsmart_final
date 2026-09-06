@@ -41,24 +41,43 @@ class ReviewSeeder extends Seeder
         $pending = 0;
 
         foreach ($products as $product) {
+            // At most ONE review per product may carry the demo account. The
+            // rest are anonymous. Attaching the same reviewer to several
+            // reviews of one product — which a per-review dice roll happily
+            // did — puts the same name twice on a product page, and blocks the
+            // "one review per customer per product" rule the account area
+            // enforces from ever being expressed as a unique index.
+            $attributedTo = fake()->boolean(30) ? $reviewer?->id : null;
+
             if ($product->id % 2 === 0) {
-                foreach (range(1, fake()->numberBetween(1, 5)) as $ignored) {
+                $count = fake()->numberBetween(1, 5);
+                $attributedIndex = $attributedTo === null ? null : fake()->numberBetween(1, $count);
+
+                foreach (range(1, $count) as $index) {
                     Review::factory()->approved()->create([
                         'product_id' => $product->id,
-                        'user_id' => fake()->boolean(30) ? $reviewer?->id : null,
+                        'user_id' => $index === $attributedIndex ? $attributedTo : null,
                         'rating' => fake()->randomElement(self::RATING_POOL),
                         'verified_purchase' => fake()->boolean(60),
                     ]);
 
                     $approved++;
                 }
+
+                // Spent on the approved batch, so the pending one below stays
+                // anonymous rather than becoming this product's second review
+                // from the same person.
+                $attributedTo = null;
             }
 
             if ($product->id % 17 === 0) {
-                foreach (range(1, fake()->numberBetween(1, 2)) as $ignored) {
+                $count = fake()->numberBetween(1, 2);
+                $attributedIndex = $attributedTo === null ? null : fake()->numberBetween(1, $count);
+
+                foreach (range(1, $count) as $index) {
                     Review::factory()->pending()->create([
                         'product_id' => $product->id,
-                        'user_id' => fake()->boolean(30) ? $reviewer?->id : null,
+                        'user_id' => $index === $attributedIndex ? $attributedTo : null,
                         'rating' => fake()->randomElement(self::RATING_POOL),
                     ]);
 

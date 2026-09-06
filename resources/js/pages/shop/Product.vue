@@ -186,13 +186,13 @@ function openUpsell(): void {
                 <div class="flex flex-col gap-2">
                     <p
                         v-if="product.brand"
-                        class="font-display text-muted-foreground text-[0.6875rem] font-bold tracking-[0.14em] uppercase"
+                        class="text-electric font-display text-[0.625rem] font-bold tracking-[0.18em] uppercase"
                     >
                         {{ product.brand.name }}
                     </p>
 
                     <h1
-                        class="font-display text-foreground text-2xl font-black tracking-[-0.03em] break-words sm:text-3xl"
+                        class="font-display text-ink text-2xl font-extrabold tracking-[-0.03em] break-words sm:text-3xl"
                     >
                         {{ product.name }}
                     </h1>
@@ -206,7 +206,7 @@ function openUpsell(): void {
                         <a
                             v-if="product.ratingCount > 0"
                             href="#reviews"
-                            class="text-electric hover:border-electric focus-visible:outline-electric border-b border-transparent text-xs focus-visible:outline-2 focus-visible:outline-offset-4"
+                            class="text-electric focus-visible:outline-electric rounded-sm text-xs font-bold transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4"
                         >
                             Read reviews
                         </a>
@@ -238,93 +238,108 @@ function openUpsell(): void {
                     {{ product.shortDescription }}
                 </p>
 
-                <!-- The one loud thing on the page. -->
-                <div class="flex flex-col gap-3">
-                    <Price
-                        size="lg"
-                        :formatted="priceSource.effectivePriceFormatted"
-                        :compare-formatted="compareFormatted"
-                        :discount-percent="priceSource.discountPercent"
-                    />
-
-                    <ProductStockBadge
-                        :status="stockSource.stockStatus"
-                        :quantity="stockSource.stockQuantity"
-                        :awaiting-selection="awaitingSelection"
-                    />
-                </div>
-
-                <ProductVariantPicker
-                    v-if="product.variationAttributes.length"
-                    v-model="selectedVariant"
-                    :attributes="product.variationAttributes"
-                    :variants="product.variants"
-                    :default-variant-id="product.defaultVariantId"
-                />
-
                 <!--
-                  The quantity is a request, not an instruction: the server
-                  clamps it to the stock rules, so the bounds the stepper
-                  renders are a courtesy only.
-
-                  `preserveState` keeps this page's instance across the redirect
-                  back onto it, so the chosen option, the quantity and the
-                  upsell dialog all survive the add instead of being remounted
-                  out from under the shopper.
+                  The buy box: price, availability, options and the add sit on
+                  one bordered card, so the part of the column that is actually
+                  a control panel is held apart from the copy above it.
                 -->
-                <Form
-                    v-bind="store.form()"
-                    :options="{ preserveScroll: true, preserveState: true }"
-                    v-slot="{ processing }"
-                    class="flex flex-col gap-3"
-                    @success="openUpsell"
+                <div
+                    class="border-rule shadow-card flex flex-col gap-5 rounded-lg border bg-white p-5 sm:p-6"
                 >
-                    <input
-                        type="hidden"
-                        name="product_id"
-                        :value="product.id"
-                    />
-                    <input
-                        v-if="selectedVariant !== null"
-                        type="hidden"
-                        name="variant_id"
-                        :value="selectedVariant.id"
-                    />
-
-                    <div class="flex flex-wrap items-center gap-3">
-                        <ProductQuantityStepper
-                            v-model="quantity"
-                            :min="product.minOrderQuantity"
-                            :max="maxQuantity"
-                            :disabled="processing || !canAddToCart"
+                    <!-- The one loud thing on the page. -->
+                    <div class="flex flex-col gap-3">
+                        <Price
+                            size="lg"
+                            :formatted="priceSource.effectivePriceFormatted"
+                            :compare-formatted="compareFormatted"
+                            :discount-percent="priceSource.discountPercent"
                         />
 
-                        <Button
-                            ref="addToCartButton"
-                            type="submit"
-                            size="lg"
-                            class="font-display h-11 min-w-48 flex-1 rounded-xs font-bold tracking-[0.08em] uppercase"
-                            :disabled="processing || !canAddToCart"
-                        >
-                            <ShoppingCart class="size-4" aria-hidden="true" />
-                            Add to cart
-                        </Button>
+                        <ProductStockBadge
+                            :status="stockSource.stockStatus"
+                            :quantity="stockSource.stockQuantity"
+                            :awaiting-selection="awaitingSelection"
+                        />
                     </div>
 
-                    <p
-                        v-if="awaitingSelection"
-                        class="text-muted-foreground text-xs"
+                    <ProductVariantPicker
+                        v-if="product.variationAttributes.length"
+                        v-model="selectedVariant"
+                        :attributes="product.variationAttributes"
+                        :variants="product.variants"
+                        :default-variant-id="product.defaultVariantId"
+                    />
+
+                    <!--
+                      The quantity is a request, not an instruction: the server
+                      clamps it to the stock rules, so the bounds the stepper
+                      renders are a courtesy only.
+
+                      `preserveState` keeps this page's instance across the
+                      redirect back onto it, so the chosen option, the quantity
+                      and the upsell dialog all survive the add instead of being
+                      remounted out from under the shopper.
+                    -->
+                    <Form
+                        v-bind="store.form()"
+                        :options="{
+                            preserveScroll: true,
+                            preserveState: true,
+                        }"
+                        v-slot="{ processing }"
+                        class="flex flex-col gap-3"
+                        @success="openUpsell"
                     >
-                        Choose every option above to add this to your cart.
-                    </p>
-                    <p
-                        v-else-if="product.minOrderQuantity > 1"
-                        class="text-muted-foreground text-xs"
-                    >
-                        Sold in a minimum of
-                        {{ product.minOrderQuantity }} units.
-                    </p>
-                </Form>
+                        <input
+                            type="hidden"
+                            name="product_id"
+                            :value="product.id"
+                        />
+                        <input
+                            v-if="selectedVariant !== null"
+                            type="hidden"
+                            name="variant_id"
+                            :value="selectedVariant.id"
+                        />
+
+                        <div class="flex flex-wrap items-center gap-3">
+                            <ProductQuantityStepper
+                                v-model="quantity"
+                                :min="product.minOrderQuantity"
+                                :max="maxQuantity"
+                                :disabled="processing || !canAddToCart"
+                            />
+
+                            <Button
+                                ref="addToCartButton"
+                                type="submit"
+                                size="lg"
+                                class="font-display h-11 min-w-48 flex-1 rounded-lg text-base font-bold"
+                                :disabled="processing || !canAddToCart"
+                            >
+                                <ShoppingCart
+                                    class="size-4"
+                                    aria-hidden="true"
+                                />
+                                Add to cart
+                            </Button>
+                        </div>
+
+                        <p
+                            v-if="awaitingSelection"
+                            class="text-muted-foreground text-xs"
+                        >
+                            Choose every option above to add this to your cart.
+                        </p>
+                        <p
+                            v-else-if="product.minOrderQuantity > 1"
+                            class="text-muted-foreground text-xs"
+                        >
+                            Sold in a minimum of
+                            {{ product.minOrderQuantity }} units.
+                        </p>
+                    </Form>
+                </div>
             </div>
         </div>
 
@@ -344,7 +359,10 @@ function openUpsell(): void {
             class="mt-16"
         >
             <SectionHeading title="Specifications" />
-            <div class="mt-6">
+            <!-- The table scrolls inside the card, never the page body. -->
+            <div
+                class="border-rule shadow-card mt-6 rounded-lg border bg-white p-5 sm:p-6"
+            >
                 <ProductSpecifications
                     :specifications="product.specifications"
                     :technical-specification="product.technicalSpecification"

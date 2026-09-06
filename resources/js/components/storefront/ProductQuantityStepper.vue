@@ -56,12 +56,12 @@ function onChange(event: Event): void {
 
 <template>
     <div
-        class="border-rule inline-flex items-stretch rounded-xs border"
+        class="border-rule inline-flex items-stretch overflow-hidden rounded-lg border bg-white"
         :class="disabled ? 'opacity-50' : ''"
     >
         <button
             type="button"
-            class="focus-visible:outline-electric text-foreground enabled:hover:bg-muted flex size-11 items-center justify-center rounded-l-xs transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+            class="focus-visible:outline-electric text-ink enabled:hover:bg-tint enabled:hover:text-electric flex size-11 items-center justify-center rounded-l-lg transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
             :disabled="!canDecrease"
             :aria-label="`Decrease quantity to ${Math.max(min, quantity - 1)}`"
             @click="step(-1)"
@@ -86,7 +86,7 @@ function onChange(event: Event): void {
 
         <button
             type="button"
-            class="focus-visible:outline-electric text-foreground enabled:hover:bg-muted flex size-11 items-center justify-center rounded-r-xs transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+            class="focus-visible:outline-electric text-ink enabled:hover:bg-tint enabled:hover:text-electric flex size-11 items-center justify-center rounded-r-lg transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
             :disabled="!canIncrease"
             :aria-label="`Increase quantity to ${max === null ? quantity + 1 : Math.min(max, quantity + 1)}`"
             @click="step(1)"

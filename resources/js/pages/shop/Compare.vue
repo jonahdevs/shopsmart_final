@@ -12,6 +12,10 @@ import { clear } from '@/routes/compare';
  * The cap is the server's, and it drops the oldest entry rather than refusing a
  * new one — so a full tray is stated as a fact rather than presented as an
  * error, and nothing here tries to block an add.
+ *
+ * The matrix is wrapped in the storefront's card, which is what gives the
+ * table its edge: the scrolling happens in `Table`'s own overflow container
+ * inside that card, so the page body never moves sideways.
  */
 const { compare } = defineProps<{ compare: App.Data.CompareData }>();
 
@@ -21,16 +25,20 @@ const isFull = computed(() => compare.products.length >= compare.limit);
 <template>
     <Head title="Compare products" />
 
-    <div class="container py-8">
-        <div class="flex flex-wrap items-end justify-between gap-4">
+    <div class="container py-10">
+        <div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
             <div>
-                <span class="bg-electric block h-0.5 w-8" aria-hidden="true" />
+                <p
+                    class="text-electric font-display text-[0.625rem] font-bold tracking-[0.18em] uppercase"
+                >
+                    Side by side
+                </p>
                 <h1
-                    class="font-display text-foreground mt-3 text-2xl font-black tracking-[-0.035em] uppercase sm:text-4xl"
+                    class="font-display text-ink mt-0.5 text-3xl font-extrabold tracking-[-0.03em] sm:text-4xl"
                 >
                     Compare
                 </h1>
-                <p class="text-muted-foreground mt-2 text-sm tabular-nums">
+                <p class="text-muted-foreground mt-1 text-sm tabular-nums">
                     <template v-if="compare.products.length === 0">
                         Nothing to compare yet.
                     </template>
@@ -49,7 +57,7 @@ const isFull = computed(() => compare.products.length >= compare.limit);
                 <button
                     type="submit"
                     :disabled="processing"
-                    class="text-muted-foreground hover:text-destructive focus-visible:outline-electric rounded-xs text-sm underline underline-offset-4 transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 disabled:opacity-50"
+                    class="border-rule text-muted-foreground hover:border-destructive hover:text-destructive focus-visible:outline-electric rounded-lg border bg-white px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
                 >
                     Clear the comparison
                 </button>
@@ -58,16 +66,19 @@ const isFull = computed(() => compare.products.length >= compare.limit);
 
         <SavedEmptyState
             v-if="compare.products.length === 0"
-            class="mt-10"
+            class="mt-8"
             list="compare"
         />
 
-        <div v-else class="mt-10 flex flex-col gap-6">
+        <div v-else class="mt-8 flex flex-col gap-4">
             <p
                 v-if="isFull"
-                class="bg-accent text-accent-foreground flex items-start gap-2 rounded-xs px-4 py-3 text-sm"
+                class="bg-tint border-rule text-ink flex items-start gap-2.5 rounded-lg border px-4 py-3 text-sm"
             >
-                <Info class="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                <Info
+                    class="text-electric mt-0.5 size-4 shrink-0"
+                    aria-hidden="true"
+                />
                 <span>
                     You are comparing the maximum of
                     {{ compare.limit }} products. Adding another drops the one
@@ -76,10 +87,14 @@ const isFull = computed(() => compare.products.length >= compare.limit);
                 </span>
             </p>
 
-            <CompareTable
-                :products="compare.products"
-                :attributes="compare.attributes"
-            />
+            <div
+                class="border-rule shadow-card overflow-hidden rounded-lg border bg-white"
+            >
+                <CompareTable
+                    :products="compare.products"
+                    :attributes="compare.attributes"
+                />
+            </div>
 
             <p
                 v-if="compare.attributes.length === 0"

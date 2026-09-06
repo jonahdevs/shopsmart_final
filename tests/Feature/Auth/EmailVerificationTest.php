@@ -111,7 +111,11 @@ test('an unverified user is turned away from a route behind the verified middlew
 test('a verified user reaches the same route', function () {
     $user = User::factory()->create();
 
+    // Past the `verified` middleware, which is what this asserts. Since phase 6
+    // `dashboard` forks by role, and a user with no role is a customer, so the
+    // route it reaches forwards them to their account rather than rendering the
+    // staff page — the point is that it is not the verification notice.
     $this->actingAs($user)
         ->get(route('dashboard'))
-        ->assertOk();
+        ->assertRedirect(route('account.dashboard'));
 });

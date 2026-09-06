@@ -89,7 +89,7 @@ async function onChange(event: Event, submit: () => void): Promise<void> {
         v-bind="update.form()"
         :options="{ preserveScroll: true }"
         v-slot="{ processing, submit }"
-        class="border-rule inline-flex items-stretch rounded-xs border"
+        class="border-rule inline-flex items-stretch rounded-lg border bg-white"
     >
         <input type="hidden" name="product_id" :value="item.productId" />
         <input
@@ -101,7 +101,7 @@ async function onChange(event: Event, submit: () => void): Promise<void> {
 
         <button
             type="button"
-            class="focus-visible:outline-electric text-foreground enabled:hover:bg-muted flex size-10 items-center justify-center rounded-l-xs transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+            class="focus-visible:outline-electric text-ink enabled:hover:bg-tint enabled:hover:text-electric flex size-10 items-center justify-center rounded-l-lg transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
             :disabled="processing || !canDecrease"
             :aria-label="`Reduce quantity of ${item.name}`"
             @click="step(-1, submit)"
@@ -122,13 +122,13 @@ async function onChange(event: Event, submit: () => void): Promise<void> {
             :max="item.maxQuantity ?? undefined"
             :value="quantity"
             :disabled="processing"
-            class="font-display focus-visible:outline-electric w-12 [appearance:textfield] border-none bg-transparent text-center text-sm font-bold tabular-nums focus-visible:outline-2 focus-visible:-outline-offset-2 disabled:opacity-40 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            class="font-display text-ink focus-visible:outline-electric w-12 [appearance:textfield] border-none bg-transparent text-center text-sm font-bold tabular-nums focus-visible:outline-2 focus-visible:-outline-offset-2 disabled:opacity-40 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             @change="onChange($event, submit)"
         />
 
         <button
             type="button"
-            class="focus-visible:outline-electric text-foreground enabled:hover:bg-muted flex size-10 items-center justify-center rounded-r-xs transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+            class="focus-visible:outline-electric text-ink enabled:hover:bg-tint enabled:hover:text-electric flex size-10 items-center justify-center rounded-r-lg transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
             :disabled="processing || !canIncrease"
             :aria-label="`Increase quantity of ${item.name}`"
             @click="step(1, submit)"

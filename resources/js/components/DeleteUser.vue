@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { usePortalTheme } from '@/composables/usePortalTheme';
 import { Form } from '@inertiajs/vue3';
 import { useTemplateRef } from 'vue';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
@@ -17,6 +18,10 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+
+// Portalled content escapes the `.storefront` wrapper, so it has to be
+// re-themed per audience — see the composable.
+const portalTheme = usePortalTheme();
 
 const passwordInput = useTemplateRef('passwordInput');
 </script>
@@ -43,7 +48,7 @@ const passwordInput = useTemplateRef('passwordInput');
                         >Delete account</Button
                     >
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent :class="portalTheme">
                     <Form
                         v-bind="ProfileController.destroy.form()"
                         reset-on-success

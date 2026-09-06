@@ -8,8 +8,8 @@ use App\Http\Controllers\Shop\CategoryController;
 use App\Http\Controllers\Shop\CheckoutController;
 use App\Http\Controllers\Shop\CheckoutCouponController;
 use App\Http\Controllers\Shop\CompareController;
+use App\Http\Controllers\Shop\DefaultAddressController;
 use App\Http\Controllers\Shop\HomeController;
-use App\Http\Controllers\Shop\OrderController;
 use App\Http\Controllers\Shop\PaymentController;
 use App\Http\Controllers\Shop\ProductController;
 use App\Http\Controllers\Shop\SearchController;
@@ -74,7 +74,7 @@ Route::delete('compare/all', [CompareController::class, 'clear'])->name('compare
 
 /*
 |--------------------------------------------------------------------------
-| Checkout and orders
+| Checkout and payment
 |--------------------------------------------------------------------------
 |
 | The one part of the storefront that is not open to guests. `customer` keeps
@@ -84,8 +84,10 @@ Route::delete('compare/all', [CompareController::class, 'clear'])->name('compare
 | The delivery-vs-collection choice travels in the query string rather than the
 | session, so it is a plain link the shopper can go back through.
 |
-| `orders.show` doubles as the confirmation page — the order IS the receipt, so
-| there is no separate throwaway page that stops working on a refresh.
+| The order pages themselves moved to routes/account.php under /account/orders,
+| keeping their names. `orders.show` still doubles as the confirmation page —
+| the order IS the receipt, so there is no separate throwaway page that stops
+| working on a refresh.
 |
 */
 
@@ -96,11 +98,14 @@ Route::middleware(['auth', 'verified', 'customer'])->group(function () {
     Route::post('checkout/coupon', [CheckoutCouponController::class, 'store'])->name('checkout.coupon.store');
     Route::delete('checkout/coupon', [CheckoutCouponController::class, 'destroy'])->name('checkout.coupon.destroy');
 
+    // The address book, kept together here because checkout writes to it as
+    // well as the account area reading it. Every action scopes to the
+    // signed-in user; promoting a default is its own controller because it
+    // necessarily demotes the others.
     Route::post('addresses', [AddressController::class, 'store'])->name('addresses.store');
+    Route::patch('addresses/{address}', [AddressController::class, 'update'])->name('addresses.update');
+    Route::patch('addresses/{address}/default', [DefaultAddressController::class, 'update'])->name('addresses.default');
     Route::delete('addresses/{address}', [AddressController::class, 'destroy'])->name('addresses.destroy');
-
-    Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
-    Route::get('orders/{order:order_number}', [OrderController::class, 'show'])->name('orders.show');
 
     // Paying is its own step, repeatable for as long as the order is unpaid: a
     // closed popup or a dropped connection must not cost the shopper the order

@@ -34,21 +34,24 @@ defineProps<{
                 preserve-scroll
                 preserve-state
                 :aria-current="method.value === selected ? 'true' : undefined"
-                class="focus-visible:outline-electric flex items-center gap-3 rounded-xs border p-4 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+                class="shadow-card hover:shadow-card-hover focus-visible:outline-electric flex items-center gap-3 rounded-lg border p-4 text-sm transition-shadow duration-200 focus-visible:outline-2 focus-visible:outline-offset-2"
                 :class="
                     method.value === selected
-                        ? 'border-ink bg-card text-foreground'
-                        : 'border-rule text-muted-foreground hover:border-ink'
+                        ? 'border-electric bg-tint text-ink'
+                        : 'border-rule text-muted-foreground bg-white'
                 "
             >
                 <component
                     :is="method.value === 'pickup' ? MapPin : Truck"
                     class="size-4 shrink-0"
+                    :class="
+                        method.value === selected
+                            ? 'text-electric'
+                            : 'text-muted-foreground'
+                    "
                     aria-hidden="true"
                 />
-                <span
-                    class="font-display text-sm font-bold tracking-[0.04em] uppercase"
-                >
+                <span class="font-display text-sm font-bold tracking-[-0.01em]">
                     {{ method.label }}
                 </span>
             </Link>
@@ -56,9 +59,12 @@ defineProps<{
 
         <p
             v-if="selected === 'pickup'"
-            class="bg-muted text-foreground flex items-start gap-2 rounded-xs px-4 py-3 text-sm leading-relaxed"
+            class="bg-tint text-foreground flex items-start gap-2 rounded-lg px-4 py-3 text-sm leading-relaxed"
         >
-            <MapPin class="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            <MapPin
+                class="text-electric mt-0.5 size-4 shrink-0"
+                aria-hidden="true"
+            />
             <span>
                 Collect from
                 <span class="font-medium">{{ pickupAddress }}</span

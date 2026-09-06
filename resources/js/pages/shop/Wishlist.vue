@@ -9,6 +9,10 @@ import { clear } from '@/routes/wishlist';
  *
  * The server sends products in saved order and has already dropped anything
  * that has since left the storefront, so this renders the list as given.
+ *
+ * The title keeps the section rhythm — blue eyebrow, heavy display line, muted
+ * subtitle — as an `<h1>` rather than composing `SectionHeading`, which is an
+ * `<h2>` and carries a link rather than a form submit.
  */
 const { products } = defineProps<{
     products: App.Data.ProductCardData[];
@@ -18,16 +22,20 @@ const { products } = defineProps<{
 <template>
     <Head title="Your wishlist" />
 
-    <div class="container py-8">
-        <div class="flex flex-wrap items-end justify-between gap-4">
+    <div class="container py-10">
+        <div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
             <div>
-                <span class="bg-electric block h-0.5 w-8" aria-hidden="true" />
+                <p
+                    class="text-electric font-display text-[0.625rem] font-bold tracking-[0.18em] uppercase"
+                >
+                    Saved
+                </p>
                 <h1
-                    class="font-display text-foreground mt-3 text-2xl font-black tracking-[-0.035em] uppercase sm:text-4xl"
+                    class="font-display text-ink mt-0.5 text-3xl font-extrabold tracking-[-0.03em] sm:text-4xl"
                 >
                     Your wishlist
                 </h1>
-                <p class="text-muted-foreground mt-2 text-sm tabular-nums">
+                <p class="text-muted-foreground mt-1 text-sm tabular-nums">
                     <template v-if="products.length === 0">
                         Nothing saved yet.
                     </template>
@@ -47,7 +55,7 @@ const { products } = defineProps<{
                 <button
                     type="submit"
                     :disabled="processing"
-                    class="text-muted-foreground hover:text-destructive focus-visible:outline-electric rounded-xs text-sm underline underline-offset-4 transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 disabled:opacity-50"
+                    class="border-rule text-muted-foreground hover:border-destructive hover:text-destructive focus-visible:outline-electric rounded-lg border bg-white px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
                 >
                     Clear the wishlist
                 </button>
@@ -56,13 +64,13 @@ const { products } = defineProps<{
 
         <SavedEmptyState
             v-if="products.length === 0"
-            class="mt-10"
+            class="mt-8"
             list="wishlist"
         />
 
         <ul
             v-else
-            class="mt-10 grid grid-cols-2 gap-x-4 gap-y-9 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+            class="mt-8 grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
         >
             <SavedProductCard
                 v-for="(product, index) in products"

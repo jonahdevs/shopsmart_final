@@ -144,7 +144,7 @@ watch(
             class="flex flex-col gap-2.5"
         >
             <legend
-                class="font-display text-foreground text-[0.6875rem] font-bold tracking-[0.14em] uppercase"
+                class="text-electric font-display text-[0.625rem] font-bold tracking-[0.18em] uppercase"
             >
                 {{ attribute.name }}
                 <span class="text-muted-foreground">
@@ -157,12 +157,15 @@ watch(
               A dropdown axis keeps every option selectable and states the
               unavailable ones in the option text: disabling them would let two
               dropdowns deadlock one another.
+
+              The swatch axis below is a row of chips, so it rounds fully
+              against the card radius the rest of the buy box carries.
             -->
             <div v-if="attribute.type === 'select'" class="relative max-w-xs">
                 <select
                     :value="selection[attribute.id] ?? ''"
                     :aria-label="attribute.name"
-                    class="border-rule focus:border-electric focus-visible:outline-electric w-full appearance-none rounded-xs border bg-white py-2 pr-9 pl-3 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
+                    class="border-rule focus:border-electric focus-visible:outline-electric shadow-card text-ink w-full appearance-none rounded-lg border bg-white py-2.5 pr-9 pl-3 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
                     @change="onSelectChange(attribute.id, $event)"
                 >
                     <option value="" disabled>
@@ -193,11 +196,11 @@ watch(
                     :key="value.id"
                     type="button"
                     :aria-pressed="selection[attribute.id] === value.id"
-                    class="focus-visible:outline-electric inline-flex items-center gap-2 rounded-xs border px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+                    class="focus-visible:outline-electric inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
                     :class="[
                         selection[attribute.id] === value.id
                             ? 'border-electric bg-accent text-accent-foreground'
-                            : 'border-rule hover:border-ink text-foreground',
+                            : 'border-rule hover:border-electric hover:text-electric text-ink',
                         unavailableValueIds.has(value.id)
                             ? 'border-dashed line-through opacity-55'
                             : '',

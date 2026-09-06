@@ -18,6 +18,9 @@ import { show } from '@/routes/product';
  *
  * The image links to the product as well as the title does, so it is hidden
  * from assistive tech rather than read out as a second identical destination.
+ *
+ * The line is a row inside the cart card, so it carries no border of its own —
+ * the list divides its children on `--rule` and the card holds the edge.
  */
 const { item } = defineProps<{ item: App.Data.CartItemData }>();
 
@@ -27,14 +30,16 @@ const priceDirection = computed(() =>
 </script>
 
 <template>
-    <li class="flex gap-4 py-6">
+    <li class="flex gap-4 p-4 sm:gap-5 sm:p-6">
         <Link
             :href="show(item.slug)"
-            class="focus-visible:outline-electric shrink-0 rounded-xs outline-offset-4 focus-visible:outline-2"
+            class="focus-visible:outline-electric shrink-0 rounded-lg outline-offset-4 focus-visible:outline-2"
             tabindex="-1"
             aria-hidden="true"
         >
-            <div class="size-20 overflow-hidden rounded-xs bg-white sm:size-24">
+            <div
+                class="border-rule size-20 overflow-hidden rounded-lg border bg-white p-1.5 sm:size-24"
+            >
                 <img
                     v-if="item.image"
                     :src="item.image.thumbUrl ?? item.image.url"
@@ -43,7 +48,7 @@ const priceDirection = computed(() =>
                     decoding="async"
                     class="size-full object-contain"
                 />
-                <div v-else class="bg-muted size-full" />
+                <div v-else class="bg-tint size-full rounded-md" />
             </div>
         </Link>
 
@@ -54,14 +59,14 @@ const priceDirection = computed(() =>
                 <div class="min-w-0 space-y-1">
                     <p
                         v-if="item.brandName"
-                        class="font-display text-muted-foreground text-[0.6875rem] font-bold tracking-[0.14em] uppercase"
+                        class="text-muted-foreground truncate text-xs"
                     >
                         {{ item.brandName }}
                     </p>
-                    <h3 class="text-foreground text-sm leading-5">
+                    <h3 class="text-ink text-sm leading-5 font-medium">
                         <Link
                             :href="show(item.slug)"
-                            class="hover:text-electric focus-visible:outline-electric rounded-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
+                            class="hover:text-electric focus-visible:outline-electric rounded-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
                         >
                             {{ item.name }}
                         </Link>
@@ -78,11 +83,7 @@ const priceDirection = computed(() =>
                 </div>
 
                 <div class="shrink-0">
-                    <p
-                        class="text-muted-foreground text-[0.625rem] font-semibold tracking-[0.14em] uppercase"
-                    >
-                        Line total
-                    </p>
+                    <p class="text-muted-foreground text-xs">Line total</p>
                     <div class="mt-1">
                         <Price size="sm" :formatted="item.lineTotalFormatted" />
                     </div>
@@ -91,11 +92,11 @@ const priceDirection = computed(() =>
 
             <div
                 v-if="item.priceChanged"
-                class="bg-muted flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xs px-3 py-2"
+                class="bg-tint border-rule flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border px-3 py-2"
             >
-                <p class="text-foreground flex items-center gap-2 text-xs">
+                <p class="text-ink flex items-center gap-2 text-xs">
                     <TriangleAlert
-                        class="size-3.5 shrink-0"
+                        class="text-electric size-3.5 shrink-0"
                         aria-hidden="true"
                     />
                     <span>
@@ -118,11 +119,7 @@ const priceDirection = computed(() =>
 
             <div class="flex flex-wrap items-center gap-x-6 gap-y-3">
                 <div>
-                    <p
-                        class="text-muted-foreground text-[0.625rem] font-semibold tracking-[0.14em] uppercase"
-                    >
-                        Each
-                    </p>
+                    <p class="text-muted-foreground text-xs">Each</p>
                     <div class="mt-1">
                         <Price size="sm" :formatted="item.unitPriceFormatted" />
                     </div>

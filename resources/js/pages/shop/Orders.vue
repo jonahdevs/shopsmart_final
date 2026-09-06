@@ -49,10 +49,14 @@ const currentPage = computed(() => {
             <StoreBreadcrumbs :items="breadcrumbs" />
 
             <div class="mt-6">
-                <span class="bg-electric block h-0.5 w-8" aria-hidden="true" />
+                <p
+                    class="text-electric font-display text-[0.625rem] font-bold tracking-[0.18em] uppercase"
+                >
+                    Your history
+                </p>
                 <h1
                     id="orders-heading"
-                    class="font-display text-foreground mt-3 text-2xl font-black tracking-[-0.035em] uppercase sm:text-4xl"
+                    class="font-display text-ink mt-1 text-2xl font-extrabold tracking-[-0.03em] sm:text-4xl"
                 >
                     Your orders
                 </h1>
@@ -61,13 +65,16 @@ const currentPage = computed(() => {
                 </p>
             </div>
 
-            <Empty v-if="orders.length === 0" class="border-rule mt-10 border">
+            <Empty
+                v-if="orders.length === 0"
+                class="border-rule mt-8 rounded-lg border"
+            >
                 <EmptyHeader>
                     <EmptyMedia variant="icon">
                         <Package aria-hidden="true" />
                     </EmptyMedia>
                     <EmptyTitle
-                        class="font-display text-lg font-black tracking-[-0.02em] uppercase"
+                        class="font-display text-lg font-extrabold tracking-[-0.02em]"
                     >
                         No orders yet
                     </EmptyTitle>
@@ -79,14 +86,14 @@ const currentPage = computed(() => {
 
                 <Link
                     :href="catalog()"
-                    class="bg-electric font-display focus-visible:outline-electric rounded-xs px-4 py-2 text-sm font-bold tracking-wide text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2"
+                    class="bg-electric font-display focus-visible:outline-electric rounded-lg px-4 py-2 text-sm font-bold tracking-wide text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
                     Start shopping
                 </Link>
             </Empty>
 
             <template v-else>
-                <ul class="border-rule mt-10 border-t">
+                <ul class="border-rule mt-8 border-t">
                     <OrderCard
                         v-for="order in orders"
                         :key="order.id"
@@ -102,7 +109,7 @@ const currentPage = computed(() => {
                     <Link
                         v-if="currentPage > 1"
                         :href="index.url({ query: { page: currentPage - 1 } })"
-                        class="border-ink hover:bg-ink font-display focus-visible:outline-electric text-foreground inline-flex items-center gap-2 rounded-xs border px-4 py-2 text-sm font-bold tracking-wide transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+                        class="border-ink hover:bg-ink font-display focus-visible:outline-electric text-foreground inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-bold tracking-wide transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2"
                     >
                         <ArrowLeft class="size-4" aria-hidden="true" />
                         Newer orders
@@ -112,7 +119,7 @@ const currentPage = computed(() => {
                     <Link
                         v-if="hasMore"
                         :href="index.url({ query: { page: currentPage + 1 } })"
-                        class="border-ink hover:bg-ink font-display focus-visible:outline-electric text-foreground inline-flex items-center gap-2 rounded-xs border px-4 py-2 text-sm font-bold tracking-wide transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+                        class="border-ink hover:bg-ink font-display focus-visible:outline-electric text-foreground inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-bold tracking-wide transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2"
                     >
                         Older orders
                         <ArrowRight class="size-4" aria-hidden="true" />

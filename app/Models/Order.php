@@ -6,6 +6,8 @@ use App\Enums\DeliveryMethod;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\StockStatus;
+use App\Notifications\OrderPaid;
+use App\Notifications\OrderStatusChanged;
 use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -15,6 +17,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Notifications\Notification;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -233,7 +236,67 @@ class Order extends Model
         $this->deductStock();
         $this->recordCouponUse();
 
+        // Inside the winning branch on purpose. The loser has already returned
+        // false above, so a webhook replaying a confirmation the browser
+        // already made cannot send a second receipt.
+        $this->notifyCustomer(new OrderPaid($this));
+
         return true;
+    }
+
+    /**
+     * Move the order's fulfilment status, telling the customer once.
+     *
+     * Guarded the same way {@see markPaid()} is, and for the same reason: two
+     * staff members marking an order delivered at the same moment must produce
+     * one transition and one email, not two.
+     *
+     * Returns false when the order was already in that status, or when another
+     * request moved it out from under this one.
+     */
+    public function changeStatus(OrderStatus $status): bool
+    {
+        $previous = $this->status;
+
+        if ($previous === $status) {
+            return false;
+        }
+
+        $moved = static::query()
+            ->whereKey($this->getKey())
+            ->where('status', $previous)
+            ->update([
+                'status' => $status,
+                'updated_at' => now(),
+                ...($status === OrderStatus::Cancelled ? ['cancelled_at' => now()] : []),
+            ]);
+
+        if ($moved === 0) {
+            return false;
+        }
+
+        $this->forceFill([
+            'status' => $status,
+            ...($status === OrderStatus::Cancelled ? ['cancelled_at' => now()] : []),
+        ])->syncOriginal();
+
+        $this->notifyCustomer(new OrderStatusChanged($this, $previous));
+
+        return true;
+    }
+
+    /**
+     * Mail the person who placed this order.
+     *
+     * Silent once the account has been deleted: the order keeps the snapshotted
+     * name and email for the record, but a closed account is not a mailbox this
+     * store should still be writing to.
+     */
+    private function notifyCustomer(Notification $notification): void
+    {
+        $this->loadMissing('user');
+
+        $this->user?->notify($notification);
     }
 
     /**

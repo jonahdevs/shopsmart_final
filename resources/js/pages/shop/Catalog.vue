@@ -45,10 +45,18 @@ const heading = computed(() => {
     <Head :title="heading" />
 
     <div class="container py-8">
+        <!--
+          The page's own title carries the section rhythm SectionHeading owns
+          for the <h2>s below it: blue eyebrow, heavy display line.
+        -->
         <header>
-            <span class="bg-electric block h-0.5 w-8" aria-hidden="true" />
+            <p
+                class="text-electric font-display text-[0.625rem] font-bold tracking-[0.18em] uppercase"
+            >
+                Catalogue
+            </p>
             <h1
-                class="font-display text-foreground mt-3 text-2xl font-black tracking-[-0.035em] uppercase sm:text-4xl"
+                class="font-display text-ink mt-1 text-2xl font-extrabold tracking-[-0.03em] sm:text-4xl"
             >
                 {{ heading }}
             </h1>

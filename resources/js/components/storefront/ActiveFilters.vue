@@ -123,7 +123,7 @@ const chips = computed<Chip[]>(() => {
             v-for="chip in chips"
             :key="chip.key"
             type="button"
-            class="border-rule hover:border-electric hover:text-electric focus-visible:outline-electric text-foreground inline-flex max-w-full items-center gap-1.5 rounded-xs border px-2.5 py-1 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+            class="border-rule hover:border-electric hover:text-electric focus-visible:outline-electric text-ink inline-flex max-w-full items-center gap-1.5 rounded-full border bg-white px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
             @click="emit('update', chip.patch)"
         >
             <span class="truncate">{{ chip.label }}</span>
@@ -133,7 +133,7 @@ const chips = computed<Chip[]>(() => {
 
         <button
             type="button"
-            class="font-display text-electric hover:border-electric focus-visible:outline-electric ml-1 shrink-0 border-b border-transparent text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
+            class="text-electric focus-visible:outline-electric ml-1 shrink-0 rounded-sm text-xs font-bold transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4"
             @click="emit('update', clearedFilters())"
         >
             Clear all

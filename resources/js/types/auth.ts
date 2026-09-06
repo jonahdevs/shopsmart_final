@@ -12,6 +12,13 @@ export type User = {
 
 export type Auth = {
     user: User;
+    /**
+     * Whether the signed-in user holds any role. Shared on every page response
+     * by HandleInertiaRequests so the settings pages can pick their chrome —
+     * customers get the storefront shell, staff keep AppLayout — without each
+     * page having to ask the server. False for a guest.
+     */
+    isStaff: boolean;
 };
 
 export type Passkey = {

@@ -23,13 +23,13 @@ const emit = defineEmits<{ update: [patch: CatalogFilterPatch] }>();
 </script>
 
 <template>
-    <Empty class="border-rule border">
+    <Empty class="border-rule shadow-card border bg-white">
         <EmptyHeader>
-            <EmptyMedia variant="icon">
+            <EmptyMedia variant="icon" class="bg-tint text-electric rounded-lg">
                 <PackageSearch aria-hidden="true" />
             </EmptyMedia>
             <EmptyTitle
-                class="font-display text-lg font-black tracking-[-0.02em] uppercase"
+                class="font-display text-ink text-xl font-extrabold tracking-[-0.02em]"
             >
                 Nothing here yet
             </EmptyTitle>
@@ -48,7 +48,7 @@ const emit = defineEmits<{ update: [patch: CatalogFilterPatch] }>();
             <button
                 v-if="hasActiveFilters"
                 type="button"
-                class="bg-electric font-display focus-visible:outline-electric rounded-xs px-4 py-2 text-sm font-bold tracking-wide text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2"
+                class="bg-electric focus-visible:outline-electric rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2"
                 @click="emit('update', clearedFilters())"
             >
                 Clear all filters
@@ -56,7 +56,7 @@ const emit = defineEmits<{ update: [patch: CatalogFilterPatch] }>();
 
             <Link
                 :href="index()"
-                class="font-display text-electric hover:border-electric focus-visible:outline-electric border-b border-transparent pb-0.5 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
+                class="text-electric focus-visible:outline-electric rounded-sm text-sm font-bold transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4"
             >
                 Browse categories
             </Link>

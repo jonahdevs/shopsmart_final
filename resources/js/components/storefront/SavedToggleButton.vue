@@ -31,7 +31,7 @@ const {
     /**
      * Renders the control as the circular glyph that floats on a product
      * card's artwork. The label moves to `aria-label`, so the button keeps its
-     * name; everywhere else the text stays visible.
+     * name; everywhere else the text stays visible as a pill chip.
      */
     iconOnly?: boolean;
 }>();
@@ -94,14 +94,18 @@ const atCompareLimit = computed(
                     : undefined
             "
             class="focus-visible:outline-electric inline-flex items-center transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
-            :class="[
+            :class="
                 iconOnly
-                    ? 'border-rule shadow-card hover:border-electric size-9 justify-center rounded-full border bg-white'
-                    : 'gap-1.5 rounded-xs text-xs focus-visible:outline-offset-4',
-                saved
-                    ? 'text-electric'
-                    : 'text-muted-foreground hover:text-electric',
-            ]"
+                    ? [
+                          'border-rule shadow-card hover:border-electric size-9 justify-center rounded-full border bg-white',
+                          saved
+                              ? 'text-electric'
+                              : 'text-muted-foreground hover:text-electric',
+                      ]
+                    : saved
+                      ? 'border-electric/40 bg-tint text-electric gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium'
+                      : 'border-rule text-muted-foreground hover:border-electric hover:text-electric gap-1.5 rounded-full border bg-white px-3 py-1.5 text-xs font-medium'
+            "
         >
             <component
                 :is="list === 'wishlist' ? Heart : Scale"

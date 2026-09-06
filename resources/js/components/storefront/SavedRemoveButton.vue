@@ -11,6 +11,9 @@ import { destroy as wishlistDestroy } from '@/routes/wishlist';
  * Always `destroy`, never a toggle: the two endpoints are each idempotent, so a
  * double click removes something that is already gone rather than putting it
  * back.
+ *
+ * A pill, so it pairs with `SavedToggleButton` wherever the two sit together
+ * under a card or above a comparison column.
  */
 const { list } = defineProps<{
     productId: number;
@@ -34,7 +37,7 @@ const action = computed(() =>
         <button
             type="submit"
             :disabled="processing"
-            class="text-muted-foreground hover:text-destructive focus-visible:outline-electric inline-flex items-center gap-1.5 rounded-xs text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 disabled:opacity-50"
+            class="border-rule text-muted-foreground hover:border-destructive hover:text-destructive focus-visible:outline-electric inline-flex items-center gap-1.5 rounded-full border bg-white px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
         >
             <Trash2 class="size-3.5" aria-hidden="true" />
             Remove

@@ -9,6 +9,7 @@ import CheckoutDeliveryPicker from '@/components/storefront/CheckoutDeliveryPick
 import CheckoutLineItem from '@/components/storefront/CheckoutLineItem.vue';
 import CheckoutPaymentPicker from '@/components/storefront/CheckoutPaymentPicker.vue';
 import CheckoutSummary from '@/components/storefront/CheckoutSummary.vue';
+import SectionHeading from '@/components/storefront/SectionHeading.vue';
 import StoreBreadcrumbs from '@/components/storefront/StoreBreadcrumbs.vue';
 import { store as storeAddress } from '@/routes/addresses';
 import { index as cartIndex } from '@/routes/cart';
@@ -108,6 +109,12 @@ const paymentMethodError = computed<string | undefined>(() => {
 
     return typeof message === 'string' ? message : undefined;
 });
+
+/** Stated once so the heading and the list cannot disagree about the count. */
+const lineCountLabel = computed(
+    () =>
+        `${quote.lines.length} ${quote.lines.length === 1 ? 'line' : 'lines'}, ready to place.`,
+);
 </script>
 
 <template>
@@ -121,28 +128,30 @@ const paymentMethodError = computed<string | undefined>(() => {
                 class="mt-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-3"
             >
                 <div>
-                    <span
-                        class="bg-electric block h-0.5 w-8"
-                        aria-hidden="true"
-                    />
+                    <p
+                        class="text-electric font-display text-[0.625rem] font-bold tracking-[0.18em] uppercase"
+                    >
+                        Almost there
+                    </p>
                     <h1
                         id="checkout-heading"
-                        class="font-display text-foreground mt-3 text-2xl font-black tracking-[-0.035em] uppercase sm:text-4xl"
+                        class="font-display text-ink mt-1 text-2xl font-extrabold tracking-[-0.03em] sm:text-4xl"
                     >
                         Checkout
                     </h1>
                     <p class="text-muted-foreground mt-2 text-sm tabular-nums">
-                        {{ quote.lines.length }}
-                        {{ quote.lines.length === 1 ? 'line' : 'lines' }}, ready
-                        to place.
+                        {{ lineCountLabel }}
                     </p>
                 </div>
 
                 <Link
                     :href="cartIndex()"
-                    class="font-display text-electric hover:border-electric focus-visible:outline-electric inline-flex items-center gap-1.5 border-b border-transparent pb-0.5 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
+                    class="text-electric focus-visible:outline-electric group inline-flex shrink-0 items-center gap-1.5 rounded-sm text-sm font-bold transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4"
                 >
-                    <ArrowLeft class="size-4" aria-hidden="true" />
+                    <ArrowLeft
+                        class="size-4 transition-transform group-hover:-translate-x-0.5 motion-reduce:transition-none"
+                        aria-hidden="true"
+                    />
                     Back to the cart
                 </Link>
             </div>
@@ -155,7 +164,7 @@ const paymentMethodError = computed<string | undefined>(() => {
             <div
                 v-if="blocked"
                 role="alert"
-                class="border-destructive/40 bg-destructive/5 mt-8 flex items-start gap-3 rounded-xs border px-4 py-3"
+                class="border-destructive/40 bg-destructive/5 mt-8 flex items-start gap-3 rounded-lg border px-4 py-3"
             >
                 <TriangleAlert
                     class="text-destructive mt-0.5 size-4 shrink-0"
@@ -174,7 +183,7 @@ const paymentMethodError = computed<string | undefined>(() => {
                     </ul>
                     <Link
                         :href="cartIndex()"
-                        class="text-electric hover:border-electric focus-visible:outline-electric mt-2 inline-block border-b border-transparent text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
+                        class="text-electric focus-visible:outline-electric mt-2 inline-block rounded-sm text-sm font-bold transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4"
                     >
                         Fix it in your cart
                     </Link>
@@ -184,13 +193,13 @@ const paymentMethodError = computed<string | undefined>(() => {
             <div
                 class="mt-10 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]"
             >
-                <div class="flex min-w-0 flex-col gap-10">
+                <div class="flex min-w-0 flex-col gap-12">
                     <Form
                         v-bind="store.form()"
                         :options="{ preserveScroll: true, preserveState: true }"
                         v-slot="{ errors }"
                         id="checkout-form"
-                        class="flex flex-col gap-10"
+                        class="flex flex-col gap-12"
                         @start="placing = true"
                         @finish="placing = false"
                     >
@@ -203,7 +212,7 @@ const paymentMethodError = computed<string | undefined>(() => {
                         <div
                             v-if="Object.keys(errors).length > 0"
                             role="alert"
-                            class="border-destructive/40 bg-destructive/5 flex items-start gap-3 rounded-xs border px-4 py-3"
+                            class="border-destructive/40 bg-destructive/5 flex items-start gap-3 rounded-lg border px-4 py-3"
                         >
                             <TriangleAlert
                                 class="text-destructive mt-0.5 size-4 shrink-0"
@@ -221,14 +230,13 @@ const paymentMethodError = computed<string | undefined>(() => {
                         </div>
 
                         <section aria-labelledby="checkout-delivery-heading">
-                            <h2
-                                id="checkout-delivery-heading"
-                                class="font-display text-foreground text-lg font-black tracking-[-0.03em] uppercase"
-                            >
-                                How you get it
-                            </h2>
+                            <SectionHeading
+                                eyebrow="How it arrives"
+                                title="How you get it"
+                                heading-id="checkout-delivery-heading"
+                            />
 
-                            <div class="mt-4">
+                            <div class="mt-6">
                                 <CheckoutDeliveryPicker
                                     :methods="deliveryMethods"
                                     :selected="deliveryMethod"
@@ -241,14 +249,13 @@ const paymentMethodError = computed<string | undefined>(() => {
                             v-if="requiresAddress"
                             aria-labelledby="checkout-address-heading"
                         >
-                            <h2
-                                id="checkout-address-heading"
-                                class="font-display text-foreground text-lg font-black tracking-[-0.03em] uppercase"
-                            >
-                                Delivery address
-                            </h2>
+                            <SectionHeading
+                                eyebrow="Where it goes"
+                                title="Delivery address"
+                                heading-id="checkout-address-heading"
+                            />
 
-                            <div class="mt-4">
+                            <div class="mt-6">
                                 <CheckoutAddressPicker
                                     v-model="selection"
                                     :addresses="addresses"
@@ -267,11 +274,11 @@ const paymentMethodError = computed<string | undefined>(() => {
                         v-bind="storeAddress.form()"
                         :options="{ preserveScroll: true, preserveState: true }"
                         v-slot="{ errors, processing }"
-                        class="border-rule flex flex-col gap-5 rounded-xs border border-dashed p-5"
+                        class="border-rule flex flex-col gap-5 rounded-lg border border-dashed bg-white p-5"
                     >
                         <div>
                             <h2
-                                class="font-display text-foreground text-sm font-black tracking-[0.02em] uppercase"
+                                class="font-display text-ink text-base font-extrabold tracking-[-0.02em]"
                             >
                                 New delivery address
                             </h2>
@@ -286,19 +293,18 @@ const paymentMethodError = computed<string | undefined>(() => {
                         <button
                             type="submit"
                             :disabled="processing"
-                            class="border-ink hover:bg-ink font-display focus-visible:outline-electric text-foreground h-10 w-fit rounded-xs border px-5 text-sm font-bold tracking-wide transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
+                            class="border-ink hover:bg-ink font-display focus-visible:outline-electric text-foreground h-10 w-fit rounded-lg border px-5 text-sm font-bold tracking-wide transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
                         >
                             Save this address
                         </button>
                     </Form>
 
                     <section aria-labelledby="checkout-note-heading">
-                        <h2
-                            id="checkout-note-heading"
-                            class="font-display text-foreground text-lg font-black tracking-[-0.03em] uppercase"
-                        >
-                            Anything we should know?
-                        </h2>
+                        <SectionHeading
+                            eyebrow="Optional"
+                            title="Anything we should know?"
+                            heading-id="checkout-note-heading"
+                        />
 
                         <!--
                           Outside the order form in the markup, part of it in the
@@ -316,23 +322,19 @@ const paymentMethodError = computed<string | undefined>(() => {
                             rows="3"
                             maxlength="1000"
                             placeholder="Delivery instructions, a landmark, the best time to call…"
-                            class="border-rule text-foreground placeholder:text-muted-foreground focus-visible:outline-electric mt-4 w-full rounded-xs border bg-white px-3 py-2 text-sm focus-visible:outline-2 focus-visible:-outline-offset-2"
+                            class="border-rule shadow-card text-foreground placeholder:text-muted-foreground focus-visible:outline-electric mt-6 w-full rounded-lg border bg-white px-3 py-2 text-sm focus-visible:outline-2 focus-visible:-outline-offset-2"
                         />
                     </section>
 
                     <section aria-labelledby="checkout-payment-heading">
-                        <h2
-                            id="checkout-payment-heading"
-                            class="font-display text-foreground text-lg font-black tracking-[-0.03em] uppercase"
-                        >
-                            How you pay
-                        </h2>
-                        <p class="text-muted-foreground mt-2 text-sm">
-                            Nothing is charged now. Place the order and we will
-                            take you through payment on the order itself.
-                        </p>
+                        <SectionHeading
+                            eyebrow="Settling up"
+                            title="How you pay"
+                            subtitle="Nothing is charged now. Place the order and we will take you through payment on the order itself."
+                            heading-id="checkout-payment-heading"
+                        />
 
-                        <div class="mt-4">
+                        <div class="mt-6">
                             <CheckoutPaymentPicker
                                 v-model="paymentMethod"
                                 :methods="paymentMethods"
@@ -343,15 +345,14 @@ const paymentMethodError = computed<string | undefined>(() => {
                     </section>
 
                     <section aria-labelledby="checkout-items-heading">
-                        <h2
-                            id="checkout-items-heading"
-                            class="font-display text-foreground text-lg font-black tracking-[-0.03em] uppercase"
-                        >
-                            What you are buying
-                        </h2>
+                        <SectionHeading
+                            eyebrow="In your basket"
+                            title="What you are buying"
+                            heading-id="checkout-items-heading"
+                        />
 
                         <ul
-                            class="border-rule divide-rule mt-4 divide-y border-t"
+                            class="border-rule divide-rule shadow-card mt-6 divide-y rounded-lg border bg-white"
                         >
                             <CheckoutLineItem
                                 v-for="(line, position) in quote.lines"
@@ -363,18 +364,13 @@ const paymentMethodError = computed<string | undefined>(() => {
                 </div>
 
                 <section
-                    class="bg-card rounded-xs lg:sticky lg:top-28"
+                    class="border-rule shadow-card rounded-lg border bg-white lg:sticky lg:top-28"
                     aria-labelledby="checkout-summary-heading"
                 >
-                    <span
-                        class="bg-ink block h-0.5 w-full"
-                        aria-hidden="true"
-                    />
-
-                    <div class="flex flex-col gap-5 p-6">
+                    <div class="flex flex-col gap-5 p-5 sm:p-6">
                         <h2
                             id="checkout-summary-heading"
-                            class="font-display text-foreground text-lg font-black tracking-[-0.03em] uppercase"
+                            class="font-display text-ink text-lg font-extrabold tracking-[-0.02em]"
                         >
                             Summary
                         </h2>
@@ -383,7 +379,7 @@ const paymentMethodError = computed<string | undefined>(() => {
 
                         <p
                             v-if="quote.freeShippingRemainingFormatted"
-                            class="bg-accent text-accent-foreground rounded-xs px-3 py-2 text-xs leading-relaxed"
+                            class="bg-tint-strong text-electric rounded-lg px-3 py-2 text-xs leading-relaxed"
                         >
                             Add
                             <span class="font-semibold tabular-nums">
@@ -402,7 +398,7 @@ const paymentMethodError = computed<string | undefined>(() => {
                             type="submit"
                             form="checkout-form"
                             :disabled="blocked || placing"
-                            class="bg-ink font-display focus-visible:outline-electric flex h-11 w-full items-center justify-center gap-2 rounded-xs text-sm font-bold tracking-[0.08em] text-white uppercase transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+                            class="bg-electric font-display focus-visible:outline-electric flex h-11 w-full items-center justify-center gap-2 rounded-lg text-sm font-bold tracking-wide text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                             <Loader2
                                 v-if="placing"

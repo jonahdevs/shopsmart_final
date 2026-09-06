@@ -19,13 +19,13 @@ defineProps<{ line: App.Data.PricedLineData }>();
 </script>
 
 <template>
-    <li class="flex gap-4 py-6">
+    <li class="flex gap-4 p-5">
         <!--
           The image is decoration next to a title that already names the
           product, so it carries no link of its own and no alternative text.
         -->
         <div
-            class="size-16 shrink-0 overflow-hidden rounded-xs bg-white sm:size-20"
+            class="size-16 shrink-0 overflow-hidden rounded-lg bg-white sm:size-20"
             aria-hidden="true"
         >
             <img
@@ -36,7 +36,7 @@ defineProps<{ line: App.Data.PricedLineData }>();
                 decoding="async"
                 class="size-full object-contain"
             />
-            <div v-else class="bg-muted size-full" />
+            <div v-else class="bg-muted size-full rounded-lg" />
         </div>
 
         <div
@@ -50,11 +50,11 @@ defineProps<{ line: App.Data.PricedLineData }>();
                     {{ line.brandName }}
                 </p>
 
-                <h3 class="text-foreground text-sm leading-5">
+                <h3 class="text-foreground text-sm leading-5 font-medium">
                     <Link
                         v-if="line.slug"
                         :href="show(line.slug)"
-                        class="hover:text-electric focus-visible:outline-electric rounded-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
+                        class="hover:text-electric focus-visible:outline-electric rounded-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
                     >
                         {{ line.name }}
                     </Link>
@@ -85,7 +85,7 @@ defineProps<{ line: App.Data.PricedLineData }>();
 
             <div class="shrink-0">
                 <p
-                    class="text-muted-foreground text-[0.625rem] font-semibold tracking-[0.14em] uppercase"
+                    class="font-display text-muted-foreground text-[0.625rem] font-bold tracking-[0.14em] uppercase"
                 >
                     Line total
                 </p>

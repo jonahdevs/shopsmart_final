@@ -12,6 +12,7 @@ use App\Models\NumberSequence;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\User;
+use App\Notifications\OrderPlaced;
 use App\Settings\CheckoutSettings;
 use App\Settings\TaxSettings;
 use Illuminate\Support\Facades\DB;
@@ -58,7 +59,7 @@ class PlaceOrder
         // insert below would serialise the whole checkout.
         $orderNumber = $this->nextOrderNumber();
 
-        return DB::transaction(function () use (
+        $order = DB::transaction(function () use (
             $user, $quote, $delivery, $address, $coupon, $customerNote, $orderNumber, $paymentMethod
         ): Order {
             $order = Order::query()->create([
@@ -105,6 +106,13 @@ class PlaceOrder
             // nothing to match against and real money unrecorded.
             return $order;
         });
+
+        // Outside the transaction, and marked afterCommit so it stays outside
+        // one a caller may have opened around this: a queue worker that picks
+        // the job up before the commit would find no order to describe.
+        $user->notify((new OrderPlaced($order))->afterCommit());
+
+        return $order;
     }
 
     /**

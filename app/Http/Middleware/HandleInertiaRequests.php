@@ -48,6 +48,13 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
+                // A closure for the same reason `socialLinks` below is one:
+                // `share()` runs on every request through this middleware,
+                // including plain JSON ones like search-suggest, and
+                // User::isStaff() is a `roles` existence query. Inertia only
+                // resolves prop closures when it is building a page response,
+                // so the keystroke endpoints never pay for it.
+                'isStaff' => fn (): bool => (bool) $request->user()?->isStaff(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'storefront' => [

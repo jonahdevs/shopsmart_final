@@ -47,11 +47,11 @@ const ICONS: Record<string, typeof CreditCard> = {
             <li v-for="method in methods" :key="method.value">
                 <label
                     :for="`${id}-${method.value}`"
-                    class="flex cursor-pointer items-start gap-3 rounded-xs border p-4 transition-colors"
+                    class="shadow-card hover:shadow-card-hover focus-within:shadow-card-hover flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-shadow duration-200"
                     :class="
                         selection === method.value
-                            ? 'border-ink bg-card'
-                            : 'border-rule hover:border-ink'
+                            ? 'border-electric bg-tint'
+                            : 'border-rule bg-white'
                     "
                 >
                     <input

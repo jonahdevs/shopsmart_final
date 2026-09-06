@@ -62,7 +62,7 @@ const averageLabel = computed(() =>
                             class="size-3.5"
                             :class="
                                 star <= review.rating
-                                    ? 'fill-amber-400 text-amber-400'
+                                    ? 'fill-star text-star'
                                     : 'text-rule fill-transparent'
                             "
                             :stroke-width="1.5"
