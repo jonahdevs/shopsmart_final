@@ -10,6 +10,7 @@ use App\Support\StorefrontSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
+use Spatie\Permission\Models\Permission;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -55,6 +56,11 @@ class HandleInertiaRequests extends Middleware
                 // resolves prop closures when it is building a page response,
                 // so the keystroke endpoints never pay for it.
                 'isStaff' => fn (): bool => (bool) $request->user()?->isStaff(),
+                // Also a closure, and for the extra reason that it is two more
+                // queries than `isStaff` is: the admin sidebar renders itself
+                // from this list, so a Manager never sees a link to a page
+                // `can:` would refuse them.
+                'permissions' => fn (): array => $this->permissions($request),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'storefront' => [
@@ -74,6 +80,30 @@ class HandleInertiaRequests extends Middleware
                 'shopper' => $this->storefront->shopperState(),
             ],
         ];
+    }
+
+    /**
+     * Every permission the signed-in staff member holds, however granted.
+     *
+     * The admin sidebar filters itself against this, so the navigation and the
+     * `can:` middleware on the routes are driven by one source rather than two
+     * that can drift. Customers hold no roles and therefore no permissions —
+     * they get an empty list without a permissions query being run at all.
+     *
+     * @return list<string>
+     */
+    private function permissions(Request $request): array
+    {
+        $user = $request->user();
+
+        if ($user === null || ! $user->isStaff()) {
+            return [];
+        }
+
+        return array_values(array_map(
+            static fn (Permission $permission): string => $permission->name,
+            $user->getAllPermissions()->all(),
+        ));
     }
 
     /**

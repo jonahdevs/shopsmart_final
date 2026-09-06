@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureUserIsCustomer;
+use App\Http\Middleware\EnsureUserIsStaff;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\ThrottleFortifyMailEndpoints;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'customer' => EnsureUserIsCustomer::class,
+            'staff' => EnsureUserIsStaff::class,
         ]);
 
         // The gateway webhook is server-to-server and carries no session, so it
