@@ -31,7 +31,7 @@ class PrunePersonalDataCommand extends Command
         $activity = $this->pruneActivityLog($settings->activity_log_retention_days);
 
         $this->components->info(sprintf(
-            'Pruned %d recently-viewed row(s) and %d activity log entr(y/ies).',
+            'Deleted %d browsing history row(s) and %d activity log record(s).',
             $recentlyViewed,
             $activity,
         ));

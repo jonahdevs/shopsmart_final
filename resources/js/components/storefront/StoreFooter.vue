@@ -5,8 +5,8 @@ import { computed } from 'vue';
 import type { NavCategory } from '@/components/storefront/CategoryStripe.vue';
 import StoreWordmark from '@/components/storefront/StoreWordmark.vue';
 import {
-    consentIsOffered,
     consentConfig,
+    consentIsOffered,
     useConsentPreferences,
 } from '@/lib/consent';
 import type { SocialLink } from '@/types/global';

@@ -3,10 +3,7 @@ import { Form } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import {
-    consentConfig,
-    useConsentPreferences,
-} from '@/lib/consent';
+import { consentConfig, useConsentPreferences } from '@/lib/consent';
 import { store } from '@/routes/consent';
 
 /**

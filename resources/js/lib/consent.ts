@@ -54,7 +54,11 @@ export function consentConfig(): ConsentConfig {
     }
 
     try {
-        cached = { ...EMPTY, ...(JSON.parse(element.textContent ?? '{}') as Partial<ConsentConfig>) };
+        const parsed = JSON.parse(
+            element.textContent ?? '{}',
+        ) as Partial<ConsentConfig>;
+
+        cached = { ...EMPTY, ...parsed };
     } catch {
         cached = EMPTY;
     }
