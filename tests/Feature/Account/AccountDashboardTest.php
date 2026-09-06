@@ -32,16 +32,17 @@ test('a customer landing on the dashboard is sent to their account', function ()
         ->assertRedirect(route('account.dashboard'));
 });
 
-test('a staff member keeps the staff dashboard', function () {
+test('a staff member is sent to the admin panel, not the account area', function () {
     $this->seed(PermissionSeeder::class);
 
     $staff = User::factory()->create();
     $staff->assignRole('Support');
 
+    // Phase 7 replaced the staff placeholder with the real admin overview, so
+    // this is now a redirect on both sides of the fork rather than a page.
     $this->actingAs($staff)
         ->get(route('dashboard'))
-        ->assertOk()
-        ->assertInertia(fn (AssertableInertia $page) => $page->component('Dashboard'));
+        ->assertRedirect(route('admin.dashboard'));
 });
 
 test('a guest is sent to sign in rather than to the account', function () {

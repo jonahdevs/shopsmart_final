@@ -9,11 +9,11 @@ test('guests are redirected to the login page', function () {
 });
 
 /**
- * `dashboard` is where Fortify lands everyone, and since phase 6 it forks by
- * role: a customer is forwarded to their account, staff keep the page. The
+ * `dashboard` is where Fortify lands everyone, and since phase 7 it is nothing
+ * but a fork: both sides redirect, so each area keeps one canonical URL. The
  * branch itself is covered in tests/Feature/Account/AccountDashboardTest.php.
  */
-test('authenticated staff can visit the dashboard', function () {
+test('authenticated staff are forwarded to the admin panel', function () {
     $this->seed(PermissionSeeder::class);
 
     $user = User::factory()->create();
@@ -22,7 +22,7 @@ test('authenticated staff can visit the dashboard', function () {
     $this->actingAs($user);
 
     $response = $this->get(route('dashboard'));
-    $response->assertOk();
+    $response->assertRedirect(route('admin.dashboard'));
 });
 
 test('an authenticated customer is forwarded to their account', function () {

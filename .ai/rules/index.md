@@ -14,4 +14,4 @@ Before planning or editing, find the row whose globs match the file's path and r
 | database/seeders/** | .ai/rules/seeders.md |
 | app/Http/Controllers/Shop/** | .ai/rules/shop.md |
 | resources/js/components/storefront/** | .ai/rules/storefront.md |
-| app/Support/StorefrontSession.php | .ai/rules/support.md |
+| app/Support/StorefrontSession.php, app/Support/Consent.php | .ai/rules/support.md |
