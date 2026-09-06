@@ -62,6 +62,21 @@ class Attribute extends Model
         return $this->hasMany(AttributeValue::class)->orderBy('sort_order');
     }
 
+    /**
+     * The products that declare this attribute, whether as a variant axis or as
+     * display-only specification data.
+     *
+     * Exists so the admin can count them: `product_attributes.attribute_id`
+     * cascades on delete, so removing an attribute in use would silently unpick
+     * every variant defined by it. The count is what lets that be refused.
+     *
+     * @return HasMany<ProductAttribute, $this>
+     */
+    public function productAttributes(): HasMany
+    {
+        return $this->hasMany(ProductAttribute::class);
+    }
+
     // ==================================================
     // SCOPES
     // ==================================================

@@ -30,7 +30,9 @@ Two symptoms mean the install has rotted again, and both are npm's optional-depe
 
 The fix is the full reinstall above. It is a dependency operation, so ask first — but note it only regenerated the lockfile; `package.json` was untouched and nothing but two patch versions moved.
 
-**Do not dismiss `Property 'form' does not exist on type ...` errors as pre-existing Wayfinder noise.** They were, briefly, believed to be exactly that. They were entirely an artefact of the broken install and vanished on reinstall. `vue-tsc` is now clean, so any such error is real.
+**`Property 'form' does not exist on type ...` means you ran `wayfinder:generate` without `--with-form`.** `vite.config.ts` configures `wayfinder({ formVariants: true })`, so the vite plugin emits a `.form()` on every action. The bare artisan command does not, and regenerating that way silently strips `.form()` from every generated module — producing hundreds of TS errors across auth, storefront, account and admin pages that look pre-existing and are not.
+
+Always run `php artisan wayfinder:generate --with-form`, or just `npm run build`, which uses the plugin's own options. These errors have twice been misdiagnosed as background noise (once blamed on the broken npm install); they are neither noise nor pre-existing, and `vue-tsc` is clean when generation is done correctly.
 
 The build is also the only check that catches a wrong Wayfinder import: action functions are named after the CONTROLLER METHOD (`updateStatus`, `updateNote`), not after the route name (`status`, `note`). Importing the route name compiles under PHPStan and passes every Pest test, then fails the build with `MISSING_EXPORT`.
 

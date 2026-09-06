@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import {
+    Bookmark,
+    Boxes,
     CreditCard,
+    FolderTree,
     LayoutGrid,
     Package,
+    SlidersHorizontal,
     Star,
     Store,
     Tag,
@@ -23,10 +27,14 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard as adminDashboard } from '@/routes/admin';
+import { index as adminAttributes } from '@/routes/admin/attributes';
+import { index as adminBrands } from '@/routes/admin/brands';
+import { index as adminCategories } from '@/routes/admin/categories';
 import { index as adminCoupons } from '@/routes/admin/coupons';
 import { index as adminCustomers } from '@/routes/admin/customers';
 import { index as adminOrders } from '@/routes/admin/orders';
 import { index as adminPayments } from '@/routes/admin/payments';
+import { index as adminProducts } from '@/routes/admin/products';
 import { index as adminReviews } from '@/routes/admin/reviews';
 import { home } from '@/routes';
 import type { AdminNavGroup, NavItem } from '@/types';
@@ -74,6 +82,35 @@ const navGroups: AdminNavGroup[] = [
                 href: adminCustomers(),
                 icon: UserRound,
                 permissions: ['customers.view', 'customers.manage'],
+            },
+        ],
+    },
+    {
+        label: 'Catalog',
+        items: [
+            {
+                title: 'Products',
+                href: adminProducts(),
+                icon: Boxes,
+                permissions: ['products.view', 'products.manage'],
+            },
+            {
+                title: 'Categories',
+                href: adminCategories(),
+                icon: FolderTree,
+                permissions: ['catalog.manage'],
+            },
+            {
+                title: 'Brands',
+                href: adminBrands(),
+                icon: Bookmark,
+                permissions: ['catalog.manage'],
+            },
+            {
+                title: 'Attributes',
+                href: adminAttributes(),
+                icon: SlidersHorizontal,
+                permissions: ['catalog.manage'],
             },
         ],
     },

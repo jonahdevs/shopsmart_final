@@ -46,5 +46,6 @@ Route::middleware(['auth', 'verified', 'staff'])
             Route::get('payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
         });
 
+        require __DIR__.'/admin/catalog.php';
         require __DIR__.'/admin/customers.php';
     });
