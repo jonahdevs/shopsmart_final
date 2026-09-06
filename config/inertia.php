@@ -15,9 +15,17 @@ return [
     |
     */
 
+    /*
+     * Switchable so the test suite can turn it off. `withoutVite()` does not
+     * cover this: SSR is a separate HTTP POST to a render server, not an asset
+     * lookup, so a test that fakes Vite still tries to reach the Inertia SSR
+     * endpoint and dies on a stray-request exception. Tests assert props, never
+     * server-rendered HTML, so there is nothing for them to gain by paying for
+     * a round trip that cannot succeed in CI anyway.
+     */
     'ssr' => [
-        'enabled' => true,
-        'url' => 'http://127.0.0.1:13714',
+        'enabled' => env('INERTIA_SSR_ENABLED', true),
+        'url' => env('INERTIA_SSR_URL', 'http://127.0.0.1:13714'),
         // 'bundle' => base_path('bootstrap/ssr/ssr.mjs'),
 
     ],

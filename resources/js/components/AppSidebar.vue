@@ -4,7 +4,10 @@ import {
     CreditCard,
     LayoutGrid,
     Package,
+    Star,
     Store,
+    Tag,
+    UserRound,
 } from '@lucide/vue';
 import AdminNav from '@/components/admin/AdminNav.vue';
 import AppLogo from '@/components/AppLogo.vue';
@@ -20,8 +23,11 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard as adminDashboard } from '@/routes/admin';
+import { index as adminCoupons } from '@/routes/admin/coupons';
+import { index as adminCustomers } from '@/routes/admin/customers';
 import { index as adminOrders } from '@/routes/admin/orders';
 import { index as adminPayments } from '@/routes/admin/payments';
+import { index as adminReviews } from '@/routes/admin/reviews';
 import { home } from '@/routes';
 import type { AdminNavGroup, NavItem } from '@/types';
 
@@ -62,6 +68,29 @@ const navGroups: AdminNavGroup[] = [
                 href: adminPayments(),
                 icon: CreditCard,
                 permissions: ['payments.view', 'payments.manage'],
+            },
+            {
+                title: 'Customers',
+                href: adminCustomers(),
+                icon: UserRound,
+                permissions: ['customers.view', 'customers.manage'],
+            },
+        ],
+    },
+    {
+        label: 'Marketing',
+        items: [
+            {
+                title: 'Reviews',
+                href: adminReviews(),
+                icon: Star,
+                permissions: ['reviews.manage'],
+            },
+            {
+                title: 'Coupons',
+                href: adminCoupons(),
+                icon: Tag,
+                permissions: ['marketing.manage'],
             },
         ],
     },
