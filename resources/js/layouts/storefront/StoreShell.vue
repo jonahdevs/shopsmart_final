@@ -2,6 +2,7 @@
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import type { NavCategory } from '@/components/storefront/CategoryStripe.vue';
+import ConsentBanner from '@/components/storefront/ConsentBanner.vue';
 import StoreFooter from '@/components/storefront/StoreFooter.vue';
 import StoreHeader from '@/components/storefront/StoreHeader.vue';
 import StoreNewsletter from '@/components/storefront/StoreNewsletter.vue';
@@ -44,6 +45,13 @@ const categories = computed<NavCategory[]>(
         <StoreNewsletter />
 
         <StoreFooter :categories="categories" />
+
+        <!--
+          Last in the shell so it lays over the page. It renders nothing at all
+          unless the store actually asks about a category, and it never loads a
+          tag itself — the server does that, for the categories already granted.
+        -->
+        <ConsentBanner />
 
         <Toaster position="top-center" />
     </div>

@@ -36,6 +36,13 @@
 
         @fonts
 
+        {{--
+            Measurement tags, and only the ones this visitor has consented to.
+            The gate is applied server-side so an ungranted vendor is never
+            fetched at all — see App\Support\Consent.
+        --}}
+        <x-privacy-scripts />
+
         @vite(['resources/css/app.css', 'resources/js/app.ts', "resources/js/pages/{$page['component']}.vue"])
         <x-inertia::head>
             <title>{{ config('app.name', 'Laravel') }}</title>

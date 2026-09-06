@@ -4,6 +4,11 @@ import { Heart } from '@lucide/vue';
 import { computed } from 'vue';
 import type { NavCategory } from '@/components/storefront/CategoryStripe.vue';
 import StoreWordmark from '@/components/storefront/StoreWordmark.vue';
+import {
+    consentIsOffered,
+    consentConfig,
+    useConsentPreferences,
+} from '@/lib/consent';
 import type { SocialLink } from '@/types/global';
 import { index as categoriesIndex } from '@/routes/categories';
 import { show } from '@/routes/category';
@@ -78,12 +83,23 @@ const unroutedColumns = [
             'Contact Us',
         ],
     },
-    {
-        key: 'about',
-        heading: 'About',
-        items: ['About ShopSmart', 'Terms & Conditions', 'Privacy Policy'],
-    },
 ] as const;
+
+/**
+ * The About column is the exception to the rule above: its two policy entries
+ * now have somewhere to point, from LegalSettings. A URL that has not been
+ * filled in still renders as a plain span, so the column keeps its shape.
+ */
+const consent = consentConfig();
+
+const policies = computed(() => [
+    { label: 'Terms & Conditions', url: consent.termsUrl },
+    { label: 'Privacy Policy', url: consent.privacyPolicyUrl },
+]);
+
+const showConsentLink = consentIsOffered();
+
+const { openConsentPreferences } = useConsentPreferences();
 </script>
 
 <template>
@@ -166,6 +182,38 @@ const unroutedColumns = [
                 <ul class="mt-4 space-y-3 text-sm">
                     <li v-for="item in column.items" :key="item">
                         <span class="text-white/55">{{ item }}</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div>
+                <h2 class="text-xs font-bold text-white">About</h2>
+                <ul class="mt-4 space-y-3 text-sm">
+                    <li>
+                        <span class="text-white/55">About ShopSmart</span>
+                    </li>
+
+                    <li v-for="policy in policies" :key="policy.label">
+                        <a
+                            v-if="policy.url"
+                            :href="policy.url"
+                            class="focus-visible:outline-electric rounded-sm text-white/55 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+                        >
+                            {{ policy.label }}
+                        </a>
+                        <span v-else class="text-white/55">
+                            {{ policy.label }}
+                        </span>
+                    </li>
+
+                    <li v-if="showConsentLink">
+                        <button
+                            type="button"
+                            class="focus-visible:outline-electric rounded-sm text-left text-white/55 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+                            @click="openConsentPreferences"
+                        >
+                            Cookie preferences
+                        </button>
                     </li>
                 </ul>
             </div>
