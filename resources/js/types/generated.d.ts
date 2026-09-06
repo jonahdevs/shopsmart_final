@@ -36,6 +36,26 @@ deliveryNotes: string | null,
 isDefault: boolean,
 summary: string,
 };
+export type AdminActivityChangeData = {
+attribute: string,
+label: string,
+from: string | null,
+to: string | null,
+};
+export type AdminActivityRowData = {
+id: number,
+logName: string,
+description: string,
+event: string | null,
+subjectType: string | null,
+subjectId: number | null,
+subjectLabel: string | null,
+causerName: string | null,
+causerId: number | null,
+changes: App.Data.AdminActivityChangeData[],
+valuesHidden: boolean,
+createdAt: string,
+};
 export type AdminAttributeFormData = {
 id: number | null,
 name: string,
@@ -236,6 +256,17 @@ orderNumber: string | null,
 paidAt: string | null,
 createdAt: string,
 };
+export type AdminPermissionGroupData = {
+resource: string,
+label: string,
+permissions: App.Data.AdminPermissionOptionData[],
+};
+export type AdminPermissionOptionData = {
+name: string,
+label: string,
+granted: boolean,
+holdable: boolean,
+};
 export type AdminProductFormData = {
 id: number | null,
 slug: string | null,
@@ -339,6 +370,33 @@ productName: string,
 productSlug: string | null,
 approvedAt: string | null,
 submittedAt: string,
+};
+export type AdminRoleOptionData = {
+id: number,
+name: string,
+permissionCount: number,
+assignable: boolean,
+};
+export type AdminRoleRowData = {
+id: number,
+name: string,
+permissions: string[],
+permissionCount: number,
+memberCount: number,
+isProtected: boolean,
+editable: boolean,
+deletable: boolean,
+};
+export type AdminStaffRowData = {
+id: number,
+name: string,
+email: string,
+roles: string[],
+emailVerifiedAt: string | null,
+invitationPending: boolean,
+createdAt: string,
+isSelf: boolean,
+manageable: boolean,
 };
 export type AttributeValueData = {
 id: number,

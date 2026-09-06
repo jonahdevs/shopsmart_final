@@ -49,4 +49,8 @@ Route::middleware(['auth', 'verified', 'staff'])
         require __DIR__.'/admin/catalog.php';
         require __DIR__.'/admin/customers.php';
         require __DIR__.'/admin/settings.php';
+
+        // Staff accounts, roles and the activity log. Split out because that
+        // section carries its own permissions and its own escalation rules.
+        require __DIR__.'/admin/access.php';
     });

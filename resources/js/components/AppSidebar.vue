@@ -7,12 +7,15 @@ import {
     FolderTree,
     LayoutGrid,
     Package,
+    ScrollText,
     Settings,
+    ShieldCheck,
     SlidersHorizontal,
     Star,
     Store,
     Tag,
     UserRound,
+    Users,
 } from '@lucide/vue';
 import AdminNav from '@/components/admin/AdminNav.vue';
 import AppLogo from '@/components/AppLogo.vue';
@@ -28,6 +31,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard as adminDashboard } from '@/routes/admin';
+import { index as adminActivity } from '@/routes/admin/activity';
 import { index as adminAttributes } from '@/routes/admin/attributes';
 import { index as adminBrands } from '@/routes/admin/brands';
 import { index as adminCategories } from '@/routes/admin/categories';
@@ -37,7 +41,9 @@ import { index as adminOrders } from '@/routes/admin/orders';
 import { index as adminPayments } from '@/routes/admin/payments';
 import { index as adminProducts } from '@/routes/admin/products';
 import { index as adminReviews } from '@/routes/admin/reviews';
+import { index as adminRoles } from '@/routes/admin/roles';
 import { index as adminSettings } from '@/routes/admin/settings';
+import { index as adminStaff } from '@/routes/admin/staff';
 import { home } from '@/routes';
 import type { AdminNavGroup, NavItem } from '@/types';
 
@@ -144,6 +150,26 @@ const navGroups: AdminNavGroup[] = [
                 href: adminSettings(),
                 icon: Settings,
                 permissions: ['settings.manage'],
+            },
+            {
+                title: 'Staff',
+                href: adminStaff(),
+                icon: Users,
+                permissions: ['staff.manage'],
+            },
+            {
+                // Super Admin only — every other seeded role is refused
+                // `roles.manage`, so this is the one item most staff never see.
+                title: 'Roles',
+                href: adminRoles(),
+                icon: ShieldCheck,
+                permissions: ['roles.manage'],
+            },
+            {
+                title: 'Activity log',
+                href: adminActivity(),
+                icon: ScrollText,
+                permissions: ['activity.view'],
             },
         ],
     },
