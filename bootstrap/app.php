@@ -11,6 +11,8 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 use Illuminate\Session\Middleware\AuthenticateSession;
+use Inertia\Inertia;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -45,4 +47,40 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        /*
+         * Branded error pages, rendered through Inertia so a shopper who hits a
+         * dead link keeps the storefront's chrome and a way back to the shop,
+         * rather than being dropped onto Symfony's bare page.
+         *
+         * Only the statuses a shopper can actually provoke are handled. Debug
+         * mode is left alone entirely — a developer needs the stack trace, and
+         * a friendly page that hides it would be a step backwards locally. The
+         * `api/*` and JSON cases are already excluded by the rule above.
+         */
+        $exceptions->respond(function (SymfonyResponse $response, Throwable $exception, Request $request): SymfonyResponse {
+            if (app()->hasDebugModeEnabled() || $request->is('api/*') || $request->expectsJson()) {
+                return $response;
+            }
+
+            if (! in_array($response->getStatusCode(), [403, 404, 419, 429, 500, 503], true)) {
+                return $response;
+            }
+
+            // 419 is a stale CSRF token, not a broken link: the session simply
+            // expired in a tab left open. Sending them back to the form they
+            // were on with a refreshed token is more useful than an error page.
+            if ($response->getStatusCode() === 419) {
+                return back()->with('toast', [
+                    'type' => 'warning',
+                    'message' => __('Your session expired. Please try again.'),
+                ]);
+            }
+
+            return Inertia::render('errors/Error', [
+                'status' => $response->getStatusCode(),
+            ])
+                ->toResponse($request)
+                ->setStatusCode($response->getStatusCode());
+        });
     })->create();

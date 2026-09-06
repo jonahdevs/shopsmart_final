@@ -2,9 +2,11 @@
 
 namespace App\Http\Middleware;
 
+use App\Data\SeoData;
 use App\Enums\CategorySection;
 use App\Models\CategoryPlacement;
 use App\Settings\SocialSettings;
+use App\Support\Seo;
 use App\Support\StorefrontCache;
 use App\Support\StorefrontSession;
 use Illuminate\Http\Request;
@@ -63,6 +65,18 @@ class HandleInertiaRequests extends Middleware
                 'permissions' => fn (): array => $this->permissions($request),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            // The document head, resolved server-side because Inertia's <Head>
+            // needs SSR to reach the initial HTML and SSR is off — see
+            // resources/views/components/seo-tags.blade.php. A closure like the
+            // rest: it reads three settings groups and must not run on the
+            // keystroke endpoints. A controller that wants more than the
+            // defaults overrides this key with its own SeoData.
+            //
+            // Named `documentHead` rather than the obvious `seo` because a page
+            // may reasonably want a prop of its own by that name — the admin's
+            // own SEO settings screen does, and the collision made the head read
+            // its keys off the settings array and fail.
+            'documentHead' => fn (): SeoData => app(Seo::class)->page(),
             'storefront' => [
                 'navCategories' => $this->navCategories(),
                 // A closure, not a value: `share()` runs on every request that

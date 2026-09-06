@@ -14,6 +14,7 @@ use App\Http\Controllers\Shop\HomeController;
 use App\Http\Controllers\Shop\PaymentController;
 use App\Http\Controllers\Shop\ProductController;
 use App\Http\Controllers\Shop\SearchController;
+use App\Http\Controllers\Shop\SeoController;
 use App\Http\Controllers\Shop\WishlistController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,6 +28,16 @@ use Illuminate\Support\Facades\Route;
 | for readability — the two paths cannot collide.
 |
 */
+
+/*
+| Routes rather than files in public/, because both answer to a setting staff
+| can change: turning indexing off has to take effect now, and a robots.txt
+| written to disk at deploy time would still be inviting crawlers hours later.
+| The static public/robots.txt was removed for the same reason — the web server
+| serves a real file before it ever reaches Laravel.
+*/
+Route::get('robots.txt', [SeoController::class, 'robots'])->name('robots');
+Route::get('sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 
 Route::get('/', HomeController::class)->name('home');
 

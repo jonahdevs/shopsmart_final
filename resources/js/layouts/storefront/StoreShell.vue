@@ -34,11 +34,29 @@ const categories = computed<NavCategory[]>(
     <div
         class="storefront bg-background text-foreground flex min-h-screen flex-col"
     >
+        <!--
+          First focusable thing on the page, and visible only once focused.
+          Every storefront page opens with a utility bar, a header and a
+          category stripe; without this, reaching the actual content by keyboard
+          means tabbing past two dozen links on every single navigation.
+        -->
+        <a
+            href="#main-content"
+            class="bg-electric focus-visible:outline-ink sr-only rounded-lg px-4 py-2 text-sm font-semibold text-white focus-visible:not-sr-only focus-visible:absolute focus-visible:top-3 focus-visible:left-3 focus-visible:z-100 focus-visible:outline-2 focus-visible:outline-offset-2"
+        >
+            Skip to content
+        </a>
+
         <StoreUtilityBar />
 
         <StoreHeader :categories="categories" />
 
-        <main class="flex-1">
+        <!--
+          `tabindex="-1"` so the skip link can actually move focus here. Without
+          it the browser scrolls to the landmark but leaves focus in the header,
+          and the next Tab returns to the navigation the shopper just skipped.
+        -->
+        <main id="main-content" tabindex="-1" class="flex-1 focus:outline-none">
             <slot />
         </main>
 

@@ -21,6 +21,15 @@ void createInertiaApp({
                 return [StorefrontLayout, AccountLayout];
             case name.startsWith('admin/'):
                 return AppLayout;
+            /*
+              The storefront's chrome, not the staff shell: an error page is
+              most often reached by a shopper following a dead link, and it has
+              to keep the header and footer that offer them a way onward. Staff
+              hitting a 403 in the admin panel get the same page, which is a
+              fair trade for one component instead of two.
+            */
+            case name.startsWith('errors/'):
+                return StorefrontLayout;
             case name.startsWith('auth/'):
                 return AuthLayout;
             /*

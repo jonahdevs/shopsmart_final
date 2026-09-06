@@ -56,6 +56,9 @@ class BrandingSettingsController extends Controller
         $this->social->fill($request->socialValues())->save();
 
         Cache::forget(StorefrontCache::SOCIAL_LINKS);
+        // The store name and the social profiles both feed the Organization
+        // block in every page's structured data.
+        StorefrontCache::forgetSeo();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Branding settings saved.')]);
 

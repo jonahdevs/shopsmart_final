@@ -54,6 +54,30 @@ class StorefrontCache
      */
     public const PRIVACY = 'storefront.privacy';
 
+    /**
+     * The title pattern, description fallback, indexing switches and the
+     * Organization block, read off four settings groups. See {@see Seo}.
+     *
+     * Cached for the same reason as the privacy config, and just as urgently:
+     * the document head is built on EVERY page response, so resolving those
+     * four groups inline added three queries to every storefront page and
+     * broke the standing query budgets on the catalog, category and product
+     * pages. Nothing observes a settings save, so {@see forgetSeo()} is called
+     * by the admin screens that write them — and by any test that writes them
+     * behind the controller's back.
+     */
+    public const SEO = 'storefront.seo';
+
+    /**
+     * The Organization block, read off BusinessSettings and SocialSettings.
+     *
+     * A separate key from {@see SEO} on purpose: only the home page publishes
+     * it — it describes the business, not the page — and keeping it out of the
+     * per-page config means every other response avoids resolving those two
+     * groups at all.
+     */
+    public const SEO_ORGANIZATION = 'storefront.seo-organization';
+
     public function forgetNavigation(): void
     {
         Cache::forget(self::NAV_CATEGORIES);
@@ -62,6 +86,12 @@ class StorefrontCache
     public static function forgetPrivacy(): void
     {
         Cache::forget(self::PRIVACY);
+    }
+
+    public static function forgetSeo(): void
+    {
+        Cache::forget(self::SEO);
+        Cache::forget(self::SEO_ORGANIZATION);
     }
 
     public function forgetCategoryCounts(): void

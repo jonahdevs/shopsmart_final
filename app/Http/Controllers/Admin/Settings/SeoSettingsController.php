@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\Settings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Settings\UpdateSeoSettingsRequest;
 use App\Settings\SeoSettings;
+use App\Support\StorefrontCache;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -31,6 +32,10 @@ class SeoSettingsController extends Controller
     public function update(UpdateSeoSettingsRequest $request): RedirectResponse
     {
         $this->seo->fill($request->seoValues())->save();
+
+        // Every page's title, description and robots directive is built from
+        // these four fields and cached; nothing observes a settings save.
+        StorefrontCache::forgetSeo();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('SEO settings saved.')]);
 

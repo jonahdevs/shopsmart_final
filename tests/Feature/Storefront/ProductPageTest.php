@@ -285,7 +285,13 @@ test('a product page issues a bounded number of queries however much hangs off i
     // settings read, on a cold cache, once an hour in production. The 28th and
     // 29th are the consent gate in the document head, which reads the legal and
     // analytics groups on the same terms — see App\Support\PrivacyConfig.
-    expect($queries)->toBeLessThanOrEqual(29);
+    //
+    // The 30th and 31st are the SEO head: SeoSettings and BrandingSettings for
+    // the title pattern, description fallback and robots directive, cached
+    // together under StorefrontCache::SEO. The Product and BreadcrumbList
+    // structured data this page also publishes costs nothing extra — both are
+    // built from the model and the crumbs already loaded.
+    expect($queries)->toBeLessThanOrEqual(31);
 });
 
 test('a product page defers its reviews', function () {

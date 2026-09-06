@@ -223,6 +223,9 @@ test('a category page issues a bounded number of queries for a page of products'
     // Sixteen rather than fifteen since the footer's social links joined the
     // shared props: one settings read, on a cold cache, once an hour in
     // production. Eighteen since the consent gate joined the document head,
-    // which reads the legal and analytics groups on the same terms.
-    expect($queries)->toBeLessThanOrEqual(18);
+    // which reads the legal and analytics groups on the same terms. Twenty
+    // since the SEO head joined it too, reading SeoSettings and
+    // BrandingSettings for the title pattern, description fallback and robots
+    // directive — cached together under StorefrontCache::SEO.
+    expect($queries)->toBeLessThanOrEqual(20);
 });

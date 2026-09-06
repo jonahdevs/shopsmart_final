@@ -13,6 +13,7 @@ use App\Models\Category;
 use App\Models\CategoryPlacement;
 use App\Models\HeroSlide;
 use App\Models\Product;
+use App\Support\Seo;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Inertia\Inertia;
@@ -31,6 +32,8 @@ class HomeController extends Controller
     /** Merchandising tag behind the curated "featured" rail. */
     private const FEATURED_TAG = 'Featured';
 
+    public function __construct(private Seo $seo) {}
+
     /**
      * Show the storefront home page.
      *
@@ -42,6 +45,10 @@ class HomeController extends Controller
     public function __invoke(): Response
     {
         return Inertia::render('shop/Home', [
+            // The one page that publishes the Organization block: it describes
+            // the business rather than the page, so it belongs on the store's
+            // canonical page and nowhere else.
+            'documentHead' => $this->seo->page(jsonLd: [$this->seo->organization()]),
             'heroSlides' => $this->heroSlides(),
             'featuredCategories' => $this->featuredCategories(),
             'newArrivals' => Inertia::defer(fn (): array => $this->newArrivals()),

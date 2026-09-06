@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\Settings\UpdateBusinessSettingsRequest;
 use App\Settings\BusinessSettings;
 use App\Settings\CurrencySettings;
 use App\Settings\LocalizationSettings;
+use App\Support\StorefrontCache;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -65,6 +66,10 @@ class BusinessSettingsController extends Controller
         $this->business->fill($request->businessValues())->save();
         $this->localization->fill($request->localizationValues())->save();
         $this->currency->fill($request->currencyValues())->save();
+
+        // The legal name, contact details and address are the Organization
+        // block every page publishes in its structured data.
+        StorefrontCache::forgetSeo();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Business settings saved.')]);
 

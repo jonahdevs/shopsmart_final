@@ -414,10 +414,16 @@ test('the catalog issues a bounded number of queries for a page of products', fu
     // the document head — read on a cold cache, once an hour in production, the
     // same trade the footer's social links make.
     //
+    // Raised by one for the SEO head: the title pattern, description fallback
+    // and robots directive come from SeoSettings and BrandingSettings, cached
+    // together under StorefrontCache::SEO on the same terms. The Organization
+    // block is deliberately not here — it costs two further groups and is
+    // published by the home page alone.
+    //
     // This cap is a coarse tripwire for a page that has grown a whole new
     // dependency; the N+1 guard proper is the test below, which is what you
     // should reach for first if this one fails.
-    expect($queries)->toBeLessThanOrEqual(16);
+    expect($queries)->toBeLessThanOrEqual(17);
 });
 
 test('the catalog costs the same number of queries whatever the page holds', function () {

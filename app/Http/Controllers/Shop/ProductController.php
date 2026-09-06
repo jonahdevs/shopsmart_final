@@ -15,6 +15,7 @@ use App\Models\ProductView;
 use App\Models\RecentlyViewed;
 use App\Models\Review;
 use App\Support\CategoryTree;
+use App\Support\Seo;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -35,6 +36,8 @@ class ProductController extends Controller
      * scannable in one glance.
      */
     private const ACCESSORY_LIMIT = 4;
+
+    public function __construct(private Seo $seo) {}
 
     /** Approved reviews shown before the shopper asks for more. */
     private const REVIEW_LIMIT = 10;
@@ -80,8 +83,22 @@ class ProductController extends Controller
 
         $this->recordView($request, $product);
 
+        $crumbs = $this->breadcrumbs($product);
+
         return Inertia::render('shop/Product', [
-            'product' => ProductDetailData::fromModel($product, $this->breadcrumbs($product)),
+            'product' => ProductDetailData::fromModel($product, $crumbs),
+            // Overrides the default shared by HandleInertiaRequests. The
+            // canonical prefers the product's own column so two URLs for the
+            // same item — a variant link, a campaign parameter — concede to one.
+            'documentHead' => $this->seo->page(
+                title: $product->meta_title ?? $product->name,
+                description: $product->meta_description ?? $product->short_description,
+                canonicalUrl: $product->canonical_url ?: route('product.show', $product->slug),
+                jsonLd: [
+                    $this->seo->product($product),
+                    $this->seo->breadcrumbs($crumbs),
+                ],
+            ),
             'accessories' => $this->accessories($product),
             'related' => $this->rail($pools['related']),
             'brandProducts' => $this->rail($pools['brand']),
