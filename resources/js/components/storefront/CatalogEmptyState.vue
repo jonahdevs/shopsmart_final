@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { PackageSearch } from '@lucide/vue';
+import { computed } from 'vue';
 import { clearedFilters } from '@/components/storefront/catalogFilters';
 import type { CatalogFilterPatch } from '@/components/storefront/catalogFilters';
 import {
@@ -17,9 +18,16 @@ import { index } from '@/routes/categories';
  * out, because the shopper cannot see which of several ticked boxes emptied the
  * grid — clearing everything is the one move guaranteed to return products.
  */
-defineProps<{ hasActiveFilters: boolean }>();
+const { searchTerm } = defineProps<{
+    hasActiveFilters: boolean;
+    /** Present only on the search page, where the dead end has a cause to name. */
+    searchTerm?: string;
+}>();
 
 const emit = defineEmits<{ update: [patch: CatalogFilterPatch] }>();
+
+/** Blank on the catalog and the category pages, which are not searches. */
+const term = computed(() => searchTerm?.trim() ?? '');
 </script>
 
 <template>
@@ -31,10 +39,17 @@ const emit = defineEmits<{ update: [patch: CatalogFilterPatch] }>();
             <EmptyTitle
                 class="font-display text-ink text-xl font-extrabold tracking-[-0.02em]"
             >
-                Nothing here yet
+                <template v-if="term !== ''">
+                    No matches for “{{ term }}”
+                </template>
+                <template v-else>Nothing here yet</template>
             </EmptyTitle>
             <EmptyDescription>
-                <template v-if="hasActiveFilters">
+                <template v-if="term !== ''">
+                    Check the spelling, try a shorter or more general term, or
+                    browse the categories instead.
+                </template>
+                <template v-else-if="hasActiveFilters">
                     No products match every filter you have on. Try loosening
                     one, or start again.
                 </template>

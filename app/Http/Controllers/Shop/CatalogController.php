@@ -6,7 +6,6 @@ use App\Data\ProductListData;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Shop\Concerns\FiltersCatalogProducts;
 use App\Http\Requests\Shop\CatalogFilterRequest;
-use App\Models\Category;
 use App\Support\CategoryTree;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -35,7 +34,7 @@ class CatalogController extends Controller
 
         $selectedIds = $filters->categories === []
             ? null
-            : $this->selectedCategoryIds($filters->categories, $tree);
+            : $this->expandedCategoryIds($filters->categories, $tree);
 
         if ($selectedIds !== null) {
             $this->scopeToCategories($query, $selectedIds);
@@ -53,29 +52,5 @@ class CatalogController extends Controller
             // what ticking it returns rather than its store-wide total.
             'brandFacets' => $this->brandFacets($selectedIds),
         ]);
-    }
-
-    /**
-     * Resolve the ticked category slugs to ids, each expanded through its whole
-     * subtree. A top-level category holds no products of its own, so resolving
-     * the slug alone returned an empty grid for a box the sidebar offered.
-     *
-     * An unknown slug resolves to nothing, which correctly empties the grid
-     * rather than being ignored.
-     *
-     * @param  list<string>  $slugs
-     * @return list<int>
-     */
-    private function selectedCategoryIds(array $slugs, CategoryTree $tree): array
-    {
-        $expanded = [];
-
-        foreach (Category::query()->whereIn('slug', $slugs)->pluck('id') as $id) {
-            foreach ($tree->subtreeIds((int) $id) as $descendantId) {
-                $expanded[$descendantId] = true;
-            }
-        }
-
-        return array_keys($expanded);
     }
 }

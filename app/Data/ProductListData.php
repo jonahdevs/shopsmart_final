@@ -30,6 +30,26 @@ class ProductListData extends Data
     ) {}
 
     /**
+     * A page of nothing, for a listing that deliberately never ran a query —
+     * the search page before the shopper has typed enough to search on. Built
+     * rather than paginated so an unanswerable request costs no queries at all.
+     *
+     * Named `emptyPage` rather than `empty`, which laravel-data already
+     * declares on the base class with an incompatible signature.
+     */
+    public static function emptyPage(int $perPage): self
+    {
+        return new self(
+            data: [],
+            currentPage: 1,
+            lastPage: 1,
+            perPage: $perPage,
+            total: 0,
+            hasMorePages: false,
+        );
+    }
+
+    /**
      * @param  LengthAwarePaginator<int, Product>  $paginator
      */
     public static function fromPaginator(LengthAwarePaginator $paginator): self
