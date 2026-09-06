@@ -69,14 +69,17 @@ abstract class ProductRequest extends FormRequest
             'sale_price' => ['nullable', 'numeric', 'min:0', 'max:99999999', 'lte:price'],
             'cost_price' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
 
-            'is_taxable' => ['required', 'boolean'],
+            // Not `required`: an unticked checkbox sends nothing at all, and
+            // absence is precisely how HTML says false. Requiring these would
+            // make every flag on the form impossible to turn off.
+            'is_taxable' => ['boolean'],
             'tax_class_id' => ['nullable', 'integer', 'exists:tax_classes,id'],
-            'is_virtual' => ['required', 'boolean'],
-            'requires_shipping' => ['required', 'boolean'],
+            'is_virtual' => ['boolean'],
+            'requires_shipping' => ['boolean'],
 
             'stock_status' => ['required', Rule::enum(StockStatus::class)],
             'stock_quantity' => ['nullable', 'integer', 'min:0', 'max:1000000'],
-            'allow_backorder' => ['required', 'boolean'],
+            'allow_backorder' => ['boolean'],
             'low_stock_threshold' => ['nullable', 'integer', 'min:0', 'max:1000000'],
             'min_order_quantity' => ['nullable', 'integer', 'min:1', 'max:1000000'],
 
@@ -98,8 +101,8 @@ abstract class ProductRequest extends FormRequest
             'variants.*.cost_price' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
             'variants.*.stock_status' => ['required', Rule::enum(StockStatus::class)],
             'variants.*.stock_quantity' => ['nullable', 'integer', 'min:0', 'max:1000000'],
-            'variants.*.allow_backorder' => ['required', 'boolean'],
-            'variants.*.is_active' => ['required', 'boolean'],
+            'variants.*.allow_backorder' => ['boolean'],
+            'variants.*.is_active' => ['boolean'],
             'variants.*.sort_order' => ['nullable', 'integer', 'min:0', 'max:1000000'],
             'variants.*.attribute_value_ids' => ['nullable', 'array'],
             'variants.*.attribute_value_ids.*' => ['integer', 'distinct', 'exists:attribute_values,id'],
@@ -107,7 +110,7 @@ abstract class ProductRequest extends FormRequest
             'links' => ['nullable', 'array', 'max:100'],
             'links.*.type' => ['required', Rule::enum(ProductLinkType::class)],
             'links.*.linked_product_id' => ['required', 'integer', 'exists:products,id'],
-            'links.*.is_required' => ['required', 'boolean'],
+            'links.*.is_required' => ['boolean'],
             'links.*.default_quantity' => ['required', 'integer', 'min:1', 'max:1000'],
             'links.*.sort_order' => ['nullable', 'integer', 'min:0', 'max:1000000'],
         ];

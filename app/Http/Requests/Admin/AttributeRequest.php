@@ -38,7 +38,7 @@ abstract class AttributeRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', 'alpha_dash', Rule::unique('attributes', 'slug')->ignore($attributeId)],
             'type' => ['required', Rule::enum(AttributeType::class)],
-            'is_active' => ['required', 'boolean'],
+            'is_active' => ['boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:1000000'],
 
             'values' => ['nullable', 'array', 'max:200'],
@@ -51,7 +51,7 @@ abstract class AttributeRequest extends FormRequest
             // a type change is harmless, a malformed one is not.
             'values.*.color_code' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'values.*.sort_order' => ['nullable', 'integer', 'min:0', 'max:1000000'],
-            'values.*.is_active' => ['required', 'boolean'],
+            'values.*.is_active' => ['boolean'],
         ];
     }
 

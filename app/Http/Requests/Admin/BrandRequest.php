@@ -29,7 +29,7 @@ abstract class BrandRequest extends FormRequest
             'slug' => ['nullable', 'string', 'max:255', 'alpha_dash', Rule::unique('brands', 'slug')->ignore($brandId)],
             'description' => ['nullable', 'string', 'max:5000'],
             'website_url' => ['nullable', 'url', 'max:500'],
-            'is_active' => ['required', 'boolean'],
+            'is_active' => ['boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:1000000'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:500'],

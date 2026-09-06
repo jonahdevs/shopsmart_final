@@ -325,6 +325,23 @@ test('creating a product saves its tags', function () {
         ->toBe(['bakery', 'commercial']);
 });
 
+test('an unticked checkbox is stored as false rather than rejected', function () {
+    $payload = productPayload();
+
+    // What a browser actually sends: an unticked box is absent, not "0".
+    unset($payload['is_taxable'], $payload['is_virtual'], $payload['requires_shipping'], $payload['allow_backorder']);
+
+    $this->actingAs($this->manager)
+        ->post(route('admin.products.store'), $payload)
+        ->assertSessionHasNoErrors();
+
+    $product = Product::query()->sole();
+
+    expect($product->is_taxable)->toBeFalse()
+        ->and($product->requires_shipping)->toBeFalse()
+        ->and($product->allow_backorder)->toBeFalse();
+});
+
 test('a sale price above the price it discounts is rejected', function () {
     $this->actingAs($this->manager)
         ->post(route('admin.products.store'), productPayload(['price' => '1000', 'sale_price' => '1200']))
