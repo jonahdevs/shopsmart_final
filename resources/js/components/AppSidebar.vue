@@ -7,6 +7,7 @@ import {
     FolderTree,
     LayoutGrid,
     Package,
+    Settings,
     SlidersHorizontal,
     Star,
     Store,
@@ -36,6 +37,7 @@ import { index as adminOrders } from '@/routes/admin/orders';
 import { index as adminPayments } from '@/routes/admin/payments';
 import { index as adminProducts } from '@/routes/admin/products';
 import { index as adminReviews } from '@/routes/admin/reviews';
+import { index as adminSettings } from '@/routes/admin/settings';
 import { home } from '@/routes';
 import type { AdminNavGroup, NavItem } from '@/types';
 
@@ -128,6 +130,20 @@ const navGroups: AdminNavGroup[] = [
                 href: adminCoupons(),
                 icon: Tag,
                 permissions: ['marketing.manage'],
+            },
+        ],
+    },
+    {
+        label: 'System',
+        items: [
+            {
+                // One entry, not seven: the settings section carries its own
+                // sub-navigation, and seven store-configuration links in the
+                // main rail would outnumber every trading destination above it.
+                title: 'Settings',
+                href: adminSettings(),
+                icon: Settings,
+                permissions: ['settings.manage'],
             },
         ],
     },

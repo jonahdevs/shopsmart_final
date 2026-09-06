@@ -48,4 +48,5 @@ Route::middleware(['auth', 'verified', 'staff'])
 
         require __DIR__.'/admin/catalog.php';
         require __DIR__.'/admin/customers.php';
+        require __DIR__.'/admin/settings.php';
     });

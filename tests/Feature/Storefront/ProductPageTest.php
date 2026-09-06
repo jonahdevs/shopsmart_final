@@ -282,8 +282,10 @@ test('a product page issues a bounded number of queries however much hangs off i
     // number of accessories — five are linked here and four are offered.
     //
     // The 27th is the footer's social links joining the shared props: one
-    // settings read, on a cold cache, once an hour in production.
-    expect($queries)->toBeLessThanOrEqual(27);
+    // settings read, on a cold cache, once an hour in production. The 28th and
+    // 29th are the consent gate in the document head, which reads the legal and
+    // analytics groups on the same terms — see App\Support\PrivacyConfig.
+    expect($queries)->toBeLessThanOrEqual(29);
 });
 
 test('a product page defers its reviews', function () {

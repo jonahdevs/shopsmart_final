@@ -2,13 +2,19 @@
 
 namespace App\Data;
 
+use App\Enums\ReviewAuthorFormat;
 use App\Models\Review;
+use App\Settings\ReviewSettings;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * One approved customer review. `authorName` is the snapshot taken when the
- * review was left, so it survives the reviewer deleting their account.
+ * review was left, so it survives the reviewer deleting their account — which
+ * is exactly why it is rendered through the store's
+ * {@see ReviewAuthorFormat} here rather than handed to the client
+ * whole. This is the only place a reviewer's name reaches the public
+ * storefront.
  */
 #[TypeScript]
 class ReviewData extends Data
@@ -30,7 +36,9 @@ class ReviewData extends Data
 
         return new self(
             id: $review->getKey(),
-            authorName: $review->author_name,
+            // Resolved rather than injected: the settings class is a container
+            // singleton, so a page of reviews reads it once.
+            authorName: app(ReviewSettings::class)->authorFormat()->apply($review->author_name),
             rating: $review->rating,
             title: $review->title,
             body: $review->body,

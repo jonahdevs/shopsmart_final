@@ -8,6 +8,7 @@ use App\Http\Controllers\Shop\CategoryController;
 use App\Http\Controllers\Shop\CheckoutController;
 use App\Http\Controllers\Shop\CheckoutCouponController;
 use App\Http\Controllers\Shop\CompareController;
+use App\Http\Controllers\Shop\ConsentController;
 use App\Http\Controllers\Shop\DefaultAddressController;
 use App\Http\Controllers\Shop\HomeController;
 use App\Http\Controllers\Shop\PaymentController;
@@ -75,6 +76,24 @@ Route::get('compare', [CompareController::class, 'index'])->name('compare.index'
 Route::post('compare', [CompareController::class, 'store'])->name('compare.store');
 Route::delete('compare', [CompareController::class, 'destroy'])->name('compare.destroy');
 Route::delete('compare/all', [CompareController::class, 'clear'])->name('compare.clear');
+
+/*
+|--------------------------------------------------------------------------
+| Cookie consent
+|--------------------------------------------------------------------------
+|
+| Open to guests, because it is guests the banner exists for. The answer is
+| written server-side into a cookie so the next document can be assembled with
+| only the measurement tags this visitor allowed — see App\Support\Consent.
+|
+| Throttled: it is an unauthenticated write, and there is no reason for anyone
+| to change their mind faster than this.
+|
+*/
+
+Route::post('consent', [ConsentController::class, 'store'])
+    ->middleware('throttle:20,1')
+    ->name('consent.store');
 
 /*
 |--------------------------------------------------------------------------

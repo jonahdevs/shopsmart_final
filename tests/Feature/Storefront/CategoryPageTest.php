@@ -222,6 +222,7 @@ test('a category page issues a bounded number of queries for a page of products'
     //
     // Sixteen rather than fifteen since the footer's social links joined the
     // shared props: one settings read, on a cold cache, once an hour in
-    // production.
-    expect($queries)->toBeLessThanOrEqual(16);
+    // production. Eighteen since the consent gate joined the document head,
+    // which reads the legal and analytics groups on the same terms.
+    expect($queries)->toBeLessThanOrEqual(18);
 });
