@@ -136,10 +136,13 @@ class SearchController extends Controller
     /**
      * Answer the header's autocomplete.
      *
-     * Products come through Scout so the ranking matches the search page, while
-     * categories and brands are plain lookups — they are a handful of rows and
-     * are not worth indexing. The two-character minimum lives in the form
-     * request, so a single keystroke never reaches the search engine at all.
+     * Matched exactly the way {@see self::index()} matches, so the six rows the
+     * dropdown offers are the first six rows of the page behind it. They used
+     * to be found two different ways and could disagree.
+     *
+     * Categories and brands stay plain lookups — a handful of rows, not worth
+     * indexing. The two-character minimum lives in the form request, so a single
+     * keystroke never reaches the database at all.
      */
     public function suggest(SearchSuggestRequest $request): JsonResponse
     {
@@ -159,8 +162,13 @@ class SearchController extends Controller
      */
     private function products(string $term): array
     {
-        return array_values(Product::search($term)
-            ->query($this->constrainToLiveSearchResults(...))
+        $query = $this->liveSearchProducts()
+            ->with(['brand:id,name,slug', 'media'])
+            ->withReviewStats();
+
+        $this->applySearchTerm($query, $term);
+
+        return array_values($query
             ->take(self::PRODUCT_LIMIT)
             ->get()
             ->map(fn (Product $product): ProductCardData => ProductCardData::fromModel($product))
@@ -168,25 +176,12 @@ class SearchController extends Controller
     }
 
     /**
-     * Scout hands its `query` callback a plain builder, so the storefront's
-     * visibility rules are applied here rather than inline — the search index
-     * knows nothing about publication status or stock.
-     *
-     * @param  Builder<Product>  $query
-     */
-    private function constrainToLiveSearchResults(Builder $query): void
-    {
-        $this->constrainToSearchableProducts($query);
-
-        $query
-            ->with(['brand:id,name,slug', 'media'])
-            ->withReviewStats()
-            ->honorStockVisibility();
-    }
-
-    /**
      * Live, search-visible products — the definition a brand shortcut has to
      * agree with, or the header would offer a brand whose results page is empty.
+     *
+     * Narrower than {@see self::liveSearchProducts()} on purpose: this one is
+     * used inside `whereHas`, where the stock-visibility scope would be applied
+     * to the wrong table.
      *
      * @param  Builder<Product>  $query
      */
