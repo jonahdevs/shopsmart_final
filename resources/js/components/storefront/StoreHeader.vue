@@ -1,20 +1,19 @@
 <script setup lang="ts">
-import { Link, router, usePage } from '@inertiajs/vue3';
-import { Heart, Scale, Search, ShoppingCart, UserRound } from '@lucide/vue';
-import { computed, ref, watch } from 'vue';
+import { Link, usePage } from '@inertiajs/vue3';
+import { Heart, Scale, ShoppingCart, UserRound } from '@lucide/vue';
+import { computed } from 'vue';
 import CategoryStripe from '@/components/storefront/CategoryStripe.vue';
 import type { NavCategory } from '@/components/storefront/CategoryStripe.vue';
+import StoreSearchForm from '@/components/storefront/StoreSearchForm.vue';
 import StoreWordmark from '@/components/storefront/StoreWordmark.vue';
 import { index as cartIndex } from '@/routes/cart';
 import { index as compareIndex } from '@/routes/compare';
 import { index as wishlistIndex } from '@/routes/wishlist';
-import { catalog, dashboard, home, login } from '@/routes';
+import { dashboard, home, login } from '@/routes';
 
 const { categories } = defineProps<{ categories: NavCategory[] }>();
 
 const page = usePage();
-
-const query = ref<string>('');
 
 /**
  * Shared from HandleInertiaRequests on every storefront response, and derived
@@ -56,26 +55,6 @@ const trays = computed(() => [
     },
 ]);
 
-/**
- * The header lives in the persistent layout, so it is constructed once and
- * never again — seeding the box from the URL at setup would leave the last
- * search sitting in it for the rest of the session. Track Inertia's url
- * instead, so navigating away from a search result clears the field.
- */
-watch(
-    () => page.url,
-    (url) => {
-        query.value =
-            new URL(url, window.location.origin).searchParams.get('q') ?? '';
-    },
-    { immediate: true },
-);
-
-function search(): void {
-    router.get(catalog.url(), query.value ? { q: query.value } : {}, {
-        preserveState: false,
-    });
-}
 </script>
 
 <template>
@@ -97,37 +76,7 @@ function search(): void {
                 <StoreWordmark />
             </Link>
 
-            <!--
-              `min-w-0` because a flex item will not shrink past its content's
-              intrinsic width by default, and an `<input>` carries one — without
-              it the header is wider than a 360px viewport and the whole
-              document picks up a horizontal scrollbar.
-            -->
-            <form
-                class="focus-within:outline-electric order-3 flex w-full min-w-0 items-center overflow-hidden rounded-full bg-white focus-within:outline-2 focus-within:outline-offset-2 md:order-2 md:mx-auto md:w-auto md:max-w-2xl md:flex-1"
-                role="search"
-                @submit.prevent="search"
-            >
-                <label for="store-search" class="sr-only">
-                    Search the catalogue
-                </label>
-                <input
-                    id="store-search"
-                    v-model="query"
-                    type="search"
-                    name="q"
-                    placeholder="Search for products, brands and more..."
-                    autocomplete="off"
-                    class="text-ink placeholder:text-muted-foreground min-w-0 flex-1 bg-transparent py-2.5 pr-2 pl-5 text-sm focus:outline-none"
-                />
-                <button
-                    type="submit"
-                    class="bg-electric flex w-14 shrink-0 items-center justify-center self-stretch text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-white"
-                >
-                    <Search class="size-4.5" aria-hidden="true" />
-                    <span class="sr-only">Search</span>
-                </button>
-            </form>
+            <StoreSearchForm />
 
             <div
                 class="order-2 ml-auto flex shrink-0 items-center gap-0.5 md:order-3 md:gap-1"

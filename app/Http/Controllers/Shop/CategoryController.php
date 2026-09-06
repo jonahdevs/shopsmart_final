@@ -141,17 +141,10 @@ class CategoryController extends Controller
             return $subtreeIds;
         }
 
-        $selected = Category::query()->whereIn('slug', $selectedSlugs)->pluck('id');
-
-        $expanded = [];
-
-        foreach ($selected as $id) {
-            foreach ($tree->subtreeIds((int) $id) as $descendantId) {
-                $expanded[$descendantId] = true;
-            }
-        }
-
-        return array_values(array_intersect(array_keys($expanded), $subtreeIds));
+        return array_values(array_intersect(
+            $this->expandedCategoryIds($selectedSlugs, $tree),
+            $subtreeIds,
+        ));
     }
 
     /**

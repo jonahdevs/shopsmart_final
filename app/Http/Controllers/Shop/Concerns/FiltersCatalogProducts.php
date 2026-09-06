@@ -52,12 +52,68 @@ trait FiltersCatalogProducts
      */
     protected function catalogQuery(): Builder
     {
+        return $this->decorateForCards($this->liveCatalogProducts());
+    }
+
+    /**
+     * The same base for the search results page, which obeys `visibleInSearch()`
+     * rather than `visibleInCatalog()`.
+     *
+     * The distinction is the whole point of the two visibility flags: a
+     * search-only product has a real product page and must be reachable from a
+     * results list, while a catalog-only one must not be — otherwise the
+     * listing offers a tile whose page answers 404.
+     *
+     * @return Builder<Product>
+     */
+    protected function searchQuery(): Builder
+    {
+        return $this->decorateForCards($this->liveSearchProducts());
+    }
+
+    /**
+     * Live, catalog-visible products, with nothing loaded.
+     *
+     * Kept separate from {@see self::catalogQuery()} because the facet
+     * aggregates group and count over this set: the eager loads and the review
+     * stat subqueries below are exactly what a `GROUP BY` cannot carry.
+     *
+     * @return Builder<Product>
+     */
+    protected function liveCatalogProducts(): Builder
+    {
         return Product::query()
-            ->with(['brand:id,name,slug', 'media'])
-            ->withReviewStats()
             ->published()
             ->visibleInCatalog()
             ->honorStockVisibility();
+    }
+
+    /**
+     * Live, search-visible products, with nothing loaded. The same definition
+     * the header autocomplete applies inside Scout's `query` callback.
+     *
+     * @return Builder<Product>
+     */
+    protected function liveSearchProducts(): Builder
+    {
+        return Product::query()
+            ->published()
+            ->visibleInSearch()
+            ->honorStockVisibility();
+    }
+
+    /**
+     * Load everything a product card renders, so a grid of tiles costs the same
+     * two eager loads however many tiles it holds.
+     *
+     * @param  Builder<Product>  $query
+     * @return Builder<Product>
+     */
+    private function decorateForCards(Builder $query): Builder
+    {
+        return $query
+            ->with(['brand:id,name,slug', 'media'])
+            ->withReviewStats();
     }
 
     /**
@@ -147,22 +203,38 @@ trait FiltersCatalogProducts
     }
 
     /**
+     * The product columns a shopper's term is matched against.
+     *
+     * A hook rather than a constant: the search results page widens this to the
+     * short description so that everything Scout offers in the header dropdown
+     * — whose `toSearchableArray()` indexes that column — is also findable on
+     * the page the dropdown links through to.
+     *
+     * @return list<'name'|'sku'|'model_number'|'short_description'>
+     */
+    protected function searchTermColumns(): array
+    {
+        return ['name', 'sku', 'model_number'];
+    }
+
+    /**
      * Free-text match across the columns a shopper would type, plus the brand
      * name — which lives on another table, so the Scout database engine (which
      * only knows real columns on `products`) cannot cover it.
      *
      * @param  Builder<Product>  $query
      */
-    private function applySearchTerm(Builder $query, string $term): void
+    protected function applySearchTerm(Builder $query, string $term): void
     {
         $pattern = $this->containsPattern($term);
+        $columns = $this->searchTermColumns();
 
-        $query->where(function (Builder $match) use ($pattern): void {
-            $match
-                ->whereRaw($this->likeExpression('name'), [$pattern])
-                ->orWhereRaw($this->likeExpression('sku'), [$pattern])
-                ->orWhereRaw($this->likeExpression('model_number'), [$pattern])
-                ->orWhereHas('brand', fn (Builder $brand) => $brand->whereRaw($this->likeExpression('name'), [$pattern]));
+        $query->where(function (Builder $match) use ($pattern, $columns): void {
+            foreach ($columns as $column) {
+                $match->orWhereRaw($this->likeExpression($column), [$pattern]);
+            }
+
+            $match->orWhereHas('brand', fn (Builder $brand) => $brand->whereRaw($this->likeExpression('name'), [$pattern]));
         });
     }
 
@@ -185,7 +257,7 @@ trait FiltersCatalogProducts
      * guard against assembling SQL out of runtime values still holds. The
      * pattern itself is bound.
      *
-     * @param  'name'|'sku'|'model_number'  $column
+     * @param  'name'|'sku'|'model_number'|'short_description'  $column
      * @return literal-string
      */
     protected function likeExpression(string $column): string
@@ -302,12 +374,45 @@ trait FiltersCatalogProducts
     }
 
     /**
+     * Resolve ticked category slugs to ids, each expanded through its whole
+     * subtree. A top-level category holds no products of its own, so resolving
+     * the slug alone returns an empty grid for a box the sidebar itself offers.
+     *
+     * An unknown slug resolves to nothing, which correctly empties the grid
+     * rather than being ignored.
+     *
+     * @param  list<string>  $slugs
+     * @return list<int>
+     */
+    protected function expandedCategoryIds(array $slugs, CategoryTree $tree): array
+    {
+        $expanded = [];
+
+        foreach (Category::query()->whereIn('slug', $slugs)->pluck('id') as $id) {
+            foreach ($tree->subtreeIds((int) $id) as $descendantId) {
+                $expanded[$descendantId] = true;
+            }
+        }
+
+        return array_keys($expanded);
+    }
+
+    /**
      * @param  Builder<Product>  $query
      * @return LengthAwarePaginator<int, Product>
      */
     protected function paginateCatalog(Builder $query): LengthAwarePaginator
     {
         return $query->paginate(self::PER_PAGE)->withQueryString();
+    }
+
+    /**
+     * The page size every listing shares, for a caller that has to describe a
+     * page it never ran a query for.
+     */
+    protected function perPage(): int
+    {
+        return self::PER_PAGE;
     }
 
     /**
@@ -349,11 +454,23 @@ trait FiltersCatalogProducts
      */
     private function freshCatalogProductIdsByCategory(): array
     {
-        $liveProducts = Product::query()
-            ->published()
-            ->visibleInCatalog()
-            ->honorStockVisibility()
-            ->select('products.id');
+        return $this->productIdsByCategoryFor($this->liveCatalogProducts());
+    }
+
+    /**
+     * Roll an arbitrary set of products up into "product ids per category".
+     *
+     * Factored out of the cached catalog map so the search results page can
+     * build the same shape over the products a term actually matched. Its
+     * facets are therefore counted against the result set rather than against
+     * the whole catalog, which is what keeps the promise a facet number makes.
+     *
+     * @param  Builder<Product>  $products
+     * @return array<int, list<int>>
+     */
+    protected function productIdsByCategoryFor(Builder $products): array
+    {
+        $liveProducts = $products->clone()->select('products.id');
 
         $primary = DB::table('products')
             ->select(['id as product_id', 'primary_category_id as category_id'])
@@ -446,7 +563,25 @@ trait FiltersCatalogProducts
      */
     protected function brandFacets(?array $categoryIds = null): array
     {
-        $counts = $this->brandCounts($categoryIds);
+        $products = $this->liveCatalogProducts();
+
+        if ($categoryIds !== null) {
+            $this->scopeToCategories($products, $categoryIds);
+        }
+
+        return $this->brandFacetsFor($products);
+    }
+
+    /**
+     * The same brand facets counted over an arbitrary set of products, so the
+     * search page can count them over what the term matched.
+     *
+     * @param  Builder<Product>  $products
+     * @return list<FacetOptionData>
+     */
+    protected function brandFacetsFor(Builder $products): array
+    {
+        $counts = $this->brandCounts($products);
 
         if ($counts === []) {
             return [];
@@ -467,23 +602,14 @@ trait FiltersCatalogProducts
     }
 
     /**
-     * @param  list<int>|null  $categoryIds
+     * @param  Builder<Product>  $products
      * @return array<int, int>
      */
-    private function brandCounts(?array $categoryIds): array
+    private function brandCounts(Builder $products): array
     {
-        $query = Product::query()
-            ->published()
-            ->visibleInCatalog()
-            ->honorStockVisibility()
-            ->whereNotNull('brand_id');
-
-        if ($categoryIds !== null) {
-            $this->scopeToCategories($query, $categoryIds);
-        }
-
         /** @var array<int, int> $counts */
-        $counts = $query
+        $counts = $products->clone()
+            ->whereNotNull('brand_id')
             ->select('brand_id')
             ->selectRaw('COUNT(*) as total')
             ->groupBy('brand_id')

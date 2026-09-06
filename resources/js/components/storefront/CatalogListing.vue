@@ -49,6 +49,13 @@ const { products, filters, categoryFacets, brandFacets, hrefFor } =
         hrefFor: (query: QueryParams) => string;
         /** Sidebar heading for the category facet group. */
         categoryLabel?: string;
+        /**
+         * The term this listing is a search for, when it is one. It only
+         * changes what the empty state says: "nothing matched *this*" is a
+         * different dead end from "this shelf is bare", and the shopper's next
+         * move differs accordingly.
+         */
+        searchTerm?: string;
     }>();
 
 /** Everything a filter change can alter; `category` and the trail cannot. */
@@ -179,6 +186,7 @@ function loadMore(): void {
                 <CatalogEmptyState
                     v-else
                     :has-active-filters="filters.hasActiveFilters"
+                    :search-term="searchTerm"
                     @update="applyPatch"
                 />
 

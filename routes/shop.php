@@ -36,9 +36,13 @@ Route::get('shop/{category:slug}', [CategoryController::class, 'show'])->name('c
 
 Route::get('product/{product:slug}', [ProductController::class, 'show'])->name('product.show');
 
+// The results page: the catalog listing with a term on it, so it reads the same
+// query string and is bookmarkable and shareable like any other listing.
+Route::get('search', [SearchController::class, 'index'])->name('search');
+
 // Fires on every keystroke past the second character, so it is throttled per
 // IP rather than left to hammer the search engine.
-Route::get('search/suggest', SearchController::class)
+Route::get('search/suggest', [SearchController::class, 'suggest'])
     ->middleware('throttle:60,1')
     ->name('search.suggest');
 
