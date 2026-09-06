@@ -49,6 +49,7 @@ defineOptions({
 const { can } = usePermissions();
 const canManage = computed(() => can('customers.manage'));
 const canModerate = computed(() => can('reviews.manage'));
+const canReadOrders = computed(() => can('orders.view'));
 
 const customer = computed(() => detail.customer);
 
@@ -238,12 +239,19 @@ const stats = computed(() => [
                                 :key="order.id"
                             >
                                 <TableCell class="font-medium">
+                                    <!--
+                                      Reading customers and reading orders are
+                                      separate permissions, so the link only
+                                      appears for staff the server would admit.
+                                    -->
                                     <Link
+                                        v-if="canReadOrders"
                                         :href="adminOrder(order.orderNumber)"
                                         class="hover:underline"
                                     >
                                         {{ order.orderNumber }}
                                     </Link>
+                                    <span v-else>{{ order.orderNumber }}</span>
                                 </TableCell>
                                 <TableCell class="tabular-nums">
                                     {{ order.itemCount }}

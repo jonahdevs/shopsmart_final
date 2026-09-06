@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Form, Head, Link, router } from '@inertiajs/vue3';
 import { Check, Search, Star, Trash2, X } from '@lucide/vue';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import ReviewController from '@/actions/App/Http/Controllers/Admin/ReviewController';
 import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
 import AdminPagination from '@/components/admin/AdminPagination.vue';
@@ -20,6 +20,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
+import { usePermissions } from '@/composables/usePermissions';
 import { formatIsoDate, toBadgeVariant } from '@/lib/utils';
 import { show as adminCustomer } from '@/routes/admin/customers';
 import { index as adminReviews } from '@/routes/admin/reviews';
@@ -73,6 +74,14 @@ const form = ref({
 
 /** The review a moderator has asked to delete; null while the dialog is shut. */
 const pendingDeletion = ref<App.Data.AdminReviewRowData | null>(null);
+
+/**
+ * A moderator does not necessarily hold `customers.view`, and the customer page
+ * is behind it — so the link to the reviewer's account only appears for someone
+ * the server would actually let through.
+ */
+const { can } = usePermissions();
+const canReadCustomers = computed(() => can('customers.view'));
 
 /**
  * Only the filters that are actually set. Sending empty strings would put
@@ -284,13 +293,16 @@ function sortArrow(column: string): string {
                                   standing under its snapshotted author_name.
                                 -->
                                 <Link
-                                    v-if="review.customerId"
+                                    v-if="review.customerId && canReadCustomers"
                                     :href="adminCustomer(review.customerId)"
                                     class="text-muted-foreground ml-1 underline"
                                 >
                                     view account
                                 </Link>
-                                <span v-else class="text-muted-foreground ml-1">
+                                <span
+                                    v-else-if="!review.customerId"
+                                    class="text-muted-foreground ml-1"
+                                >
                                     (no account)
                                 </span>
                                 <span class="text-muted-foreground">

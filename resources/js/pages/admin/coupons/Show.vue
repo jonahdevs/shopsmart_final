@@ -31,6 +31,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { usePermissions } from '@/composables/usePermissions';
 import { formatIsoDate } from '@/lib/utils';
 import { show as adminCustomer } from '@/routes/admin/customers';
 import { edit as adminCouponEdit, index as adminCoupons } from '@/routes/admin/coupons';
@@ -53,6 +54,15 @@ const coupon = computed(() => detail.coupon);
 
 /** True while the confirm-removal dialog is open. */
 const confirmingRemoval = ref(false);
+
+/**
+ * The history links out to two other admin sections, each behind its own
+ * permission. Marketing and sales are not necessarily the same person, so a
+ * link only appears for someone the server would actually let through.
+ */
+const { can } = usePermissions();
+const canReadCustomers = computed(() => can('customers.view'));
+const canReadOrders = computed(() => can('orders.view'));
 
 /**
  * A code that has been redeemed is deactivated rather than deleted:
@@ -237,12 +247,15 @@ const terms = computed(() => [
                             >
                                 <TableCell class="font-medium">
                                     <Link
-                                        v-if="use.orderNumber"
+                                        v-if="use.orderNumber && canReadOrders"
                                         :href="adminOrder(use.orderNumber)"
                                         class="hover:underline"
                                     >
                                         {{ use.orderNumber }}
                                     </Link>
+                                    <span v-else-if="use.orderNumber">
+                                        {{ use.orderNumber }}
+                                    </span>
                                     <span v-else class="text-muted-foreground">
                                         Order removed
                                     </span>
@@ -254,7 +267,7 @@ const terms = computed(() => [
                                       means the account has since been closed.
                                     -->
                                     <Link
-                                        v-if="use.customerId"
+                                        v-if="use.customerId && canReadCustomers"
                                         :href="adminCustomer(use.customerId)"
                                         class="hover:underline"
                                     >
