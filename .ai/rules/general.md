@@ -20,15 +20,19 @@ So there is no way to click through the storefront from here. Verify server-side
 
 Note also that `php artisan tinker --execute '...'` DOES work with single quotes; it is only double quotes inside that PowerShell strips. Piping a file into `php artisan tinker` fails on this machine with a T_VARIABLE parse error.
 
-## npm run build is broken here; use vue-tsc to verify the frontend
-`npm run build` fails on this machine for two pre-existing environmental reasons, neither caused by application code:
+## Always run `npm run build` — a broken install hides real errors as fake ones
+`npm run build` and `npx vue-tsc --noEmit -p tsconfig.json` both work and both must pass. Fixed 2026-09-06 by deleting `node_modules` and `package-lock.json` and reinstalling; the tree went from 131 top-level packages to 215.
 
-1. `node_modules/.bin/` is empty, so the `vp` shim (vite-plus) does not exist: "'vp' is not recognized as an internal or external command".
-2. Running it directly (`node node_modules/vite-plus/bin/vp build`) then fails with `Cannot find native binding` / `Cannot find module '@rolldown/binding-wasm32-wasi'` — the npm optional-dependency bug (npm/cli#4828).
+Two symptoms mean the install has rotted again, and both are npm's optional-dependency bug (npm/cli#4828), never application code:
 
-The documented fix is deleting `node_modules` and `package-lock.json` and reinstalling, which is a dependency operation needing the user's approval. Until that is done, verify the frontend with `npx vue-tsc --noEmit -p tsconfig.json` instead.
+1. `node_modules/.bin/` is empty, so the `vp` shim (vite-plus) is missing: "'vp' is not recognized as an internal or external command".
+2. Running the binary directly then fails with `Cannot find native binding` / `Cannot find module '@rolldown/binding-wasm32-wasi'`.
 
-Note that vue-tsc reports many PRE-EXISTING `Property 'form' does not exist on type ...` errors from Wayfinder's route-function typing, across auth pages, storefront components and account pages. Those are not yours — only check that your own files add no new errors.
+The fix is the full reinstall above. It is a dependency operation, so ask first — but note it only regenerated the lockfile; `package.json` was untouched and nothing but two patch versions moved.
+
+**Do not dismiss `Property 'form' does not exist on type ...` errors as pre-existing Wayfinder noise.** They were, briefly, believed to be exactly that. They were entirely an artefact of the broken install and vanished on reinstall. `vue-tsc` is now clean, so any such error is real.
+
+The build is also the only check that catches a wrong Wayfinder import: action functions are named after the CONTROLLER METHOD (`updateStatus`, `updateNote`), not after the route name (`status`, `note`). Importing the route name compiles under PHPStan and passes every Pest test, then fails the build with `MISSING_EXPORT`.
 
 ## Commit multi-line messages with git commit -F, never -m
 PowerShell strips double quotes when passing an argument to a native executable, so `git commit -m` with a message containing a `"` gets split at that point and git fails with a bogus `error: pathspec '...' did not match any file(s)`. A PowerShell here-string (`@'...'@`) does not help — the stripping happens at the native-command boundary.

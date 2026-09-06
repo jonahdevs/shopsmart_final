@@ -24,7 +24,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { usePermissions } from '@/composables/usePermissions';
 import { formatIsoDate, toBadgeVariant } from '@/lib/utils';
-import { note, status } from '@/actions/App/Http/Controllers/Admin/OrderController';
+import { updateNote, updateStatus } from '@/actions/App/Http/Controllers/Admin/OrderController';
 import { index as adminOrders } from '@/routes/admin/orders';
 
 const { detail } = defineProps<{
@@ -344,7 +344,7 @@ const address = order.shippingAddress;
 
                         <Form
                             v-else
-                            v-bind="status.form(order.orderNumber)"
+                            v-bind="updateStatus.form(order.orderNumber)"
                             :options="{ preserveScroll: true }"
                             v-slot="{ errors, processing }"
                             class="space-y-3"
@@ -385,7 +385,7 @@ const address = order.shippingAddress;
                     </CardHeader>
                     <CardContent>
                         <Form
-                            v-bind="note.form(order.orderNumber)"
+                            v-bind="updateNote.form(order.orderNumber)"
                             :options="{ preserveScroll: true }"
                             v-slot="{ errors, processing }"
                             class="space-y-3"
