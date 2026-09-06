@@ -22,5 +22,6 @@ if (app()->environment('local')) {
 }
 
 require __DIR__.'/shop.php';
+require __DIR__.'/admin.php';
 require __DIR__.'/account.php';
 require __DIR__.'/settings.php';
