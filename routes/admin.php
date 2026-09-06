@@ -45,4 +45,8 @@ Route::middleware(['auth', 'verified', 'staff'])
             Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
             Route::get('payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
         });
+
+        // Staff accounts, roles and the activity log. Split out because that
+        // section carries its own permissions and its own escalation rules.
+        require __DIR__.'/admin/access.php';
     });
