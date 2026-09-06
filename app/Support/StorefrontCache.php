@@ -41,9 +41,27 @@ class StorefrontCache
      */
     public const CATEGORY_PRODUCT_IDS = 'storefront.category-product-ids.v2';
 
+    /**
+     * The consent categories the banner offers, the policy URLs, and the
+     * measurement tag ids those categories gate. See {@see PrivacyConfig}.
+     *
+     * Cached for the same reason as the social links, only more so: the privacy
+     * scripts are rendered into the head of EVERY document, storefront and
+     * admin alike, so resolving two settings groups inline put two queries on
+     * every single page load. Nothing observes a settings save, so
+     * {@see forgetPrivacy()} is called by the admin screen that writes them —
+     * and by any test that writes them behind the controller's back.
+     */
+    public const PRIVACY = 'storefront.privacy';
+
     public function forgetNavigation(): void
     {
         Cache::forget(self::NAV_CATEGORIES);
+    }
+
+    public static function forgetPrivacy(): void
+    {
+        Cache::forget(self::PRIVACY);
     }
 
     public function forgetCategoryCounts(): void

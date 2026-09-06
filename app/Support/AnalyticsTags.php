@@ -3,7 +3,6 @@
 namespace App\Support;
 
 use App\Enums\ConsentCategory;
-use App\Settings\AnalyticsSettings;
 use Illuminate\Http\Request;
 
 /**
@@ -22,7 +21,7 @@ use Illuminate\Http\Request;
 class AnalyticsTags
 {
     public function __construct(
-        private AnalyticsSettings $analytics,
+        private PrivacyConfig $config,
         private Consent $consent,
     ) {}
 
@@ -34,10 +33,12 @@ class AnalyticsTags
      */
     public function forRequest(Request $request): array
     {
+        $tags = $this->config->get()['tags'];
+
         $candidates = [
-            'ga4' => [trim($this->analytics->ga4_id), ConsentCategory::Analytics],
-            'gtm' => [trim($this->analytics->gtm_id), ConsentCategory::Analytics],
-            'metaPixel' => [trim($this->analytics->meta_pixel_id), ConsentCategory::Marketing],
+            'ga4' => [$tags['ga4'], ConsentCategory::Analytics],
+            'gtm' => [$tags['gtm'], ConsentCategory::Analytics],
+            'metaPixel' => [$tags['metaPixel'], ConsentCategory::Marketing],
         ];
 
         $allowed = [];

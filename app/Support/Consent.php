@@ -4,7 +4,6 @@ namespace App\Support;
 
 use App\Enums\ConsentCategory;
 use App\Http\Controllers\Shop\ConsentController;
-use App\Settings\LegalSettings;
 use Illuminate\Http\Request;
 
 /**
@@ -34,17 +33,28 @@ class Consent
     /** One year, in minutes. */
     public const LIFETIME = 60 * 24 * 365;
 
-    public function __construct(private LegalSettings $settings) {}
+    public function __construct(private PrivacyConfig $config) {}
 
     /**
      * The optional categories this store asks about. An empty list means the
      * banner does not render and no optional tag can ever load.
      *
+     * Read through {@see PrivacyConfig} rather than the settings object: this
+     * runs on every document, and resolving the settings costs a query.
+     *
      * @return list<ConsentCategory>
      */
     public function offered(): array
     {
-        return $this->settings->offeredCategories();
+        $categories = array_filter(array_map(
+            static fn (string $value): ?ConsentCategory => ConsentCategory::tryFrom($value),
+            $this->config->get()['categories'],
+        ));
+
+        return array_values(array_filter(
+            $categories,
+            static fn (ConsentCategory $category): bool => $category->isOptional(),
+        ));
     }
 
     public function isOffered(ConsentCategory $category): bool

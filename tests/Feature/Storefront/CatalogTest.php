@@ -407,13 +407,17 @@ test('the catalog issues a bounded number of queries for a page of products', fu
         ->assertOk()
         ->assertInertia(fn (AssertableInertia $page) => $page->has('products.data', 24));
 
-    // Twelve at the time of writing: the paginator count, the page itself, the
-    // brand and media eager loads, the two facet aggregates and their lookups,
-    // the category tree the facet counts are rolled up through, and the store
-    // settings. This cap is a coarse tripwire for a page that has grown a whole
-    // new dependency; the N+1 guard proper is the test below, which is what you
+    // Fourteen at the time of writing: the paginator count, the page itself,
+    // the brand and media eager loads, the two facet aggregates and their
+    // lookups, the category tree the facet counts are rolled up through, the
+    // store settings, and the two settings groups behind the consent gate in
+    // the document head — read on a cold cache, once an hour in production, the
+    // same trade the footer's social links make.
+    //
+    // This cap is a coarse tripwire for a page that has grown a whole new
+    // dependency; the N+1 guard proper is the test below, which is what you
     // should reach for first if this one fails.
-    expect($queries)->toBeLessThanOrEqual(14);
+    expect($queries)->toBeLessThanOrEqual(16);
 });
 
 test('the catalog costs the same number of queries whatever the page holds', function () {

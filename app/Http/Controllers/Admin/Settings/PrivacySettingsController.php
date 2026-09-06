@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Settings\UpdatePrivacySettingsRequest;
 use App\Settings\AnalyticsSettings;
 use App\Settings\LegalSettings;
+use App\Support\StorefrontCache;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -56,6 +57,11 @@ class PrivacySettingsController extends Controller
     {
         $this->legal->fill($request->legalValues())->save();
         $this->analytics->fill($request->analyticsValues())->save();
+
+        // Both groups are read on every document through a cached read model,
+        // so without this a category withdrawn here would keep gating tags for
+        // up to an hour — which is the wrong direction for this setting to fail.
+        StorefrontCache::forgetPrivacy();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Privacy settings saved.')]);
 

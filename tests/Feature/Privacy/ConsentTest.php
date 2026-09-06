@@ -4,6 +4,7 @@ use App\Enums\ConsentCategory;
 use App\Settings\AnalyticsSettings;
 use App\Settings\LegalSettings;
 use App\Support\Consent;
+use App\Support\StorefrontCache;
 
 /**
  * The consent gate on the measurement tags.
@@ -30,14 +31,24 @@ beforeEach(function () {
     $analytics->gtm_id = GTM_ID;
     $analytics->meta_pixel_id = PIXEL_ID;
     $analytics->save();
+
+    StorefrontCache::forgetPrivacy();
 });
 
-/** @param  array<int, string>  $categories */
+/**
+ * These tests write the settings directly rather than through the admin screen,
+ * so they have to drop the cached read model themselves — the same thing
+ * PrivacySettingsController does after a save.
+ *
+ * @param  array<int, string>  $categories
+ */
 function offerCategories(array $categories): void
 {
     $legal = app(LegalSettings::class);
     $legal->consent_categories = $categories;
     $legal->save();
+
+    StorefrontCache::forgetPrivacy();
 }
 
 /**
