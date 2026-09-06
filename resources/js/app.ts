@@ -19,6 +19,8 @@ void createInertiaApp({
                 return StorefrontLayout;
             case name.startsWith('account/'):
                 return [StorefrontLayout, AccountLayout];
+            case name.startsWith('admin/'):
+                return AppLayout;
             case name.startsWith('auth/'):
                 return AuthLayout;
             /*

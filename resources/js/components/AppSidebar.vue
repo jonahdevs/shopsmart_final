@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, FolderGit2, LayoutGrid } from '@lucide/vue';
+import {
+    CreditCard,
+    LayoutGrid,
+    Package,
+    Store,
+} from '@lucide/vue';
+import AdminNav from '@/components/admin/AdminNav.vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
-import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import {
     Sidebar,
@@ -14,27 +19,63 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
-import type { NavItem } from '@/types';
+import { dashboard as adminDashboard } from '@/routes/admin';
+import { index as adminOrders } from '@/routes/admin/orders';
+import { index as adminPayments } from '@/routes/admin/payments';
+import { home } from '@/routes';
+import type { AdminNavGroup, NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
+/**
+ * The staff shell's navigation.
+ *
+ * Each item declares the permissions that admit a staff member to it, and
+ * AdminNav drops the ones they do not hold — so a Support role sees Orders and
+ * Payments and simply never learns the catalog pages exist. The permissions
+ * here must match the `can:` middleware on the corresponding routes in
+ * routes/admin.php; that middleware is what actually refuses a request.
+ *
+ * Later phases append their own groups here as their routes land.
+ */
+const navGroups: AdminNavGroup[] = [
     {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
+        label: 'Overview',
+        items: [
+            {
+                title: 'Dashboard',
+                href: adminDashboard(),
+                icon: LayoutGrid,
+                exact: true,
+            },
+        ],
+    },
+    {
+        label: 'Sales',
+        items: [
+            {
+                title: 'Orders',
+                href: adminOrders(),
+                icon: Package,
+                permissions: ['orders.view', 'orders.manage'],
+            },
+            {
+                title: 'Payments',
+                href: adminPayments(),
+                icon: CreditCard,
+                permissions: ['payments.view', 'payments.manage'],
+            },
+        ],
     },
 ];
 
+/**
+ * A way back to the shop floor. Staff cannot buy — EnsureUserIsCustomer sees to
+ * that — but they do need to look at what a customer sees.
+ */
 const footerNavItems: NavItem[] = [
     {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
+        title: 'View storefront',
+        href: home(),
+        icon: Store,
     },
 ];
 </script>
@@ -45,7 +86,7 @@ const footerNavItems: NavItem[] = [
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
-                        <Link :href="dashboard()">
+                        <Link :href="adminDashboard()">
                             <AppLogo />
                         </Link>
                     </SidebarMenuButton>
@@ -54,7 +95,7 @@ const footerNavItems: NavItem[] = [
         </SidebarHeader>
 
         <SidebarContent>
-            <NavMain :items="mainNavItems" />
+            <AdminNav :groups="navGroups" />
         </SidebarContent>
 
         <SidebarFooter>

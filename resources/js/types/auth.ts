@@ -19,6 +19,13 @@ export type Auth = {
      * page having to ask the server. False for a guest.
      */
     isStaff: boolean;
+    /**
+     * Every permission the signed-in staff member holds, however granted —
+     * directly or through a role. Shared on every page response so the admin
+     * sidebar can render only the destinations `can:` would actually admit
+     * them to. Empty for customers and guests.
+     */
+    permissions: string[];
 };
 
 export type Passkey = {
