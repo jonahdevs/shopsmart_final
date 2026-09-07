@@ -81,14 +81,30 @@ class OrderController extends Controller
     /**
      * Move the order's fulfilment status.
      *
-     * A refused move is reported as a validation error rather than a flash,
-     * because it means the page was showing a status the order had already left
-     * — the staff member needs the form to say so, not a toast that scrolls
-     * away.
+     * Which moves are legal is settled by {@see UpdateOrderStatusRequest} before
+     * this runs, so anything arriving here is either a permitted transition or a
+     * no-op. A refused move is reported as a validation error rather than a
+     * flash, because it means the page was showing a status the order had
+     * already left — the staff member needs the form to say so, not a toast that
+     * scrolls away.
      */
     public function updateStatus(UpdateOrderStatusRequest $request, Order $order): RedirectResponse
     {
         $status = OrderStatus::from((string) $request->validated('status'));
+
+        // The picker renders the current status as its selected option, so a
+        // form submitted untouched lands here routinely. That is a no-op, not a
+        // failure: it must not error and it must not email the customer.
+        // Handled before changeStatus(), which reports a same-status write as
+        // false and cannot tell it apart from losing a race.
+        if ($order->status === $status) {
+            Inertia::flash('toast', [
+                'type' => 'info',
+                'message' => __('This order is already :status.', ['status' => mb_strtolower($status->label())]),
+            ]);
+
+            return back();
+        }
 
         if (! $order->changeStatus($status)) {
             return back()->withErrors([

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Layers, Plus, Trash2 } from '@lucide/vue';
+import { computed } from 'vue';
 import AdminCard from '@/components/admin/AdminCard.vue';
 import AdminCardHeader from '@/components/admin/AdminCardHeader.vue';
 import AdminEmptyState from '@/components/admin/AdminEmptyState.vue';
@@ -8,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
+import VariantMatrixDialog from './VariantMatrixDialog.vue';
 
 type Option = { value: string; label: string };
 
@@ -48,8 +50,23 @@ defineProps<{
  */
 const rows = defineModel<VariantRow[]>({ required: true });
 
-function addVariant(): void {
-    rows.value.push({
+/**
+ * A fresh row, however it was asked for.
+ *
+ * The generator and the Add button have to agree on what a new variant looks
+ * like — two shapes that drift apart would mean a generated row defaulting to
+ * out of stock or inactive while a hand-added one did not.
+ *
+ * The SKU is left blank on purpose, including for generated rows. A SKU is a
+ * warehouse's identifier, not something a form can infer from a colour and a
+ * size; a guessed one that looks right and is wrong is far more expensive than
+ * an empty field the request refuses.
+ */
+function blankVariant(
+    attributeValueIds: number[],
+    sortOrder: number,
+): VariantRow {
+    return {
         id: null,
         sku: '',
         barcode: null,
@@ -60,9 +77,48 @@ function addVariant(): void {
         stockQuantity: null,
         allowBackorder: false,
         isActive: true,
-        sortOrder: rows.value.length,
-        attributeValueIds: [],
-    });
+        sortOrder,
+        attributeValueIds,
+    };
+}
+
+function addVariant(): void {
+    rows.value.push(blankVariant([], rows.value.length));
+}
+
+/**
+ * What the matrix dialog decided is missing, appended.
+ *
+ * Appended, never assigned: the dialog has already dropped every combination
+ * that is here, so the rows a staff member has priced keep their place, their
+ * index — and therefore their uncontrolled inputs, which are keyed by it.
+ */
+function appendGenerated(combinations: number[][]): void {
+    for (const combination of combinations) {
+        rows.value.push(blankVariant([...combination], rows.value.length));
+    }
+}
+
+/** The value ids each row holds, for the dialog to compare against. */
+const existingCombinations = computed(() =>
+    rows.value.map((variant) => variant.attributeValueIds),
+);
+
+/**
+ * Mirror an edited option select back into the row.
+ *
+ * Everything else on a row is write-only local state — the `<Form>` reads the
+ * DOM at submit time and nothing here has to know. The options are the
+ * exception: the generator decides what is new by comparing against these, so
+ * a combination picked by hand and never recorded here would be generated a
+ * second time as a duplicate.
+ */
+function syncAttributeValueIds(index: number, value: unknown): void {
+    const selected: unknown[] = Array.isArray(value) ? value : [];
+
+    rows.value[index].attributeValueIds = selected
+        .map(Number)
+        .filter(Number.isInteger);
 }
 </script>
 
@@ -70,6 +126,17 @@ function addVariant(): void {
     <AdminCard>
         <AdminCardHeader title="Variants" :icon="Layers">
             <template #actions>
+                <!--
+                  With no attributes set up there is nothing to combine, so the
+                  action does not exist rather than opening an empty dialog.
+                -->
+                <VariantMatrixDialog
+                    v-if="attributeGroups.length > 0"
+                    :attribute-groups="attributeGroups"
+                    :existing-combinations="existingCombinations"
+                    @generate="appendGenerated"
+                />
+
                 <Button
                     type="button"
                     variant="outline"
@@ -184,6 +251,9 @@ function addVariant(): void {
                         multiple
                         class="h-28"
                         :model-value="variant.attributeValueIds.map(String)"
+                        @update:model-value="
+                            (value) => syncAttributeValueIds(index, value)
+                        "
                     >
                         <optgroup
                             v-for="group in attributeGroups"

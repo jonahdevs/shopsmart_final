@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\OrderInvoiceController;
 use App\Http\Controllers\Admin\PaymentController;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +35,11 @@ Route::middleware(['auth', 'verified', 'staff'])
         Route::middleware('can:orders.view')->group(function (): void {
             Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
             Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+
+            // Reading an order includes taking a copy of it away. It is the same
+            // document the customer downloads, so it needs no more than the
+            // permission that already showed the figures on screen.
+            Route::get('orders/{order}/invoice', OrderInvoiceController::class)->name('orders.invoice');
         });
 
         Route::middleware('can:orders.manage')->group(function (): void {

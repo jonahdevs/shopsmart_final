@@ -5,6 +5,7 @@ import {
     ArrowLeftRight,
     Banknote,
     CreditCard,
+    Download,
     MessageSquare,
     Package,
     StickyNote,
@@ -15,6 +16,7 @@ import {
     updateNote,
     updateStatus,
 } from '@/actions/App/Http/Controllers/Admin/OrderController';
+import OrderInvoiceController from '@/actions/App/Http/Controllers/Admin/OrderInvoiceController';
 import AdminCard from '@/components/admin/AdminCard.vue';
 import AdminCardHeader from '@/components/admin/AdminCardHeader.vue';
 import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
@@ -22,7 +24,10 @@ import AdminStatCard from '@/components/admin/AdminStatCard.vue';
 import AdminStatusBadge from '@/components/admin/AdminStatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { NativeSelect } from '@/components/ui/native-select';
+import {
+    NativeSelect,
+    NativeSelectOption,
+} from '@/components/ui/native-select';
 import {
     Table,
     TableBody,
@@ -72,6 +77,18 @@ const address = order.shippingAddress;
                         <ArrowLeft class="size-4" aria-hidden="true" />
                         All orders
                     </Link>
+                </Button>
+
+                <!--
+                  A plain anchor, not a <Link>: the invoice is a PDF the browser
+                  downloads, and an Inertia visit would ask the server for a page
+                  and get a file it cannot render.
+                -->
+                <Button v-if="can('orders.view')" size="sm" as-child>
+                    <a :href="OrderInvoiceController.url(order.orderNumber)">
+                        <Download class="size-4" aria-hidden="true" />
+                        Invoice
+                    </a>
                 </Button>
             </template>
         </AdminPageHeader>
@@ -390,14 +407,29 @@ const address = order.shippingAddress;
                         >
                             <div class="space-y-1.5">
                                 <Label for="order-status">New status</Label>
-                                <NativeSelect id="order-status" name="status">
-                                    <option
+                                <!--
+                                  The current status leads the list and is
+                                  selected, so the picker opens showing the truth
+                                  and a staff member has to choose a move rather
+                                  than stumble into one. Which moves are offered
+                                  is `detail.availableStatuses`, decided by the
+                                  server — the lifecycle is not restated here.
+                                -->
+                                <NativeSelect
+                                    id="order-status"
+                                    name="status"
+                                    :model-value="order.status"
+                                >
+                                    <NativeSelectOption :value="order.status">
+                                        {{ order.statusLabel }} (current)
+                                    </NativeSelectOption>
+                                    <NativeSelectOption
                                         v-for="option in detail.availableStatuses"
                                         :key="option.value"
                                         :value="option.value"
                                     >
                                         {{ option.label }}
-                                    </option>
+                                    </NativeSelectOption>
                                 </NativeSelect>
                                 <p
                                     v-if="errors.status"

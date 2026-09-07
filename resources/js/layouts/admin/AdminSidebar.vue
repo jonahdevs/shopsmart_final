@@ -7,6 +7,7 @@ import {
     FolderTree,
     LayoutGrid,
     Package,
+    Percent,
     ScrollText,
     Settings,
     ShieldCheck,
@@ -53,6 +54,7 @@ import {
     shipping as settingsShipping,
 } from '@/routes/admin/settings';
 import { index as adminStaff } from '@/routes/admin/staff';
+import { index as adminTaxClasses } from '@/routes/admin/tax-classes';
 import type { AdminNavGroup, NavItem } from '@/types';
 
 /**
@@ -124,6 +126,12 @@ const navGroups: AdminNavGroup[] = [
                 title: 'Attributes',
                 href: adminAttributes(),
                 icon: SlidersHorizontal,
+                permissions: ['catalog.manage'],
+            },
+            {
+                title: 'Tax classes',
+                href: adminTaxClasses(),
+                icon: Percent,
                 permissions: ['catalog.manage'],
             },
         ],

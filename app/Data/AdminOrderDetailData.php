@@ -3,6 +3,7 @@
 namespace App\Data;
 
 use App\Enums\OrderStatus;
+use App\Http\Requests\Admin\UpdateOrderStatusRequest;
 use App\Models\Order;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
@@ -57,28 +58,25 @@ class AdminOrderDetailData extends Data
     /**
      * The statuses this order may still be moved to.
      *
-     * A final status is the end of the road — {@see OrderStatus::isFinal()} — so
-     * the picker offers nothing from there rather than letting staff reopen a
-     * refunded order into "processing". The current status is excluded because
-     * {@see Order::changeStatus()} treats a no-op move as a failure.
+     * The lifecycle itself lives on {@see OrderStatus::allowedTransitions()},
+     * which {@see UpdateOrderStatusRequest} also reads,
+     * so the picker can never offer a move the form request would then refuse —
+     * and the client never has to know the rules, only render them.
+     *
+     * The current status is not in this list: staying put is not a transition.
+     * The page adds it to the select itself, as the selected option, so that
+     * submitting the form untouched is the no-op it looks like.
      *
      * @return list<array{value: string, label: string}>
      */
     private static function transitionsFrom(OrderStatus $current): array
     {
-        if ($current->isFinal()) {
-            return [];
-        }
-
-        return array_values(array_map(
+        return array_map(
             static fn (OrderStatus $status): array => [
                 'value' => $status->value,
                 'label' => $status->label(),
             ],
-            array_filter(
-                OrderStatus::cases(),
-                static fn (OrderStatus $status): bool => $status !== $current,
-            ),
-        ));
+            $current->allowedTransitions(),
+        );
     }
 }

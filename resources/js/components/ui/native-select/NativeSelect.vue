@@ -11,8 +11,12 @@ defineOptions({
 
 const props = defineProps<{ modelValue?: AcceptableValue | AcceptableValue[], class?: HTMLAttributes["class"] }>()
 
+// Vue's type-literal emit syntax takes a TUPLE OF ARGUMENTS, so the payload
+// has to be `[value: …]`. Declared bare, the handler types as zero-argument and
+// any listener that reads the new value fails to compile — which is why every
+// other call site reaches for `v-model` instead.
 const emit = defineEmits<{
-  "update:modelValue": AcceptableValue
+  "update:modelValue": [value: AcceptableValue]
 }>()
 
 const modelValue = useVModel(props, "modelValue", emit, {

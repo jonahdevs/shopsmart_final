@@ -203,11 +203,11 @@ registeredAt: string,
 };
 export type AdminDashboardChartsData = {
 timeline: App.Data.AdminDashboardTimelineData,
-ordersByStatus: Array<any>,
-revenueByMethod: Array<any>,
-topProducts: Array<any>,
-topCategories: Array<any>,
-ratings: Array<any>,
+ordersByStatus: App.Data.AdminChartSliceData[],
+revenueByMethod: App.Data.AdminChartSliceData[],
+topProducts: App.Data.AdminChartSliceData[],
+topCategories: App.Data.AdminChartSliceData[],
+ratings: App.Data.AdminChartSliceData[],
 averageRating: number | null,
 reviewCount: number,
 };
@@ -228,10 +228,10 @@ lowStockCount: number,
 periodLabel: string,
 };
 export type AdminDashboardTimelineData = {
-labels: Array<any>,
-revenue: Array<any>,
-orders: Array<any>,
-customers: Array<any>,
+labels: string[],
+revenue: number[],
+orders: number[],
+customers: number[],
 currencySymbol: string,
 };
 export type AdminOrderDetailData = {
@@ -421,6 +421,26 @@ invitationPending: boolean,
 createdAt: string,
 isSelf: boolean,
 manageable: boolean,
+};
+export type AdminTaxClassFormData = {
+id: number | null,
+slug: string | null,
+name: string,
+rate: string,
+description: string | null,
+isActive: boolean,
+productCount: number,
+isStoreDefault: boolean,
+};
+export type AdminTaxClassRowData = {
+id: number,
+name: string,
+slug: string,
+rate: string,
+description: string | null,
+isActive: boolean,
+productCount: number,
+isStoreDefault: boolean,
 };
 export type AttributeValueData = {
 id: number,

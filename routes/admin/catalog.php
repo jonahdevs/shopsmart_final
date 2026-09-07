@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\TaxClassController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,14 +19,19 @@ use Illuminate\Support\Facades\Route;
 |
 | Reading the catalog and changing it are separate permissions:
 | `products.view` gets the products table, `products.manage` is needed to
-| create, edit or remove one. Categories, brands and attributes are catalog
-| *structure* rather than merchandise, and move together under a single
-| `catalog.manage` — a role that may restructure the taxonomy may restructure
-| all of it.
+| create, edit or remove one. Categories, brands, attributes and tax classes
+| are catalog *structure* rather than merchandise, and move together under a
+| single `catalog.manage` — a role that may restructure the taxonomy may
+| restructure all of it. Tax classes join that group rather than sitting under
+| the settings permission because a VAT band is a thing products are filed
+| into, edited the same way and by the same people as the rest of the
+| structure; only the store *default* band is a setting, and that stays in
+| shipping and tax settings where it already lives.
 |
 | Products, categories and brands are bound by slug through their models' own
-| route keys. Attributes are not: they never appear in a storefront URL, so
-| there is no slug worth putting in an admin one.
+| route keys. Attributes and tax classes are not: neither declares
+| `getRouteKeyName()`, and neither ever appears in a storefront URL, so there
+| is no slug worth putting in an admin one.
 |
 | `products/create` is registered before `products/{product}/edit` only for
 | readability — the two patterns cannot collide. `products.restore` binds
@@ -76,4 +82,11 @@ Route::middleware('can:catalog.manage')->group(function (): void {
     Route::get('attributes/{attribute}/edit', [AttributeController::class, 'edit'])->name('attributes.edit');
     Route::patch('attributes/{attribute}', [AttributeController::class, 'update'])->name('attributes.update');
     Route::delete('attributes/{attribute}', [AttributeController::class, 'destroy'])->name('attributes.destroy');
+
+    Route::get('tax-classes', [TaxClassController::class, 'index'])->name('tax-classes.index');
+    Route::get('tax-classes/create', [TaxClassController::class, 'create'])->name('tax-classes.create');
+    Route::post('tax-classes', [TaxClassController::class, 'store'])->name('tax-classes.store');
+    Route::get('tax-classes/{taxClass}/edit', [TaxClassController::class, 'edit'])->name('tax-classes.edit');
+    Route::patch('tax-classes/{taxClass}', [TaxClassController::class, 'update'])->name('tax-classes.update');
+    Route::delete('tax-classes/{taxClass}', [TaxClassController::class, 'destroy'])->name('tax-classes.destroy');
 });
