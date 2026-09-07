@@ -1,9 +1,19 @@
 <script setup lang="ts">
-import { Deferred, Head, Link } from '@inertiajs/vue3';
+import { Deferred, Head, Link, usePage } from '@inertiajs/vue3';
 import type { InertiaLinkProps } from '@inertiajs/vue3';
 import type { LucideIcon } from '@lucide/vue';
-import { Heart, MapPin, Package, PenLine, Plus } from '@lucide/vue';
+import {
+    Heart,
+    MapPin,
+    Package,
+    PenLine,
+    Plus,
+    ShieldCheck,
+    UserRound,
+} from '@lucide/vue';
 import { computed } from 'vue';
+import AccountPanel from '@/components/storefront/AccountPanel.vue';
+import AccountStatTile from '@/components/storefront/AccountStatTile.vue';
 import OrderCard from '@/components/storefront/OrderCard.vue';
 import ProductGrid from '@/components/storefront/ProductGrid.vue';
 import ProductGridSkeleton from '@/components/storefront/ProductGridSkeleton.vue';
@@ -15,6 +25,7 @@ import {
     EmptyMedia,
     EmptyTitle,
 } from '@/components/ui/empty';
+import { formatIsoDate } from '@/lib/utils';
 import { catalog } from '@/routes';
 import {
     addresses as addressesRoute,
@@ -22,6 +33,8 @@ import {
     reviews as reviewsRoute,
 } from '@/routes/account';
 import { index as ordersIndex } from '@/routes/orders';
+import { edit as editProfile } from '@/routes/profile';
+import { edit as editSecurity } from '@/routes/security';
 import { index as wishlistIndex } from '@/routes/wishlist';
 
 /**
@@ -75,6 +88,38 @@ const tiles = computed<AccountStat[]>(() => [
         icon: PenLine,
     },
 ]);
+
+/**
+ * The signed-in user, off the shared props.
+ *
+ * `customerName` already arrives as its own prop, but the email and the join
+ * date do not — and asking the controller for two more strings it does not
+ * otherwise need would be a query budget spent on something every page in this
+ * shell is already carrying.
+ */
+const page = usePage();
+
+const user = computed(() => page.props.auth.user);
+
+/**
+ * The settings a shopper actually reaches for from a hub page. Appearance is
+ * deliberately absent: dark mode is a staff affordance and the storefront is
+ * always light, so offering it here would promise something that does nothing.
+ */
+const settingsLinks = [
+    {
+        label: 'Profile',
+        description: 'Your name, email and phone number.',
+        href: editProfile(),
+        icon: UserRound,
+    },
+    {
+        label: 'Security',
+        description: 'Password, two-factor and passkeys.',
+        href: editSecurity(),
+        icon: ShieldCheck,
+    },
+];
 </script>
 
 <template>
@@ -91,29 +136,12 @@ const tiles = computed<AccountStat[]>(() => [
 
             <ul class="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <li v-for="tile in tiles" :key="tile.label">
-                    <Link
+                    <AccountStatTile
+                        :label="tile.label"
+                        :value="tile.count"
                         :href="tile.href"
-                        class="border-rule shadow-card hover:shadow-card-hover focus-visible:outline-electric flex h-full flex-col gap-3 rounded-lg border bg-white p-4 transition-shadow focus-visible:outline-2 focus-visible:outline-offset-2"
-                    >
-                        <span
-                            class="bg-tint-strong text-electric flex size-9 items-center justify-center rounded-full"
-                            aria-hidden="true"
-                        >
-                            <component :is="tile.icon" class="size-4" />
-                        </span>
-                        <span>
-                            <span
-                                class="font-display text-ink block text-2xl leading-none font-extrabold tracking-[-0.02em] tabular-nums"
-                            >
-                                {{ tile.count }}
-                            </span>
-                            <span
-                                class="text-muted-foreground mt-1 block text-xs"
-                            >
-                                {{ tile.label }}
-                            </span>
-                        </span>
-                    </Link>
+                        :icon="tile.icon"
+                    />
                 </li>
             </ul>
         </section>
@@ -164,57 +192,136 @@ const tiles = computed<AccountStat[]>(() => [
             </ul>
         </section>
 
-        <section aria-labelledby="account-address-heading">
-            <SectionHeading
-                eyebrow="Where it goes"
+        <!--
+          Two panels of facts rather than two more content sections: who you are
+          and where things go are reference material, and the headed card is the
+          device this area uses for that. SectionHeading stays for the ORDERS
+          above, which is content a shopper reads through.
+        -->
+        <div class="grid gap-4 lg:grid-cols-2">
+            <AccountPanel
+                title="Account details"
+                :icon="UserRound"
+                :action-href="editProfile()"
+                action-label="Edit"
+            >
+                <dl class="space-y-4 text-sm">
+                    <div>
+                        <dt
+                            class="text-muted-foreground text-[0.625rem] font-bold tracking-[0.16em] uppercase"
+                        >
+                            Name
+                        </dt>
+                        <dd class="text-ink mt-0.5 font-medium">
+                            {{ customerName }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt
+                            class="text-muted-foreground text-[0.625rem] font-bold tracking-[0.16em] uppercase"
+                        >
+                            Email
+                        </dt>
+                        <dd class="text-ink mt-0.5 truncate font-medium">
+                            {{ user.email }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt
+                            class="text-muted-foreground text-[0.625rem] font-bold tracking-[0.16em] uppercase"
+                        >
+                            Member since
+                        </dt>
+                        <dd class="text-ink mt-0.5 font-medium">
+                            {{ formatIsoDate(user.created_at) }}
+                        </dd>
+                    </div>
+                </dl>
+            </AccountPanel>
+
+            <AccountPanel
                 title="Default address"
-                subtitle="The one checkout reaches for first."
-                heading-id="account-address-heading"
-                :view-all-href="addressesRoute()"
-                view-all-label="Address book"
-            />
-
-            <div
-                v-if="defaultAddress"
-                class="border-rule shadow-card mt-6 flex items-start gap-3 rounded-lg border bg-white p-5 text-sm"
+                :icon="MapPin"
+                :action-href="addressesRoute()"
+                action-label="Address book"
             >
-                <MapPin
-                    class="text-electric mt-0.5 size-4 shrink-0"
-                    aria-hidden="true"
-                />
-                <div class="min-w-0">
-                    <p class="text-foreground font-medium">
-                        {{ defaultAddress.fullName }}
-                    </p>
-                    <p class="text-muted-foreground mt-1 leading-relaxed">
-                        {{ defaultAddress.summary }}
-                    </p>
-                    <p
-                        v-if="defaultAddress.phone"
-                        class="text-muted-foreground mt-1 tabular-nums"
-                    >
-                        {{ defaultAddress.phone }}
-                    </p>
-                </div>
-            </div>
-
-            <div
-                v-else
-                class="border-rule mt-6 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-dashed p-5"
-            >
-                <p class="text-muted-foreground text-sm">
-                    You have no saved addresses yet. Add one and checkout will
-                    fill itself in.
-                </p>
-                <Link
-                    :href="addressesRoute()"
-                    class="border-ink hover:bg-ink font-display focus-visible:outline-electric text-foreground inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-bold tracking-wide transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+                <div
+                    v-if="defaultAddress"
+                    class="flex items-start gap-3 text-sm"
                 >
-                    <Plus class="size-4" aria-hidden="true" />
-                    Add an address
-                </Link>
-            </div>
-        </section>
+                    <MapPin
+                        class="text-electric mt-0.5 size-4 shrink-0"
+                        aria-hidden="true"
+                    />
+                    <div class="min-w-0">
+                        <p class="text-ink font-medium">
+                            {{ defaultAddress.fullName }}
+                        </p>
+                        <p class="text-muted-foreground mt-1 leading-relaxed">
+                            {{ defaultAddress.summary }}
+                        </p>
+                        <p
+                            v-if="defaultAddress.phone"
+                            class="text-muted-foreground mt-1 tabular-nums"
+                        >
+                            {{ defaultAddress.phone }}
+                        </p>
+                    </div>
+                </div>
+
+                <div
+                    v-else
+                    class="border-rule flex flex-col items-start gap-3 rounded-lg border border-dashed p-4"
+                >
+                    <p class="text-muted-foreground text-sm">
+                        You have no saved addresses yet. Add one and checkout
+                        will fill itself in.
+                    </p>
+                    <Link
+                        :href="addressesRoute()"
+                        class="border-ink hover:bg-ink font-display focus-visible:outline-electric text-foreground inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-bold tracking-wide transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+                    >
+                        <Plus class="size-4" aria-hidden="true" />
+                        Add an address
+                    </Link>
+                </div>
+            </AccountPanel>
+        </div>
+
+        <!--
+          Flush, because the rows are the panel's content and each one is its
+          own hit target edge to edge. The focus ring is inset for the same
+          reason AccountPanel documents: the panel clips its overflow.
+        -->
+        <AccountPanel title="Settings" :icon="ShieldCheck" flush>
+            <ul>
+                <li v-for="link in settingsLinks" :key="link.label">
+                    <Link
+                        :href="link.href"
+                        class="border-rule hover:bg-tint focus-visible:outline-electric flex items-center gap-4 border-b px-5 py-3.5 transition-colors last:border-b-0 focus-visible:outline-2 focus-visible:-outline-offset-2"
+                    >
+                        <span
+                            class="bg-tint-strong text-electric flex size-9 shrink-0 items-center justify-center rounded-lg"
+                            aria-hidden="true"
+                        >
+                            <component :is="link.icon" class="size-4" />
+                        </span>
+                        <span class="min-w-0">
+                            <span
+                                class="font-display text-ink block text-sm font-bold"
+                            >
+                                {{ link.label }}
+                            </span>
+                            <span
+                                class="text-muted-foreground block truncate text-xs"
+                            >
+                                {{ link.description }}
+                            </span>
+                        </span>
+                    </Link>
+                </li>
+            </ul>
+        </AccountPanel>
 
         <!--
           Below the fold and nothing above it depends on it, so the page paints

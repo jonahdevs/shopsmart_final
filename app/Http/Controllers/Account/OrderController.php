@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Shop;
+namespace App\Http\Controllers\Account;
 
 use App\Data\BreadcrumbData;
 use App\Data\OrderData;
@@ -17,8 +17,9 @@ use Inertia\Response;
  *
  * Ownership is checked with a 404 rather than a 403 — telling a stranger that
  * an order number exists but is not theirs is more than they need to know.
- * Phase 6 grows the surrounding account area; phase 7 adds the staff view,
- * which is when a policy will start to earn its keep.
+ * The staff view of the same rows is {@see \App\Http\Controllers\Admin\OrderController},
+ * which is where a policy would earn its keep; here there is only ever one
+ * shopper's rows to consider.
  */
 class OrderController extends Controller
 {
@@ -33,7 +34,7 @@ class OrderController extends Controller
             ->paginate(self::PER_PAGE)
             ->withQueryString();
 
-        return Inertia::render('shop/Orders', [
+        return Inertia::render('account/Orders', [
             'orders' => array_values(array_map(
                 fn (Order $order): OrderData => OrderData::fromModel($order),
                 $orders->items(),
@@ -49,10 +50,10 @@ class OrderController extends Controller
 
         $order->load('items');
 
-        return Inertia::render('shop/Order', [
+        return Inertia::render('account/Order', [
             'order' => OrderData::fromModel($order),
             'pickupAddress' => app(ShippingSettings::class)->pickup_address,
-            'breadcrumbs' => $this->breadcrumbs($order->order_number),
+            'breadcrumbs' => $this->breadcrumbs(__('Order :number', ['number' => $order->order_number])),
         ]);
     }
 
@@ -62,6 +63,9 @@ class OrderController extends Controller
      * Kept to two rungs because StoreBreadcrumbs reads a null slug past the
      * first rung as the Categories root, so an intermediate "Orders" rung would
      * link somewhere it should not.
+     *
+     * The last rung is also the page's H1: AccountLayout takes the heading from
+     * it, so the trail, the tab and the headline cannot drift apart.
      *
      * @return list<BreadcrumbData>
      */

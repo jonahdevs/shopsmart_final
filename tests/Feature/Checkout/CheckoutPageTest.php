@@ -22,9 +22,8 @@ beforeEach(function () {
     // Asserts page props, not markup, so it must not depend on a JS build.
     $this->withoutVite();
 
-    // The phase 4 page components (shop/Checkout, shop/Order, shop/Orders) are
-    // not written yet. What is under test here is the prop contract the
-    // controller publishes, not the existence of a Vue module.
+    // What is under test here is the prop contract the controller publishes,
+    // not the existence of a Vue module.
     config()->set('inertia.testing.ensure_pages_exist', false);
 
     $this->standardVat = TaxClass::factory()->standardVat()->create();

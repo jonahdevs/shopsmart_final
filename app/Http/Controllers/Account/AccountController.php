@@ -9,7 +9,6 @@ use App\Data\BreadcrumbData;
 use App\Data\OrderData;
 use App\Data\ProductCardData;
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Shop\OrderController;
 use App\Models\Address;
 use App\Models\Order;
 use App\Models\Product;

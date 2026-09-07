@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Enums\DeliveryMethod;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
-use App\Models\Address;
 use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -14,40 +13,42 @@ use App\Models\Product;
 use App\Models\User;
 use App\Settings\ShippingSettings;
 use Carbon\CarbonImmutable;
+use Database\Seeders\Concerns\SeedsDemoHistory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
- * Trading history: staff logins, customers, and four months of orders.
+ * Four months of trading: orders, their lines, and the payment attempts behind
+ * them.
  *
- * Without this the catalog seeds beautifully and every screen that reports on
- * SELLING is empty — the dashboard, orders, payments and customers all render
- * their empty states, which is a poor way to show a store that works.
+ * Runs last, because it sells the catalog to the customer list and discounts
+ * with the coupons — every one of which has to exist first.
  *
- * Two things this seeder takes seriously:
+ * Two things this seeder takes seriously.
  *
- * Orders are back-dated across a window rather than all created "now", because
- * every trend on the dashboard is a comparison between one period and the one
- * before it. A hundred orders sharing a timestamp produce a flat line and a
- * null delta on every tile.
+ * Orders are back-dated across the window rather than all created "now",
+ * because every trend on the admin dashboard is a comparison between one period
+ * and the one before it. A hundred orders sharing a timestamp produce a flat
+ * line and a null delta on every tile.
  *
  * Totals are computed from the lines, not invented. `subtotal` is the sum of
  * what sold, shipping follows the store's own free-shipping threshold, and tax
  * is extracted from the total rather than added to it, because
  * `prices_include_tax` is true for this store. An order whose figures do not
- * add up is worse than no order — it makes the admin look broken.
+ * add up is worse than no order — it makes the admin look broken, and every
+ * screen reports the discrepancy faithfully.
  */
-class DemoCommerceSeeder extends Seeder
+class OrderSeeder extends Seeder
 {
-    /** How far back the trading history runs. */
-    private const WINDOW_DAYS = 120;
+    use SeedsDemoHistory;
 
-    private const CUSTOMERS = 45;
-
+    /** Orders spread across the whole customer list. */
     private const ORDERS = 190;
+
+    /** Orders guaranteed to the named demo shopper, so their account is furnished. */
+    private const DEMO_SHOPPER_ORDERS = 9;
 
     /** VAT is extracted from tax-inclusive prices at this rate. */
     private const TAX_DIVISOR = 1.16;
@@ -78,25 +79,38 @@ class DemoCommerceSeeder extends Seeder
     public function run(): void
     {
         /*
-          Unguarded because this seeder's whole point is back-dating. `created_at`
-          and `updated_at` appear in no `#[Fillable]` list — correctly, nothing in
+          Unguarded because back-dating is the point. `created_at` and
+          `updated_at` appear in no `#[Fillable]` list — correctly, nothing in
           the application should mass-assign them — so `create()` would silently
           drop them and stack four months of trading onto today.
         */
         Model::unguarded(function (): void {
-            $this->seedStore();
+            $this->seedOrders();
         });
     }
 
-    private function seedStore(): void
+    private function seedOrders(): void
     {
-        $this->createStaff();
-
-        $customers = $this->createCustomers();
         $products = $this->sellableProducts();
 
         if ($products->isEmpty()) {
             $this->command->warn('No sellable products found — run ProductSeeder first. Skipping orders.');
+
+            return;
+        }
+
+        /*
+          Everyone except the untouched shopper, whose whole reason for existing
+          is to show what the account area looks like before you have bought
+          anything.
+        */
+        $customers = User::query()
+            ->whereDoesntHave('roles')
+            ->where('email', '!=', UserSeeder::NEW_SHOPPER_EMAIL)
+            ->get();
+
+        if ($customers->isEmpty()) {
+            $this->command->warn('No customers found — run UserSeeder first. Skipping orders.');
 
             return;
         }
@@ -107,70 +121,25 @@ class DemoCommerceSeeder extends Seeder
             $this->createOrder($customers, $products, $coupons);
         }
 
+        /*
+          Random assignment across forty-six shoppers leaves the named one with
+          a handful of orders on a good run and none on a bad one — and an empty
+          account is exactly what that login exists to avoid. So it gets its own
+          guaranteed run afterwards.
+        */
+        $shopper = $customers->firstWhere('email', UserSeeder::DEMO_SHOPPER_EMAIL);
+
+        if ($shopper !== null) {
+            for ($i = 0; $i < self::DEMO_SHOPPER_ORDERS; $i++) {
+                $this->createOrder(new Collection([$shopper]), $products, $coupons);
+            }
+        }
+
         $this->command->info(sprintf(
-            'Seeded %d customers and %d orders across the last %d days.',
-            self::CUSTOMERS,
-            self::ORDERS,
+            'Seeded %d orders across the last %d days.',
+            self::ORDERS + ($shopper === null ? 0 : self::DEMO_SHOPPER_ORDERS),
             self::WINDOW_DAYS,
         ));
-    }
-
-    /**
-     * One login per seeded role, so the permission-filtered sidebar can
-     * actually be demonstrated rather than described.
-     */
-    private function createStaff(): void
-    {
-        $accounts = [
-            ['Super Admin', 'owner@shopsmart.test', 'Amara Otieno'],
-            ['Admin', 'admin@shopsmart.test', 'Brian Kimani'],
-            ['Manager', 'manager@shopsmart.test', 'Cynthia Wanjiru'],
-            ['Support', 'support@shopsmart.test', 'Dennis Mutiso'],
-        ];
-
-        foreach ($accounts as [$role, $email, $name]) {
-            $user = User::query()->firstOrCreate(
-                ['email' => $email],
-                [
-                    'name' => $name,
-                    // Demo credentials for a seeded store, never a deployed one.
-                    'password' => Hash::make('password'),
-                    'email_verified_at' => now(),
-                ],
-            );
-
-            $user->syncRoles([$role]);
-        }
-    }
-
-    /**
-     * Customers, registered at points across the window.
-     *
-     * Spread rather than bulk-created so "new customers" has a shape to plot —
-     * and so the previous-period comparison has something on both sides of it.
-     *
-     * @return Collection<int, User>
-     */
-    private function createCustomers(): Collection
-    {
-        return Collection::times(self::CUSTOMERS, function (): User {
-            $registeredAt = $this->momentInWindow();
-
-            $customer = User::factory()->create([
-                'created_at' => $registeredAt,
-                'updated_at' => $registeredAt,
-                'email_verified_at' => $registeredAt,
-            ]);
-
-            // Most shoppers save one address; a few save a second.
-            Address::factory()->isDefault()->for($customer)->create();
-
-            if (fake()->boolean(25)) {
-                Address::factory()->for($customer)->create();
-            }
-
-            return $customer;
-        });
     }
 
     /**
@@ -435,23 +404,6 @@ class DemoCommerceSeeder extends Seeder
     private function taxWithin(int $cents): int
     {
         return (int) round($cents - ($cents / self::TAX_DIVISOR));
-    }
-
-    /**
-     * A point in the trading window, weighted toward the recent end.
-     *
-     * Squaring a uniform random pulls the distribution toward "now", which is
-     * what a growing store's order history looks like — and it means the
-     * current period genuinely outperforms the previous one, so the trend
-     * arrows on the dashboard point somewhere.
-     */
-    private function momentInWindow(): CarbonImmutable
-    {
-        $skewed = fake()->randomFloat(4, 0, 1) ** 2;
-
-        return now()
-            ->subDays((int) round($skewed * self::WINDOW_DAYS))
-            ->setTime(fake()->numberBetween(7, 21), fake()->numberBetween(0, 59));
     }
 
     /**

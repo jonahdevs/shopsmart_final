@@ -29,7 +29,9 @@ class ReviewSeeder extends Seeder
 
     public function run(): void
     {
-        $reviewer = User::query()->where('email', 'test@example.com')->first();
+        $reviewer = User::query()
+            ->where('email', UserSeeder::DEMO_SHOPPER_EMAIL)
+            ->first();
 
         $products = Product::query()
             ->where('status', ProductStatus::Published)

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import AppLogoIcon from '@/components/AppLogoIcon.vue';
+import StoreWordmark from '@/components/storefront/StoreWordmark.vue';
 import { home } from '@/routes';
 
 defineProps<{
@@ -20,13 +20,13 @@ defineProps<{
                         :href="home()"
                         class="flex flex-col items-center gap-2 font-medium"
                     >
-                        <div
-                            class="mb-1 flex h-9 w-9 items-center justify-center rounded-md"
-                        >
-                            <AppLogoIcon
-                                class="size-9 fill-current text-[var(--foreground)] dark:text-white"
-                            />
-                        </div>
+                        <!--
+                          The shop'''s own wordmark, not a framework logo. These
+                          pages are the first thing a customer sees after the
+                          storefront hands them off, so the mark has to be the
+                          same one they just clicked away from.
+                        -->
+                        <StoreWordmark tone="onLight" />
                         <span class="sr-only">{{ title }}</span>
                     </Link>
                     <div class="space-y-2 text-center">

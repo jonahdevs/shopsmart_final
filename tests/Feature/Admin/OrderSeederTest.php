@@ -5,7 +5,8 @@ use App\Enums\PaymentStatus;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
-use Database\Seeders\DemoCommerceSeeder;
+use Database\Seeders\OrderSeeder;
+use Database\Seeders\UserSeeder;
 use Database\Seeders\PermissionSeeder;
 
 /**
@@ -31,7 +32,8 @@ beforeEach(function () {
     // factory products keeps this test off the image-heavy ProductSeeder.
     Product::factory()->count(12)->published()->create(['price' => 250_000]);
 
-    $this->seed(DemoCommerceSeeder::class);
+    $this->seed(UserSeeder::class);
+    $this->seed(OrderSeeder::class);
 });
 
 test('every order total reconciles with its own lines', function () {

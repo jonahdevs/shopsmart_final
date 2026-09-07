@@ -2,7 +2,6 @@ import { createInertiaApp } from '@inertiajs/vue3';
 import { initializeTheme } from '@/composables/useAppearance';
 import AccountLayout from '@/layouts/account/AccountLayout.vue';
 import AdminLayout from '@/layouts/admin/AdminLayout.vue';
-import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import SettingsShell from '@/layouts/settings/SettingsShell.vue';
 import StorefrontLayout from '@/layouts/StorefrontLayout.vue';
@@ -40,8 +39,15 @@ void createInertiaApp({
             */
             case name.startsWith('settings/'):
                 return SettingsShell;
+            /*
+              Unreachable in practice — every page above is matched by an
+              explicit case, and `Welcome` opts out with null. It resolves to
+              the staff shell rather than a bare page so that a route added
+              without a case here fails visibly in the admin rather than
+              rendering unstyled.
+            */
             default:
-                return AppLayout;
+                return AdminLayout;
         }
     },
     progress: {

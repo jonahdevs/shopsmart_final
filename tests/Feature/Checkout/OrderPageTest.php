@@ -19,14 +19,19 @@ use Inertia\Testing\AssertableInertia;
  * The page is built entirely from the order's own columns and its frozen lines,
  * never from the catalog, so a product renamed or repriced afterwards cannot
  * change what a shopper's receipt says they bought.
+ *
+ * Both components live under `account/`, which is what earns them the account
+ * sidebar: the layout switch in resources/js/app.ts resolves by page-name
+ * prefix, and a `shop/` name here would drop a shopper out of their own area
+ * with no way back to Addresses or Reviews. The last breadcrumb rung is
+ * asserted for the same reason — AccountLayout renders the H1 from it.
  */
 beforeEach(function () {
     // Asserts page props, not markup, so it must not depend on a JS build.
     $this->withoutVite();
 
-    // The phase 4 page components (shop/Order, shop/Orders) are not written
-    // yet. What is under test here is the prop contract the controller
-    // publishes, not the existence of a Vue module.
+    // What is under test here is the prop contract the controller publishes,
+    // not the existence of a Vue module.
     config()->set('inertia.testing.ensure_pages_exist', false);
 
     $this->standardVat = TaxClass::factory()->standardVat()->create();
@@ -77,7 +82,7 @@ test('the confirmation shows the order that was just placed', function () {
         ->get(route('orders.show', $order->order_number))
         ->assertOk()
         ->assertInertia(fn (AssertableInertia $page) => $page
-            ->component('shop/Order')
+            ->component('account/Order')
             ->where('order.orderNumber', $order->order_number)
             ->where('order.customerEmail', $this->customer->email)
             ->where('order.paymentStatus', PaymentStatus::Pending->value)
@@ -88,7 +93,8 @@ test('the confirmation shows the order that was just placed', function () {
             ->where('order.itemCount', 2)
             ->where('order.totals.totalCents', 330_000)
             ->where('order.shippingAddress.line1', $this->address->line1)
-            ->has('breadcrumbs', 2));
+            ->has('breadcrumbs', 2)
+            ->where('breadcrumbs.1.name', "Order {$order->order_number}"));
 });
 
 test('the order page reads the snapshot, not the catalog', function () {
@@ -150,13 +156,14 @@ test('the history lists only this shopper orders, newest first', function () {
         ->get(route('orders.index'))
         ->assertOk()
         ->assertInertia(fn (AssertableInertia $page) => $page
-            ->component('shop/Orders')
+            ->component('account/Orders')
             ->has('orders', 3)
             ->where('orders.0.orderNumber', $newest->order_number)
             ->where('orders.1.orderNumber', $middle->order_number)
             ->where('orders.2.orderNumber', $oldest->order_number)
             ->where('hasMore', false)
-            ->has('breadcrumbs', 2));
+            ->has('breadcrumbs', 2)
+            ->where('breadcrumbs.1.name', 'Your orders'));
 });
 
 test('a shopper with no orders gets an empty history', function () {

@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -21,11 +20,9 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             PermissionSeeder::class,
-        ]);
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            // Before the catalog, because ReviewSeeder attributes reviews to
+            // the named shopper and OrderSeeder sells to the whole list.
+            UserSeeder::class,
         ]);
 
         $this->call([
@@ -40,7 +37,7 @@ class DatabaseSeeder extends Seeder
             CouponSeeder::class,
             // Last: it sells the catalog above it and needs the coupons to
             // discount with.
-            DemoCommerceSeeder::class,
+            OrderSeeder::class,
         ]);
 
         $this->announceImageConversions();

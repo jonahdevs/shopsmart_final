@@ -1,9 +1,9 @@
 <?php
 
 use App\Http\Controllers\Account\AccountController;
+use App\Http\Controllers\Account\OrderController;
 use App\Http\Controllers\Account\OrderReceiptController;
 use App\Http\Controllers\Account\ReviewController;
-use App\Http\Controllers\Shop\OrderController;
 use Illuminate\Support\Facades\Route;
 
 /*

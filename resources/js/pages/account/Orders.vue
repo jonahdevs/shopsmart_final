@@ -3,7 +3,6 @@ import { Head, Link, usePage } from '@inertiajs/vue3';
 import { ArrowLeft, ArrowRight, Package } from '@lucide/vue';
 import { computed } from 'vue';
 import OrderCard from '@/components/storefront/OrderCard.vue';
-import StoreBreadcrumbs from '@/components/storefront/StoreBreadcrumbs.vue';
 import {
     Empty,
     EmptyDescription,
@@ -20,6 +19,9 @@ import { index } from '@/routes/orders';
  * Paged rather than infinitely scrolled: an order history is something people
  * come back to looking for one specific order, and a page they can link to and
  * go back through beats a list that has to be re-grown every visit.
+ *
+ * The trail and the H1 come from AccountLayout, off the `breadcrumbs` prop, so
+ * this page renders neither.
  */
 defineProps<{
     orders: App.Data.OrderData[];
@@ -44,30 +46,17 @@ const currentPage = computed(() => {
 <template>
     <Head title="Your orders" />
 
-    <div class="container flex flex-col gap-16 py-8">
-        <section aria-labelledby="orders-heading">
-            <StoreBreadcrumbs :items="breadcrumbs" />
+    <div class="flex flex-col gap-8">
+        <p class="text-muted-foreground -mt-2 text-sm">
+            Everything you have placed with us, newest first.
+        </p>
 
-            <div class="mt-6">
-                <p
-                    class="text-electric font-display text-[0.625rem] font-bold tracking-[0.18em] uppercase"
-                >
-                    Your history
-                </p>
-                <h1
-                    id="orders-heading"
-                    class="font-display text-ink mt-1 text-2xl font-extrabold tracking-[-0.03em] sm:text-4xl"
-                >
-                    Your orders
-                </h1>
-                <p class="text-muted-foreground mt-2 text-sm">
-                    Everything you have placed with us, newest first.
-                </p>
-            </div>
+        <section aria-labelledby="order-history-heading">
+            <h2 id="order-history-heading" class="sr-only">Order history</h2>
 
             <Empty
                 v-if="orders.length === 0"
-                class="border-rule mt-8 rounded-lg border"
+                class="border-rule rounded-lg border"
             >
                 <EmptyHeader>
                     <EmptyMedia variant="icon">
@@ -93,7 +82,7 @@ const currentPage = computed(() => {
             </Empty>
 
             <template v-else>
-                <ul class="border-rule mt-8 border-t">
+                <ul class="border-rule border-t">
                     <OrderCard
                         v-for="order in orders"
                         :key="order.id"
