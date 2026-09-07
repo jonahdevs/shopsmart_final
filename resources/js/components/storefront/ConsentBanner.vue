@@ -160,7 +160,9 @@ function handleSuccess() {
                     value="all"
                     class="bg-electric focus-visible:outline-electric rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2"
                     @click="
-                        intend(config.categories.map((category) => category.value))
+                        intend(
+                            config.categories.map((category) => category.value),
+                        )
                     "
                 >
                     Accept all

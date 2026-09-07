@@ -54,7 +54,6 @@ const trays = computed(() => [
         count: shopper.value?.cartCount ?? 0,
     },
 ]);
-
 </script>
 
 <template>

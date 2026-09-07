@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { Form, Head, Link, router } from '@inertiajs/vue3';
-import { Check, Search, Star, Trash2, X } from '@lucide/vue';
-import { computed, ref, watch } from 'vue';
+import { Form, Head, Link } from '@inertiajs/vue3';
+import { Check, MessageSquare, Star, Trash2, X } from '@lucide/vue';
+import { computed, ref } from 'vue';
 import ReviewController from '@/actions/App/Http/Controllers/Admin/ReviewController';
+import AdminCard from '@/components/admin/AdminCard.vue';
+import AdminEmptyState from '@/components/admin/AdminEmptyState.vue';
+import AdminFilterBar from '@/components/admin/AdminFilterBar.vue';
 import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
 import AdminPagination from '@/components/admin/AdminPagination.vue';
-import { Badge } from '@/components/ui/badge';
+import AdminStatusBadge from '@/components/admin/AdminStatusBadge.vue';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import {
     Dialog,
     DialogClose,
@@ -17,11 +19,11 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { usePermissions } from '@/composables/usePermissions';
-import { formatIsoDate, toBadgeVariant } from '@/lib/utils';
+import { useIndexTable } from '@/composables/useIndexTable';
+import { formatIsoDate } from '@/lib/utils';
+import { dashboard as adminDashboard } from '@/routes/admin';
 import { show as adminCustomer } from '@/routes/admin/customers';
 import { index as adminReviews } from '@/routes/admin/reviews';
 import { show as shopProduct } from '@/routes/product';
@@ -55,21 +57,10 @@ const {
 defineOptions({
     layout: {
         breadcrumbs: [
-            { title: 'Dashboard', href: '/admin' },
-            { title: 'Reviews', href: '/admin/reviews' },
+            { title: 'Dashboard', href: adminDashboard().url },
+            { title: 'Reviews', href: adminReviews().url },
         ],
     },
-});
-
-/**
- * The filter bar is local state that syncs to the URL, not a form post: a
- * filtered queue has to be a shareable link, and a moderator expects the back
- * button to undo a filter.
- */
-const form = ref({
-    search: filters.search ?? '',
-    status: filters.status ?? '',
-    rating: filters.rating === null ? '' : String(filters.rating),
 });
 
 /** The review a moderator has asked to delete; null while the dialog is shut. */
@@ -84,60 +75,27 @@ const { can } = usePermissions();
 const canReadCustomers = computed(() => can('customers.view'));
 
 /**
- * Only the filters that are actually set. Sending empty strings would put
- * `?status=` on every URL and make two identical views look like different
- * pages to the browser's history.
+ * The filter bar is local state that syncs to the URL, not a form post: a
+ * filtered queue has to be a shareable link, and a moderator expects the back
+ * button to undo a filter. `useIndexTable` owns the debounce, the visit options
+ * and the rule that empty filters are omitted rather than sent blank.
  */
-function activeQuery(overrides: Record<string, string | number> = {}) {
-    const query: Record<string, string | number> = {};
-
-    for (const [key, value] of Object.entries(form.value)) {
-        if (value !== '') {
-            query[key] = value;
-        }
-    }
-
-    if (filters.sort !== 'created_at' || filters.direction !== 'desc') {
-        query.sort = filters.sort;
-        query.direction = filters.direction;
-    }
-
-    return { ...query, ...overrides };
-}
-
-let debounce: ReturnType<typeof setTimeout> | undefined;
-
-watch(
-    form,
-    () => {
-        clearTimeout(debounce);
-        debounce = setTimeout(() => {
-            router.get(adminReviews.url({ query: activeQuery() }), undefined, {
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-            });
-        }, 300);
+const { form, isFiltered, hrefForPage, sortHref, clear } = useIndexTable({
+    toUrl: (query) => adminReviews.url({ query }),
+    sortState: () => filters,
+    defaultSort: { column: 'created_at', direction: 'desc' },
+    fields: {
+        search: filters.search ?? '',
+        status: filters.status ?? '',
+        rating: filters.rating === null ? '' : String(filters.rating),
     },
-    { deep: true },
-);
-
-function hrefForPage(page: number): string {
-    return adminReviews.url({ query: activeQuery({ page }) });
-}
-
-/** Clicking a sortable heading flips direction when it is already the sort. */
-function sortHref(column: string): string {
-    const direction =
-        filters.sort === column && filters.direction === 'asc' ? 'desc' : 'asc';
-
-    return adminReviews.url({ query: activeQuery({ sort: column, direction }) });
-}
+});
 
 /**
  * The queue is a card list rather than a table, so the sort controls are plain
- * links: `aria-sort` belongs on a column header and would be invalid on an
- * anchor. The arrow is what tells a reader which way the current sort runs.
+ * links and `AdminSortableHead` does not apply: `aria-sort` belongs on a column
+ * header and would be invalid on an anchor. The arrow is what tells a reader
+ * which way the current sort runs.
  */
 function sortArrow(column: string): string {
     if (filters.sort !== column) {
@@ -149,102 +107,104 @@ function sortArrow(column: string): string {
 </script>
 
 <template>
-    <div class="flex flex-col gap-6 p-4">
+    <div class="flex flex-col gap-6">
         <Head title="Reviews" />
 
         <AdminPageHeader
+            eyebrow="Marketing"
             title="Reviews"
             :description="`${pendingCount} review${pendingCount === 1 ? '' : 's'} waiting for a decision.`"
         />
 
-        <div
+        <!--
+          Why the queue may look wrong before anyone reads a row: a store-wide
+          switch, not a filter, is the reason it is quiet.
+        -->
+        <AdminCard
             v-if="!reviewsEnabled || autoApprove"
-            class="bg-muted/50 rounded-lg border p-4 text-sm"
+            padded
+            class="bg-muted/50 text-sm"
         >
             <p v-if="!reviewsEnabled">
                 Reviews are switched off store-wide, so nothing new will arrive
                 here. Everything below is what was already collected.
             </p>
             <p v-else>
-                New reviews publish immediately without moderation, so this queue
-                only fills when somebody pulls one back. Change that under
+                New reviews publish immediately without moderation, so this
+                queue only fills when somebody pulls one back. Change that under
                 review settings.
             </p>
-        </div>
+        </AdminCard>
 
-        <Card>
-            <CardContent class="pt-6">
-                <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    <div class="space-y-1.5 xl:col-span-2">
-                        <Label for="review-search">Search</Label>
-                        <div class="relative">
-                            <Search
-                                class="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2"
-                                aria-hidden="true"
-                            />
-                            <Input
-                                id="review-search"
-                                v-model="form.search"
-                                class="pl-8"
-                                placeholder="Author, product or wording"
-                                type="search"
-                            />
-                        </div>
-                    </div>
-
-                    <div class="space-y-1.5">
-                        <Label for="review-status">Status</Label>
-                        <NativeSelect id="review-status" v-model="form.status">
-                            <option value="">All statuses</option>
-                            <option
-                                v-for="option in statusOptions"
-                                :key="option.value"
-                                :value="option.value"
-                            >
-                                {{ option.label }}
-                            </option>
-                        </NativeSelect>
-                    </div>
-
-                    <div class="space-y-1.5">
-                        <Label for="review-rating">Rating</Label>
-                        <NativeSelect id="review-rating" v-model="form.rating">
-                            <option value="">Any rating</option>
-                            <option
-                                v-for="rating in [5, 4, 3, 2, 1]"
-                                :key="rating"
-                                :value="String(rating)"
-                            >
-                                {{ rating }} star{{ rating === 1 ? '' : 's' }}
-                            </option>
-                        </NativeSelect>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-
-        <Card>
-            <CardContent class="space-y-4 pt-6">
-                <p
-                    v-if="reviews.length === 0"
-                    class="text-muted-foreground py-12 text-center text-sm"
+        <!--
+          One card, four strips: filters, sort, the queue, pagination. Not four
+          cards — they are one object, and the borders between them say so.
+        -->
+        <AdminCard>
+            <AdminFilterBar
+                v-model:search="form.search"
+                search-placeholder="Author, product or wording"
+                search-label="Search reviews"
+                :show-clear="isFiltered"
+                @clear="clear"
+            >
+                <NativeSelect
+                    v-model="form.status"
+                    class="w-40"
+                    aria-label="Status"
                 >
-                    No reviews match these filters.
-                </p>
+                    <option value="">All statuses</option>
+                    <option
+                        v-for="option in statusOptions"
+                        :key="option.value"
+                        :value="option.value"
+                    >
+                        {{ option.label }}
+                    </option>
+                </NativeSelect>
 
-                <div v-else class="flex items-center gap-4 text-sm">
+                <NativeSelect
+                    v-model="form.rating"
+                    class="w-36"
+                    aria-label="Rating"
+                >
+                    <option value="">Any rating</option>
+                    <option
+                        v-for="rating in [5, 4, 3, 2, 1]"
+                        :key="rating"
+                        :value="String(rating)"
+                    >
+                        {{ rating }} star{{ rating === 1 ? '' : 's' }}
+                    </option>
+                </NativeSelect>
+            </AdminFilterBar>
+
+            <AdminEmptyState
+                v-if="reviews.length === 0"
+                :icon="MessageSquare"
+                :filtered="isFiltered"
+                :title="isFiltered ? 'No matching reviews' : 'Nothing to read'"
+                :description="
+                    isFiltered
+                        ? 'No reviews match these filters.'
+                        : 'Reviews written on the storefront queue up here.'
+                "
+            />
+
+            <template v-else>
+                <div class="flex items-center gap-4 border-b px-5 py-3 text-sm">
                     <span class="text-muted-foreground">Sort by</span>
                     <Link
                         :href="sortHref('created_at')"
                         preserve-scroll
-                        class="hover:underline"
+                        class="hover:text-foreground transition-colors"
                     >
                         Date{{ sortArrow('created_at') }}
                     </Link>
                     <Link
                         :href="sortHref('rating')"
                         preserve-scroll
-                        class="hover:underline"
+                        class="hover:text-foreground transition-colors"
                     >
                         Rating{{ sortArrow('rating') }}
                     </Link>
@@ -253,18 +213,15 @@ function sortArrow(column: string): string {
                 <article
                     v-for="review in reviews"
                     :key="review.id"
-                    class="rounded-lg border p-4"
+                    class="border-b px-5 py-4 last:border-b-0"
                 >
                     <div class="flex flex-wrap items-start gap-3">
                         <div class="min-w-0 flex-1 space-y-1">
                             <div class="flex flex-wrap items-center gap-2">
-                                <Badge
-                                    :variant="
-                                        toBadgeVariant(review.statusVariant)
-                                    "
-                                >
-                                    {{ review.statusLabel }}
-                                </Badge>
+                                <AdminStatusBadge
+                                    :label="review.statusLabel"
+                                    :variant="review.statusVariant"
+                                />
                                 <span
                                     class="flex items-center gap-1 text-sm font-medium tabular-nums"
                                 >
@@ -274,12 +231,11 @@ function sortArrow(column: string): string {
                                     />
                                     {{ review.rating }}/5
                                 </span>
-                                <Badge
+                                <AdminStatusBadge
                                     v-if="review.verifiedPurchase"
-                                    variant="secondary"
-                                >
-                                    Verified purchase
-                                </Badge>
+                                    label="Verified purchase"
+                                    tone="info"
+                                />
                             </div>
 
                             <p class="text-sm">
@@ -347,8 +303,8 @@ function sortArrow(column: string): string {
                                     size="sm"
                                     variant="outline"
                                     :disabled="
-                                        processing || review.status ===
-                                        'approved'
+                                        processing ||
+                                        review.status === 'approved'
                                     "
                                 >
                                     <Check class="size-4" aria-hidden="true" />
@@ -374,8 +330,8 @@ function sortArrow(column: string): string {
                                     size="sm"
                                     variant="outline"
                                     :disabled="
-                                        processing || review.status ===
-                                        'rejected'
+                                        processing ||
+                                        review.status === 'rejected'
                                     "
                                 >
                                     <X class="size-4" aria-hidden="true" />
@@ -403,17 +359,19 @@ function sortArrow(column: string): string {
                         {{ review.body }}
                     </p>
                 </article>
-            </CardContent>
-        </Card>
+            </template>
 
-        <AdminPagination
-            :pagination="pagination"
-            :href-for-page="hrefForPage"
-        />
+            <AdminPagination
+                :pagination="pagination"
+                :href-for-page="hrefForPage"
+            />
+        </AdminCard>
 
         <Dialog
             :open="pendingDeletion !== null"
-            @update:open="(open) => (pendingDeletion = open ? pendingDeletion : null)"
+            @update:open="
+                (open) => (pendingDeletion = open ? pendingDeletion : null)
+            "
         >
             <DialogContent v-if="pendingDeletion">
                 <DialogHeader>

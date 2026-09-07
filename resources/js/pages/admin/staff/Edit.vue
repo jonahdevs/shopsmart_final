@@ -1,22 +1,17 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft, Mail } from '@lucide/vue';
+import { Mail } from '@lucide/vue';
 import {
     destroy,
     invite,
     update,
 } from '@/actions/App/Http/Controllers/Admin/StaffController';
+import AdminCard from '@/components/admin/AdminCard.vue';
+import AdminCardHeader from '@/components/admin/AdminCardHeader.vue';
 import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
+import AdminStatusBadge from '@/components/admin/AdminStatusBadge.vue';
 import InputError from '@/components/InputError.vue';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
 import {
     Dialog,
     DialogClose,
@@ -29,6 +24,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as adminStaff } from '@/routes/admin/staff';
 
 const { member, roleOptions } = defineProps<{
@@ -39,60 +35,59 @@ const { member, roleOptions } = defineProps<{
 defineOptions({
     layout: {
         breadcrumbs: [
-            { title: 'Dashboard', href: '/admin' },
-            { title: 'Staff', href: '/admin/staff' },
+            { title: 'Dashboard', href: adminDashboard().url },
+            { title: 'Staff', href: adminStaff().url },
         ],
     },
 });
 </script>
 
 <template>
-    <div class="flex flex-col gap-6 p-4">
+    <div class="flex flex-col gap-6">
         <Head :title="member.name" />
 
-        <AdminPageHeader
-            :title="member.name"
-            description="Changing somebody's roles changes what they can reach the moment they save."
-        >
-            <template #actions>
-                <Button variant="outline" size="sm" as-child>
-                    <Link :href="adminStaff()">
-                        <ArrowLeft class="size-4" aria-hidden="true" />
-                        All staff
-                    </Link>
-                </Button>
-            </template>
-        </AdminPageHeader>
-
-        <div v-if="member.invitationPending" class="flex flex-wrap items-center gap-3">
-            <Badge variant="secondary">Invitation not yet accepted</Badge>
-            <Form
-                v-bind="invite.form(member.id)"
-                :options="{ preserveScroll: true }"
-                v-slot="{ processing }"
-            >
-                <Button
-                    type="submit"
-                    variant="outline"
-                    size="sm"
-                    :disabled="processing"
-                >
-                    <Mail class="size-4" aria-hidden="true" />
-                    {{ processing ? 'Sending…' : 'Send the invitation again' }}
-                </Button>
-            </Form>
-        </div>
-
+        <!--
+          The page header sits inside the form so the save button can read
+          `processing` — the actions belong beside the title, not stranded at
+          the bottom of a form somebody has already scrolled past.
+        -->
         <Form
             v-bind="update.form(member.id)"
-            class="flex max-w-2xl flex-col gap-6"
+            class="flex flex-col gap-6"
             v-slot="{ errors, processing }"
         >
-            <Card>
-                <CardHeader>
-                    <CardTitle>Account</CardTitle>
-                </CardHeader>
-                <CardContent class="space-y-4">
+            <AdminPageHeader
+                eyebrow="System"
+                :title="member.name"
+                description="Changing somebody's roles changes what they can reach the moment they save."
+            >
+                <template #actions>
+                    <Button variant="ghost" size="sm" as-child>
+                        <Link :href="adminStaff()">Cancel</Link>
+                    </Button>
+                    <Button type="submit" size="sm" :disabled="processing">
+                        {{ processing ? 'Saving…' : 'Save changes' }}
+                    </Button>
+                </template>
+            </AdminPageHeader>
+
+            <!--
+              A stack rather than a main column and an aside: the two cards
+              that would fill an aside — the invitation and the revoke — are
+              each their own POST, and a form cannot nest inside this one.
+            -->
+            <AdminCard class="max-w-2xl">
+                <AdminCardHeader title="Account">
+                    <template #actions>
+                        <AdminStatusBadge
+                            v-if="member.invitationPending"
+                            label="Invitation not yet accepted"
+                            variant="secondary"
+                        />
+                    </template>
+                </AdminCardHeader>
+
+                <div class="grid gap-4 px-5 py-5">
                     <div class="grid gap-2">
                         <Label for="name">Name</Label>
                         <Input
@@ -115,24 +110,26 @@ defineOptions({
                         />
                         <InputError :message="errors.email" />
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+            </AdminCard>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Roles</CardTitle>
-                    <CardDescription>
-                        At least one. To take away someone's access entirely, use
-                        “Revoke staff access” below — it is a different decision
-                        and it says what it does.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent class="space-y-3">
+            <AdminCard class="max-w-2xl">
+                <AdminCardHeader title="Roles" />
+
+                <div class="space-y-3 px-5 py-5">
+                    <p class="text-muted-foreground text-sm">
+                        At least one. To take away someone's access entirely,
+                        use “Revoke staff access” below — it is a different
+                        decision and it says what it does.
+                    </p>
+
                     <label
                         v-for="role in roleOptions"
                         :key="role.id"
                         class="flex cursor-pointer items-start gap-3 text-sm"
-                        :class="{ 'cursor-not-allowed opacity-50': !role.assignable }"
+                        :class="{
+                            'cursor-not-allowed opacity-50': !role.assignable,
+                        }"
                     >
                         <input
                             type="checkbox"
@@ -152,38 +149,65 @@ defineOptions({
                                         : 'permissions'
                                 }}
                                 <template v-if="!role.assignable">
-                                    · carries permissions you do not hold, so you
-                                    cannot grant it
+                                    · carries permissions you do not hold, so
+                                    you cannot grant it
                                 </template>
                             </span>
                         </span>
                     </label>
 
                     <InputError :message="errors.roles" />
-                </CardContent>
-            </Card>
-
-            <div class="flex items-center gap-3">
-                <Button type="submit" :disabled="processing">
-                    {{ processing ? 'Saving…' : 'Save changes' }}
-                </Button>
-                <Button variant="ghost" as-child>
-                    <Link :href="adminStaff()">Cancel</Link>
-                </Button>
-            </div>
+                </div>
+            </AdminCard>
         </Form>
 
-        <Card class="max-w-2xl border-destructive/30">
-            <CardHeader>
-                <CardTitle>Revoke staff access</CardTitle>
-                <CardDescription>
-                    This does not delete the account. Every role comes off, which
-                    turns {{ member.name }} back into a customer — their orders,
-                    addresses and reviews stay exactly as they are, and granting a
-                    role again puts them straight back.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
+        <!--
+          Resending is its own POST, and a form cannot be nested inside the one
+          above — so it lives down here with the other account-level action
+          rather than beside the badge that announces it.
+        -->
+        <AdminCard v-if="member.invitationPending" class="max-w-2xl">
+            <AdminCardHeader title="Invitation" />
+
+            <div class="space-y-3 px-5 py-5">
+                <p class="text-muted-foreground text-sm">
+                    Nobody has accepted this invitation yet. Sending it again
+                    emails {{ member.name }} a fresh link to set a password.
+                </p>
+
+                <Form
+                    v-bind="invite.form(member.id)"
+                    :options="{ preserveScroll: true }"
+                    v-slot="{ processing }"
+                >
+                    <Button
+                        type="submit"
+                        variant="outline"
+                        size="sm"
+                        :disabled="processing"
+                    >
+                        <Mail class="size-4" aria-hidden="true" />
+                        {{
+                            processing
+                                ? 'Sending…'
+                                : 'Send the invitation again'
+                        }}
+                    </Button>
+                </Form>
+            </div>
+        </AdminCard>
+
+        <AdminCard class="border-destructive/30 max-w-2xl">
+            <AdminCardHeader title="Revoke staff access" />
+
+            <div class="space-y-3 px-5 py-5">
+                <p class="text-muted-foreground text-sm">
+                    This does not delete the account. Every role comes off,
+                    which turns {{ member.name }} back into a customer — their
+                    orders, addresses and reviews stay exactly as they are, and
+                    granting a role again puts them straight back.
+                </p>
+
                 <Dialog>
                     <DialogTrigger as-child>
                         <Button variant="destructive" size="sm">
@@ -219,13 +243,17 @@ defineOptions({
                                     variant="destructive"
                                     :disabled="processing"
                                 >
-                                    {{ processing ? 'Revoking…' : 'Revoke access' }}
+                                    {{
+                                        processing
+                                            ? 'Revoking…'
+                                            : 'Revoke access'
+                                    }}
                                 </Button>
                             </DialogFooter>
                         </Form>
                     </DialogContent>
                 </Dialog>
-            </CardContent>
-        </Card>
+            </div>
+        </AdminCard>
     </div>
 </template>

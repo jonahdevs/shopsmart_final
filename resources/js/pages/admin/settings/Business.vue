@@ -10,11 +10,19 @@ import {
     NativeSelectOption,
 } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
-import { business as businessRoute } from '@/routes/admin/settings';
+import { dashboard as adminDashboard } from '@/routes/admin';
+import {
+    business as businessRoute,
+    index as adminSettings,
+} from '@/routes/admin/settings';
 
 defineOptions({
     layout: {
-        breadcrumbs: [{ title: 'Business', href: businessRoute() }],
+        breadcrumbs: [
+            { title: 'Dashboard', href: adminDashboard().url },
+            { title: 'Settings', href: adminSettings().url },
+            { title: 'Business', href: businessRoute().url },
+        ],
     },
 });
 
@@ -49,7 +57,7 @@ const dimensionUnits = ['mm', 'cm', 'm', 'in'];
 </script>
 
 <template>
-    <div>
+    <div class="flex flex-col gap-6">
         <Head title="Business settings" />
 
         <SettingsForm

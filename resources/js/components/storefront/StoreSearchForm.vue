@@ -28,7 +28,12 @@ const MINIMUM_TERM_LENGTH = 2;
 const DEBOUNCE_MS = 180;
 
 type Suggestion =
-    | { kind: 'product'; key: string; label: string; product: App.Data.ProductCardData }
+    | {
+          kind: 'product';
+          key: string;
+          label: string;
+          product: App.Data.ProductCardData;
+      }
     | { kind: 'category'; key: string; label: string; slug: string }
     | { kind: 'brand'; key: string; label: string; id: number };
 
@@ -68,30 +73,24 @@ watch(
 
 /** One flat list, because arrow keys walk the groups as a single sequence. */
 const suggestions = computed<Suggestion[]>(() => [
-    ...products.value.map(
-        (product): Suggestion => ({
-            kind: 'product',
-            key: `product-${product.id}`,
-            label: product.name,
-            product,
-        }),
-    ),
-    ...categories.value.map(
-        (category): Suggestion => ({
-            kind: 'category',
-            key: `category-${category.id}`,
-            label: category.name,
-            slug: category.slug,
-        }),
-    ),
-    ...brands.value.map(
-        (brand): Suggestion => ({
-            kind: 'brand',
-            key: `brand-${brand.id}`,
-            label: brand.name,
-            id: brand.id,
-        }),
-    ),
+    ...products.value.map((product): Suggestion => ({
+        kind: 'product',
+        key: `product-${product.id}`,
+        label: product.name,
+        product,
+    })),
+    ...categories.value.map((category): Suggestion => ({
+        kind: 'category',
+        key: `category-${category.id}`,
+        label: category.name,
+        slug: category.slug,
+    })),
+    ...brands.value.map((brand): Suggestion => ({
+        kind: 'brand',
+        key: `brand-${brand.id}`,
+        label: brand.name,
+        id: brand.id,
+    })),
 ]);
 
 const hasSuggestions = computed(() => suggestions.value.length > 0);
@@ -214,7 +213,9 @@ function move(step: number): void {
 }
 
 function onEnter(event: KeyboardEvent): void {
-    const active = isExpanded.value ? suggestions.value[activeIndex.value] : undefined;
+    const active = isExpanded.value
+        ? suggestions.value[activeIndex.value]
+        : undefined;
 
     if (active !== undefined) {
         event.preventDefault();

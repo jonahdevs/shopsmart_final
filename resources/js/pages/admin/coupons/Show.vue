@@ -1,18 +1,23 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
-import { Pencil } from '@lucide/vue';
+import {
+    ArrowLeft,
+    Pencil,
+    ScrollText,
+    Ticket,
+    TriangleAlert,
+    Wallet,
+} from '@lucide/vue';
 import { computed, ref } from 'vue';
 import CouponController from '@/actions/App/Http/Controllers/Admin/CouponController';
+import AdminCard from '@/components/admin/AdminCard.vue';
+import AdminCardHeader from '@/components/admin/AdminCardHeader.vue';
+import AdminEmptyState from '@/components/admin/AdminEmptyState.vue';
 import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
-import { Badge } from '@/components/ui/badge';
+import AdminStatCard from '@/components/admin/AdminStatCard.vue';
+import AdminStatusBadge from '@/components/admin/AdminStatusBadge.vue';
+import { adminTones } from '@/components/admin/tones';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
 import {
     Dialog,
     DialogClose,
@@ -33,8 +38,12 @@ import {
 } from '@/components/ui/table';
 import { usePermissions } from '@/composables/usePermissions';
 import { formatIsoDate } from '@/lib/utils';
+import { dashboard as adminDashboard } from '@/routes/admin';
+import {
+    edit as adminCouponEdit,
+    index as adminCoupons,
+} from '@/routes/admin/coupons';
 import { show as adminCustomer } from '@/routes/admin/customers';
-import { edit as adminCouponEdit, index as adminCoupons } from '@/routes/admin/coupons';
 import { show as adminOrder } from '@/routes/admin/orders';
 
 const { detail } = defineProps<{
@@ -44,8 +53,8 @@ const { detail } = defineProps<{
 defineOptions({
     layout: {
         breadcrumbs: [
-            { title: 'Dashboard', href: '/admin' },
-            { title: 'Coupons', href: '/admin/coupons' },
+            { title: 'Dashboard', href: adminDashboard().url },
+            { title: 'Coupons', href: adminCoupons().url },
         ],
     },
 });
@@ -71,6 +80,15 @@ const canReadOrders = computed(() => can('orders.view'));
  */
 const hasRedemptions = computed(() => detail.redemptions.length > 0);
 
+/**
+ * The counter and the rows are kept in step by Order::recordCouponUse(), which
+ * increments only when the (coupon_id, order_id) unique index admitted a new
+ * row. Surfacing the disagreement means a drift is visible rather than silent.
+ */
+const countersDisagree = computed(
+    () => coupon.value.redemptionCount !== coupon.value.usedCount,
+);
+
 const terms = computed(() => [
     { label: 'Discount', value: coupon.value.valueLabel },
     {
@@ -86,15 +104,17 @@ const terms = computed(() => [
     },
     {
         label: 'Total redemptions allowed',
-        value: coupon.value.usageLimit === null
-            ? 'Unlimited'
-            : String(coupon.value.usageLimit),
+        value:
+            coupon.value.usageLimit === null
+                ? 'Unlimited'
+                : String(coupon.value.usageLimit),
     },
     {
         label: 'Per customer',
-        value: coupon.value.usageLimitPerUser === null
-            ? 'Unlimited'
-            : String(coupon.value.usageLimitPerUser),
+        value:
+            coupon.value.usageLimitPerUser === null
+                ? 'Unlimited'
+                : String(coupon.value.usageLimitPerUser),
     },
     {
         label: 'Valid from',
@@ -112,16 +132,20 @@ const terms = computed(() => [
 </script>
 
 <template>
-    <div class="flex flex-col gap-6 p-4">
+    <div class="flex flex-col gap-6">
         <Head :title="coupon.code" />
 
         <AdminPageHeader
+            eyebrow="Marketing"
             :title="coupon.code"
             :description="coupon.description ?? 'No internal note.'"
         >
             <template #actions>
                 <Button variant="outline" size="sm" as-child>
-                    <Link :href="adminCoupons()">Back to coupons</Link>
+                    <Link :href="adminCoupons()">
+                        <ArrowLeft class="size-4" aria-hidden="true" />
+                        Back to coupons
+                    </Link>
                 </Button>
                 <Button size="sm" as-child>
                     <Link :href="adminCouponEdit(coupon.id)">
@@ -132,102 +156,70 @@ const terms = computed(() => [
             </template>
         </AdminPageHeader>
 
-        <div class="grid gap-4 sm:grid-cols-3">
-            <Card>
-                <CardContent class="pt-6">
-                    <p class="text-muted-foreground text-sm">State</p>
-                    <p class="mt-2">
-                        <Badge
-                            :variant="coupon.isRedeemable ? 'default' : 'outline'"
-                        >
-                            {{ coupon.isRedeemable ? 'Live' : 'Not live' }}
-                        </Badge>
-                        <Badge v-if="!coupon.isActive" variant="destructive" class="ml-2">
-                            Switched off
-                        </Badge>
-                    </p>
-                    <p class="text-muted-foreground mt-2 text-xs">
-                        {{ coupon.typeLabel }}
-                    </p>
-                </CardContent>
-            </Card>
+        <div class="grid gap-4 sm:grid-cols-2">
+            <AdminStatCard
+                label="Times redeemed"
+                :value="String(coupon.usedCount)"
+                :icon="Ticket"
+                tone="brand"
+                :hint="
+                    countersDisagree
+                        ? undefined
+                        : `Matches ${coupon.redemptionCount} recorded redemption${coupon.redemptionCount === 1 ? '' : 's'}.`
+                "
+            />
 
-            <Card>
-                <CardContent class="pt-6">
-                    <p class="text-muted-foreground text-sm">Times redeemed</p>
-                    <p class="mt-1 text-2xl font-semibold tabular-nums">
-                        {{ coupon.usedCount }}
-                    </p>
-                    <!--
-                      The counter and the rows are kept in step by
-                      Order::recordCouponUse(), which increments only when the
-                      (coupon_id, order_id) unique index admitted a new row.
-                      Showing both means a drift is visible rather than silent.
-                    -->
-                    <p
-                        v-if="coupon.redemptionCount !== coupon.usedCount"
-                        class="mt-1 text-xs text-red-600 dark:text-red-500"
-                    >
-                        {{ coupon.redemptionCount }} redemption rows recorded —
-                        the counter and the history disagree.
-                    </p>
-                    <p v-else class="text-muted-foreground mt-1 text-xs">
-                        Matches {{ coupon.redemptionCount }} recorded
-                        redemption{{ coupon.redemptionCount === 1 ? '' : 's' }}.
-                    </p>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardContent class="pt-6">
-                    <p class="text-muted-foreground text-sm">Discount given</p>
-                    <p class="mt-1 text-2xl font-semibold tabular-nums">
-                        {{ detail.discountedTotalFormatted }}
-                    </p>
-                    <p class="text-muted-foreground mt-1 text-xs">
-                        Summed from the redemption rows.
-                    </p>
-                </CardContent>
-            </Card>
+            <AdminStatCard
+                label="Discount given"
+                :value="detail.discountedTotalFormatted"
+                :icon="Wallet"
+                tone="success"
+                hint="Summed from the redemption rows."
+            />
         </div>
 
-        <Card>
-            <CardHeader>
-                <CardTitle>Terms</CardTitle>
-                <CardDescription>
-                    What the checkout enforces when a shopper types this code.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <dl class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <div v-for="term in terms" :key="term.label">
-                        <dt class="text-muted-foreground text-xs">
-                            {{ term.label }}
-                        </dt>
-                        <dd class="mt-0.5 text-sm font-medium">
-                            {{ term.value }}
-                        </dd>
-                    </div>
-                </dl>
-            </CardContent>
-        </Card>
+        <AdminCard
+            v-if="countersDisagree"
+            padded
+            class="flex items-start gap-3 text-sm"
+        >
+            <TriangleAlert
+                class="mt-0.5 size-4 shrink-0"
+                :class="adminTones.danger.text"
+                aria-hidden="true"
+            />
+            <p>
+                {{ coupon.redemptionCount }} redemption rows recorded — the
+                counter and the history disagree.
+            </p>
+        </AdminCard>
 
-        <Card>
-            <CardHeader>
-                <CardTitle>Redemption history</CardTitle>
-                <CardDescription>
+        <!--
+          The history is the record you read down; the terms and the removal
+          control are what you glance at, so they sit in the aside.
+        -->
+        <div class="grid gap-6 lg:grid-cols-3">
+            <AdminCard class="lg:col-span-2">
+                <AdminCardHeader
+                    title="Redemption history"
+                    :icon="ScrollText"
+                />
+
+                <p class="text-muted-foreground border-b px-5 py-3 text-xs">
                     Written once, when a payment confirms — never at checkout,
                     so an abandoned basket cannot eat a limited code's budget.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <p
-                    v-if="!hasRedemptions"
-                    class="text-muted-foreground py-6 text-center text-sm"
-                >
-                    Nobody has redeemed this code yet.
                 </p>
 
+                <AdminEmptyState
+                    v-if="!hasRedemptions"
+                    :icon="ScrollText"
+                    title="Nobody has redeemed this code yet"
+                />
+
+                <!--
+                  Wide content scrolls inside its own container so the page body
+                  never scrolls sideways on a narrow screen.
+                -->
                 <div v-else class="overflow-x-auto">
                     <Table>
                         <TableHeader>
@@ -249,7 +241,7 @@ const terms = computed(() => [
                                     <Link
                                         v-if="use.orderNumber && canReadOrders"
                                         :href="adminOrder(use.orderNumber)"
-                                        class="hover:underline"
+                                        class="hover:text-primary transition-colors"
                                     >
                                         {{ use.orderNumber }}
                                     </Link>
@@ -267,9 +259,11 @@ const terms = computed(() => [
                                       means the account has since been closed.
                                     -->
                                     <Link
-                                        v-if="use.customerId && canReadCustomers"
+                                        v-if="
+                                            use.customerId && canReadCustomers
+                                        "
                                         :href="adminCustomer(use.customerId)"
-                                        class="hover:underline"
+                                        class="hover:text-primary transition-colors"
                                     >
                                         {{ use.customerName }}
                                     </Link>
@@ -287,14 +281,67 @@ const terms = computed(() => [
                         </TableBody>
                     </Table>
                 </div>
-            </CardContent>
-        </Card>
+            </AdminCard>
+
+            <div class="flex flex-col gap-6">
+                <AdminCard>
+                    <AdminCardHeader title="State" />
+
+                    <div class="space-y-2 px-5 py-4">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <AdminStatusBadge
+                                :label="
+                                    coupon.isRedeemable ? 'Live' : 'Not live'
+                                "
+                                :tone="
+                                    coupon.isRedeemable ? 'success' : 'neutral'
+                                "
+                            />
+                            <AdminStatusBadge
+                                v-if="!coupon.isActive"
+                                label="Switched off"
+                                tone="danger"
+                            />
+                        </div>
+                        <p class="text-muted-foreground text-xs">
+                            {{ coupon.typeLabel }}
+                        </p>
+                    </div>
+                </AdminCard>
+
+                <AdminCard>
+                    <AdminCardHeader title="Terms" :icon="Ticket" />
+
+                    <p class="text-muted-foreground border-b px-5 py-3 text-xs">
+                        What the checkout enforces when a shopper types this
+                        code.
+                    </p>
+
+                    <dl
+                        class="grid gap-4 px-5 py-4 sm:grid-cols-2 lg:grid-cols-1"
+                    >
+                        <div v-for="term in terms" :key="term.label">
+                            <dt class="text-muted-foreground text-xs">
+                                {{ term.label }}
+                            </dt>
+                            <dd class="mt-0.5 text-sm font-medium">
+                                {{ term.value }}
+                            </dd>
+                        </div>
+                    </dl>
+                </AdminCard>
+            </div>
+        </div>
 
         <div class="flex justify-end">
             <Dialog v-model:open="confirmingRemoval">
                 <DialogTrigger as-child>
                     <Button variant="destructive" size="sm">
-                        {{ hasRedemptions ? 'Deactivate coupon' : 'Delete coupon' }}
+                        {{
+                            hasRedemptions
+                                ? 'Deactivate coupon'
+                                : 'Delete coupon'
+                        }}
                     </Button>
                 </DialogTrigger>
                 <DialogContent>
@@ -334,7 +381,11 @@ const terms = computed(() => [
                                 variant="destructive"
                                 :disabled="processing"
                             >
-                                {{ hasRedemptions ? 'Switch it off' : 'Delete it' }}
+                                {{
+                                    hasRedemptions
+                                        ? 'Switch it off'
+                                        : 'Delete it'
+                                }}
                             </Button>
                         </Form>
                     </DialogFooter>

@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
+import { Head } from '@inertiajs/vue3';
+import { ScrollText } from '@lucide/vue';
+import AdminCard from '@/components/admin/AdminCard.vue';
+import AdminEmptyState from '@/components/admin/AdminEmptyState.vue';
+import AdminFilterBar from '@/components/admin/AdminFilterBar.vue';
 import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
 import AdminPagination from '@/components/admin/AdminPagination.vue';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import AdminSortableHead from '@/components/admin/AdminSortableHead.vue';
+import AdminStatusBadge from '@/components/admin/AdminStatusBadge.vue';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import {
     Table,
@@ -16,7 +18,9 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useIndexTable } from '@/composables/useIndexTable';
 import { formatIsoDate } from '@/lib/utils';
+import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as adminActivity } from '@/routes/admin/activity';
 
 type ActivityFilters = {
@@ -51,73 +55,32 @@ const {
 defineOptions({
     layout: {
         breadcrumbs: [
-            { title: 'Dashboard', href: '/admin' },
-            { title: 'Activity', href: '/admin/activity' },
+            { title: 'Dashboard', href: adminDashboard().url },
+            { title: 'Activity', href: adminActivity().url },
         ],
     },
 });
 
-const form = ref({
-    log_name: filters.log_name ?? '',
-    event: filters.event ?? '',
-    subject_type: filters.subject_type ?? '',
-    causer_id: filters.causer_id === null ? '' : String(filters.causer_id),
-    from: filters.from ?? '',
-    to: filters.to ?? '',
-});
-
-function activeQuery(overrides: Record<string, string | number> = {}) {
-    const query: Record<string, string | number> = {};
-
-    for (const [key, value] of Object.entries(form.value)) {
-        if (value !== '') {
-            query[key] = value;
-        }
-    }
-
-    if (filters.sort !== 'created_at' || filters.direction !== 'desc') {
-        query.sort = filters.sort;
-        query.direction = filters.direction;
-    }
-
-    return { ...query, ...overrides };
-}
-
-let debounce: ReturnType<typeof setTimeout> | undefined;
-
-watch(
-    form,
-    () => {
-        clearTimeout(debounce);
-        debounce = setTimeout(() => {
-            router.get(adminActivity.url({ query: activeQuery() }), undefined, {
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-            });
-        }, 300);
-    },
-    { deep: true },
-);
-
-function hrefForPage(page: number): string {
-    return adminActivity.url({ query: activeQuery({ page }) });
-}
-
-function sortHref(column: string): string {
-    const direction =
-        filters.sort === column && filters.direction === 'asc' ? 'desc' : 'asc';
-
-    return adminActivity.url({ query: activeQuery({ sort: column, direction }) });
-}
-
-function ariaSort(column: string): 'ascending' | 'descending' | 'none' {
-    if (filters.sort !== column) {
-        return 'none';
-    }
-
-    return filters.direction === 'asc' ? 'ascending' : 'descending';
-}
+/**
+ * The filter bar is local state that syncs to the URL, not a form post: a
+ * narrowed trail has to be a link an auditor can send. `useIndexTable` owns the
+ * debounce, the visit options and the rule that empty filters are omitted.
+ */
+const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
+    useIndexTable({
+        toUrl: (query) => adminActivity.url({ query }),
+        sortState: () => filters,
+        defaultSort: { column: 'created_at', direction: 'desc' },
+        fields: {
+            log_name: filters.log_name ?? '',
+            event: filters.event ?? '',
+            subject_type: filters.subject_type ?? '',
+            causer_id:
+                filters.causer_id === null ? '' : String(filters.causer_id),
+            from: filters.from ?? '',
+            to: filters.to ?? '',
+        },
+    });
 
 /** "not set" reads better than an empty cell for a value that was null. */
 function shown(value: string | null): string {
@@ -126,227 +89,220 @@ function shown(value: string | null): string {
 </script>
 
 <template>
-    <div class="flex flex-col gap-6 p-4">
+    <div class="flex flex-col gap-6">
         <Head title="Activity" />
 
         <AdminPageHeader
+            eyebrow="System"
             title="Activity"
             :description="`${pagination.total} recorded ${pagination.total === 1 ? 'event' : 'events'}. Read-only — nothing here can be edited or deleted.`"
         />
 
-        <Card>
-            <CardContent class="pt-6">
-                <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-                    <div class="space-y-1.5">
-                        <Label for="activity-log">Log</Label>
-                        <NativeSelect id="activity-log" v-model="form.log_name">
-                            <option value="">All logs</option>
-                            <option
-                                v-for="name in logNames"
-                                :key="name"
-                                :value="name"
-                            >
-                                {{ name }}
-                            </option>
-                        </NativeSelect>
-                    </div>
-
-                    <div class="space-y-1.5">
-                        <Label for="activity-event">Event</Label>
-                        <NativeSelect id="activity-event" v-model="form.event">
-                            <option value="">All events</option>
-                            <option
-                                v-for="event in events"
-                                :key="event"
-                                :value="event"
-                            >
-                                {{ event }}
-                            </option>
-                        </NativeSelect>
-                    </div>
-
-                    <div class="space-y-1.5">
-                        <Label for="activity-subject">Subject</Label>
-                        <NativeSelect
-                            id="activity-subject"
-                            v-model="form.subject_type"
-                        >
-                            <option value="">All subjects</option>
-                            <option
-                                v-for="subject in subjectTypes"
-                                :key="subject.value"
-                                :value="subject.value"
-                            >
-                                {{ subject.label }}
-                            </option>
-                        </NativeSelect>
-                    </div>
-
-                    <div class="space-y-1.5">
-                        <Label for="activity-causer">Who</Label>
-                        <NativeSelect
-                            id="activity-causer"
-                            v-model="form.causer_id"
-                        >
-                            <option value="">Anyone</option>
-                            <option
-                                v-for="causer in causers"
-                                :key="causer.value"
-                                :value="String(causer.value)"
-                            >
-                                {{ causer.label }}
-                            </option>
-                        </NativeSelect>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="space-y-1.5">
-                            <Label for="activity-from">From</Label>
-                            <Input
-                                id="activity-from"
-                                v-model="form.from"
-                                type="date"
-                            />
-                        </div>
-                        <div class="space-y-1.5">
-                            <Label for="activity-to">To</Label>
-                            <Input
-                                id="activity-to"
-                                v-model="form.to"
-                                type="date"
-                            />
-                        </div>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-
-        <Card>
-            <CardContent class="pt-6">
-                <p
-                    v-if="entries.length === 0"
-                    class="text-muted-foreground py-12 text-center text-sm"
+        <AdminCard>
+            <!--
+              No search box: the trail has no free-text search on the server,
+              and a box that narrowed nothing would be worse than none.
+            -->
+            <AdminFilterBar
+                :searchable="false"
+                :show-clear="isFiltered"
+                @clear="clear"
+            >
+                <NativeSelect
+                    v-model="form.log_name"
+                    class="w-40"
+                    aria-label="Log"
                 >
-                    Nothing has been recorded for these filters.
-                </p>
+                    <option value="">All logs</option>
+                    <option v-for="name in logNames" :key="name" :value="name">
+                        {{ name }}
+                    </option>
+                </NativeSelect>
 
-                <div v-else class="overflow-x-auto">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead :aria-sort="ariaSort('created_at')">
-                                    <Link
-                                        :href="sortHref('created_at')"
-                                        preserve-scroll
-                                        class="hover:underline"
-                                    >
-                                        When
-                                    </Link>
-                                </TableHead>
-                                <TableHead>Who</TableHead>
-                                <TableHead :aria-sort="ariaSort('event')">
-                                    <Link
-                                        :href="sortHref('event')"
-                                        preserve-scroll
-                                        class="hover:underline"
-                                    >
-                                        What
-                                    </Link>
-                                </TableHead>
-                                <TableHead>Subject</TableHead>
-                                <TableHead>Changes</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow v-for="entry in entries" :key="entry.id">
-                                <TableCell class="text-muted-foreground whitespace-nowrap">
-                                    {{ formatIsoDate(entry.createdAt) }}
-                                </TableCell>
-                                <TableCell>
-                                    {{ entry.causerName ?? 'System' }}
-                                </TableCell>
-                                <TableCell>
-                                    <Badge variant="outline">
-                                        {{ entry.event ?? entry.description }}
-                                    </Badge>
-                                    <span
-                                        class="text-muted-foreground block text-xs"
-                                    >
-                                        {{ entry.logName }}
+                <NativeSelect
+                    v-model="form.event"
+                    class="w-40"
+                    aria-label="Event"
+                >
+                    <option value="">All events</option>
+                    <option v-for="event in events" :key="event" :value="event">
+                        {{ event }}
+                    </option>
+                </NativeSelect>
+
+                <NativeSelect
+                    v-model="form.subject_type"
+                    class="w-40"
+                    aria-label="Subject"
+                >
+                    <option value="">All subjects</option>
+                    <option
+                        v-for="subject in subjectTypes"
+                        :key="subject.value"
+                        :value="subject.value"
+                    >
+                        {{ subject.label }}
+                    </option>
+                </NativeSelect>
+
+                <NativeSelect
+                    v-model="form.causer_id"
+                    class="w-40"
+                    aria-label="Who"
+                >
+                    <option value="">Anyone</option>
+                    <option
+                        v-for="causer in causers"
+                        :key="causer.value"
+                        :value="String(causer.value)"
+                    >
+                        {{ causer.label }}
+                    </option>
+                </NativeSelect>
+
+                <Input
+                    v-model="form.from"
+                    type="date"
+                    class="w-36"
+                    aria-label="Recorded from"
+                />
+                <Input
+                    v-model="form.to"
+                    type="date"
+                    class="w-36"
+                    aria-label="Recorded to"
+                />
+            </AdminFilterBar>
+
+            <AdminEmptyState
+                v-if="entries.length === 0"
+                :icon="ScrollText"
+                :filtered="isFiltered"
+                :title="isFiltered ? 'Nothing recorded' : 'The trail is empty'"
+                :description="
+                    isFiltered
+                        ? 'Nothing has been recorded for these filters.'
+                        : 'Staff actions are written here as they happen.'
+                "
+            />
+
+            <!--
+              Wide content scrolls inside its own container so the page body
+              never scrolls sideways on a narrow screen.
+            -->
+            <div v-else class="overflow-x-auto">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <AdminSortableHead
+                                label="When"
+                                :href="sortHref('created_at')"
+                                :sort="ariaSort('created_at')"
+                            />
+                            <TableHead>Who</TableHead>
+                            <AdminSortableHead
+                                label="What"
+                                :href="sortHref('event')"
+                                :sort="ariaSort('event')"
+                            />
+                            <TableHead>Subject</TableHead>
+                            <TableHead>Changes</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        <TableRow v-for="entry in entries" :key="entry.id">
+                            <TableCell
+                                class="text-muted-foreground whitespace-nowrap"
+                            >
+                                {{ formatIsoDate(entry.createdAt) }}
+                            </TableCell>
+                            <TableCell>
+                                {{ entry.causerName ?? 'System' }}
+                            </TableCell>
+                            <TableCell>
+                                <AdminStatusBadge
+                                    :label="entry.event ?? entry.description"
+                                    tone="neutral"
+                                />
+                                <span
+                                    class="text-muted-foreground block text-xs"
+                                >
+                                    {{ entry.logName }}
+                                </span>
+                            </TableCell>
+                            <TableCell>
+                                <span v-if="entry.subjectType">
+                                    {{ entry.subjectType }}
+                                    <span class="font-medium">
+                                        {{
+                                            entry.subjectLabel ??
+                                            `#${entry.subjectId}`
+                                        }}
                                     </span>
-                                </TableCell>
-                                <TableCell>
-                                    <span v-if="entry.subjectType">
-                                        {{ entry.subjectType }}
-                                        <span class="font-medium">
-                                            {{
-                                                entry.subjectLabel ??
-                                                `#${entry.subjectId}`
-                                            }}
+                                </span>
+                                <span
+                                    v-else
+                                    class="text-muted-foreground text-sm"
+                                >
+                                    —
+                                </span>
+                            </TableCell>
+                            <TableCell class="max-w-md">
+                                <p
+                                    v-if="entry.changes.length === 0"
+                                    class="text-muted-foreground text-sm"
+                                >
+                                    No attribute changes recorded.
+                                </p>
+
+                                <ul v-else class="space-y-0.5 text-sm">
+                                    <li
+                                        v-for="change in entry.changes"
+                                        :key="change.attribute"
+                                    >
+                                        <span class="text-muted-foreground">
+                                            {{ change.label }}:
                                         </span>
-                                    </span>
-                                    <span
-                                        v-else
-                                        class="text-muted-foreground text-sm"
-                                    >
-                                        —
-                                    </span>
-                                </TableCell>
-                                <TableCell class="max-w-md">
-                                    <p
-                                        v-if="entry.changes.length === 0"
-                                        class="text-muted-foreground text-sm"
-                                    >
-                                        No attribute changes recorded.
-                                    </p>
-
-                                    <ul v-else class="space-y-0.5 text-sm">
-                                        <li
-                                            v-for="change in entry.changes"
-                                            :key="change.attribute"
-                                        >
+                                        <template v-if="entry.valuesHidden">
                                             <span class="text-muted-foreground">
-                                                {{ change.label }}:
+                                                changed
                                             </span>
-                                            <template v-if="entry.valuesHidden">
-                                                <span class="text-muted-foreground">
-                                                    changed
-                                                </span>
-                                            </template>
-                                            <template v-else>
-                                                {{ shown(change.from) }}
-                                                →
-                                                <span class="font-medium">
-                                                    {{ shown(change.to) }}
-                                                </span>
-                                            </template>
-                                        </li>
-                                    </ul>
+                                        </template>
+                                        <template v-else>
+                                            {{ shown(change.from) }}
+                                            →
+                                            <span class="font-medium">
+                                                {{ shown(change.to) }}
+                                            </span>
+                                        </template>
+                                    </li>
+                                </ul>
 
-                                    <!--
-                                      The trail is personal data in its own
-                                      right: `activity.view` says you may see
-                                      that an order moved, not that you may read
-                                      the order.
-                                    -->
-                                    <p
-                                        v-if="entry.valuesHidden && entry.changes.length > 0"
-                                        class="text-muted-foreground pt-1 text-xs"
-                                    >
-                                        Values hidden — you do not have
-                                        permission to read this record.
-                                    </p>
-                                </TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
-        </Card>
+                                <!--
+                                  The trail is personal data in its own right:
+                                  `activity.view` says you may see that an order
+                                  moved, not that you may read the order.
+                                -->
+                                <p
+                                    v-if="
+                                        entry.valuesHidden &&
+                                        entry.changes.length > 0
+                                    "
+                                    class="text-muted-foreground pt-1 text-xs"
+                                >
+                                    Values hidden — you do not have permission
+                                    to read this record.
+                                </p>
+                            </TableCell>
+                        </TableRow>
+                    </TableBody>
+                </Table>
+            </div>
 
-        <AdminPagination
-            :pagination="pagination"
-            :href-for-page="hrefForPage"
-        />
+            <AdminPagination
+                :pagination="pagination"
+                :href-for-page="hrefForPage"
+            />
+        </AdminCard>
     </div>
 </template>

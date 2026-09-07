@@ -1,21 +1,18 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
-import { ChevronLeft, Plus, Trash2 } from '@lucide/vue';
+import { List, Plus, SlidersHorizontal, Tag, Trash2 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import AttributeController from '@/actions/App/Http/Controllers/Admin/AttributeController';
+import AdminCard from '@/components/admin/AdminCard.vue';
+import AdminCardHeader from '@/components/admin/AdminCardHeader.vue';
+import AdminEmptyState from '@/components/admin/AdminEmptyState.vue';
 import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
+import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as adminAttributes } from '@/routes/admin/attributes';
 
 /** A value row while it is being edited; `id` is null until it is saved. */
@@ -38,8 +35,8 @@ const props = defineProps<{
 defineOptions({
     layout: {
         breadcrumbs: [
-            { title: 'Dashboard', href: '/admin' },
-            { title: 'Attributes', href: '/admin/attributes' },
+            { title: 'Dashboard', href: adminDashboard().url },
+            { title: 'Attributes', href: adminAttributes().url },
         ],
     },
 });
@@ -100,23 +97,14 @@ function reseedFromProps(): void {
 </script>
 
 <template>
-    <div class="flex flex-col gap-6 p-4">
+    <div class="flex flex-col gap-6">
         <Head :title="isNew ? 'New attribute' : attribute.name" />
 
-        <AdminPageHeader
-            :title="isNew ? 'New attribute' : attribute.name"
-            description="An attribute and its values are saved together."
-        >
-            <template #actions>
-                <Button variant="outline" as-child>
-                    <Link :href="adminAttributes()">
-                        <ChevronLeft class="size-4" aria-hidden="true" />
-                        All attributes
-                    </Link>
-                </Button>
-            </template>
-        </AdminPageHeader>
-
+        <!--
+          The page header sits inside the form so Save stays an ordinary submit
+          button instead of a detached one wired back by `form=`. The delete
+          form below is a sibling, not a child — forms cannot nest.
+        -->
         <Form
             v-bind="submitTarget"
             :options="{ preserveScroll: true, preserveState: true }"
@@ -124,115 +112,194 @@ function reseedFromProps(): void {
             v-slot="{ errors, processing }"
             @success="reseedFromProps"
         >
-            <Card>
-                <CardHeader>
-                    <CardTitle>Details</CardTitle>
-                    <CardDescription>
-                        Leave the slug blank to have one made from the name.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent class="grid gap-4 sm:grid-cols-2">
-                    <div class="space-y-1.5">
-                        <Label for="name">Name</Label>
-                        <Input
-                            id="name"
-                            name="name"
-                            :default-value="attribute.name"
-                            required
-                            maxlength="255"
-                        />
-                        <InputError :message="errors.name" />
-                    </div>
+            <AdminPageHeader
+                eyebrow="Catalog"
+                :title="isNew ? 'New attribute' : attribute.name"
+                description="An attribute and its values are saved together."
+            >
+                <template #actions>
+                    <Button variant="outline" size="sm" as-child>
+                        <Link :href="adminAttributes()">Cancel</Link>
+                    </Button>
+                    <Button type="submit" size="sm" :disabled="processing">
+                        {{ isNew ? 'Create attribute' : 'Save attribute' }}
+                    </Button>
+                </template>
+            </AdminPageHeader>
 
-                    <div class="space-y-1.5">
-                        <Label for="slug">Slug</Label>
-                        <Input
-                            id="slug"
-                            name="slug"
-                            :default-value="attribute.slug ?? undefined"
-                            maxlength="255"
-                            placeholder="made-from-the-name"
-                        />
-                        <InputError :message="errors.slug" />
-                    </div>
+            <div class="grid gap-6 lg:grid-cols-3">
+                <div class="space-y-6 lg:col-span-2">
+                    <AdminCard>
+                        <AdminCardHeader title="Details" :icon="Tag" />
 
-                    <div class="space-y-1.5">
-                        <Label for="type">Renders as</Label>
-                        <NativeSelect
-                            id="type"
-                            name="type"
-                            :model-value="attribute.type"
+                        <div class="grid gap-4 p-5 sm:grid-cols-2">
+                            <div class="space-y-1.5">
+                                <Label for="name">Name</Label>
+                                <Input
+                                    id="name"
+                                    name="name"
+                                    :default-value="attribute.name"
+                                    required
+                                    maxlength="255"
+                                />
+                                <InputError :message="errors.name" />
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <Label for="slug">Slug</Label>
+                                <Input
+                                    id="slug"
+                                    name="slug"
+                                    :default-value="attribute.slug ?? undefined"
+                                    maxlength="255"
+                                    placeholder="made-from-the-name"
+                                />
+                                <InputError :message="errors.slug" />
+                            </div>
+
+                            <div class="space-y-1.5 sm:col-span-2">
+                                <Label for="type">Renders as</Label>
+                                <NativeSelect
+                                    id="type"
+                                    name="type"
+                                    :model-value="attribute.type"
+                                >
+                                    <option
+                                        v-for="option in typeOptions"
+                                        :key="option.value"
+                                        :value="option.value"
+                                    >
+                                        {{ option.label }}
+                                    </option>
+                                </NativeSelect>
+                                <InputError :message="errors.type" />
+                            </div>
+                        </div>
+                    </AdminCard>
+                </div>
+
+                <div class="space-y-6">
+                    <AdminCard>
+                        <AdminCardHeader
+                            title="Availability"
+                            :icon="SlidersHorizontal"
+                        />
+
+                        <div class="space-y-4 p-5">
+                            <div class="flex items-center gap-2">
+                                <input
+                                    id="is_active"
+                                    name="is_active"
+                                    type="checkbox"
+                                    value="1"
+                                    :checked="attribute.isActive"
+                                    class="border-input size-4 rounded"
+                                />
+                                <Label for="is_active">
+                                    Active — offered when building variants
+                                </Label>
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <Label for="sort_order">Sort order</Label>
+                                <Input
+                                    id="sort_order"
+                                    name="sort_order"
+                                    type="number"
+                                    min="0"
+                                    :default-value="attribute.sortOrder"
+                                />
+                                <InputError :message="errors.sort_order" />
+                            </div>
+                        </div>
+                    </AdminCard>
+                </div>
+            </div>
+
+            <!--
+              The repeater is full width rather than in the grid above: a value
+              row carries six fields, and squeezing it into two thirds of the
+              page is what forced the old four-column jumble.
+            -->
+            <AdminCard>
+                <AdminCardHeader title="Values" :icon="List">
+                    <template #actions>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            @click="addValue"
                         >
-                            <option
-                                v-for="option in typeOptions"
-                                :key="option.value"
-                                :value="option.value"
-                            >
-                                {{ option.label }}
-                            </option>
-                        </NativeSelect>
-                        <InputError :message="errors.type" />
-                    </div>
+                            <Plus class="size-4" aria-hidden="true" />
+                            Add value
+                        </Button>
+                    </template>
+                </AdminCardHeader>
 
-                    <div class="space-y-1.5">
-                        <Label for="sort_order">Sort order</Label>
-                        <Input
-                            id="sort_order"
-                            name="sort_order"
-                            type="number"
-                            min="0"
-                            :default-value="attribute.sortOrder"
-                        />
-                        <InputError :message="errors.sort_order" />
-                    </div>
-
-                    <div class="flex items-center gap-2 sm:col-span-2">
-                        <input
-                            id="is_active"
-                            name="is_active"
-                            type="checkbox"
-                            value="1"
-                            :checked="attribute.isActive"
-                            class="border-input size-4 rounded"
-                        />
-                        <Label for="is_active">
-                            Active — offered when building variants
-                        </Label>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Values</CardTitle>
-                    <CardDescription>
+                <div class="border-b px-5 py-3">
+                    <p class="text-muted-foreground text-sm">
                         A value that still defines a purchasable variant cannot
                         be removed; the save is refused rather than unpicking
                         the variant.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent class="flex flex-col gap-4">
-                    <InputError :message="errors.values" />
-
-                    <p
-                        v-if="values.length === 0"
-                        class="text-muted-foreground text-sm"
-                    >
-                        This attribute has no values yet.
                     </p>
+                    <InputError class="mt-2" :message="errors.values" />
+                </div>
 
-                    <div
-                        v-for="(row, index) in values"
-                        :key="index"
-                        class="grid gap-4 rounded-md border p-4 sm:grid-cols-4"
-                    >
-                        <input
-                            v-if="row.id !== null"
-                            type="hidden"
-                            :name="`values[${index}][id]`"
-                            :value="row.id"
-                        />
+                <AdminEmptyState
+                    v-if="values.length === 0"
+                    :icon="List"
+                    title="No values yet"
+                    description="Add a value for every option a variant can be built on."
+                />
 
+                <!--
+                  Each row is a strip of the card rather than a bordered box
+                  inside it: the rows are one list, and a rule between them says
+                  that where a gap and a second border does not.
+                -->
+                <div
+                    v-for="(row, index) in values"
+                    :key="index"
+                    class="border-b px-5 py-4 last:border-b-0"
+                >
+                    <input
+                        v-if="row.id !== null"
+                        type="hidden"
+                        :name="`values[${index}][id]`"
+                        :value="row.id"
+                    />
+
+                    <div class="mb-3 flex items-center justify-between gap-3">
+                        <p
+                            class="text-muted-foreground font-display text-xs font-bold tracking-[0.08em] uppercase"
+                        >
+                            Value {{ index + 1 }}
+                        </p>
+
+                        <div class="flex items-center gap-3">
+                            <span
+                                v-if="row.variantCount"
+                                class="text-muted-foreground text-xs"
+                            >
+                                Defines {{ row.variantCount }} variant<template
+                                    v-if="row.variantCount !== 1"
+                                    >s</template
+                                >
+                            </span>
+
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                @click="values.splice(index, 1)"
+                            >
+                                <Trash2 class="size-4" aria-hidden="true" />
+                                Remove
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <div class="space-y-1.5">
                             <Label :for="`value-${index}-label`">Label</Label>
                             <Input
@@ -315,65 +382,21 @@ function reseedFromProps(): void {
                             />
                             <Label :for="`value-${index}-active`">Active</Label>
                         </div>
-
-                        <div
-                            class="text-muted-foreground flex items-center text-xs sm:pt-6"
-                        >
-                            <span v-if="row.variantCount">
-                                Defines {{ row.variantCount }} variant<template
-                                    v-if="row.variantCount !== 1"
-                                    >s</template
-                                >
-                            </span>
-                        </div>
-
-                        <div class="flex items-end justify-end">
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                @click="values.splice(index, 1)"
-                            >
-                                <Trash2 class="size-4" aria-hidden="true" />
-                                Remove
-                            </Button>
-                        </div>
                     </div>
-
-                    <div>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            @click="addValue"
-                        >
-                            <Plus class="size-4" aria-hidden="true" />
-                            Add value
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <div class="flex items-center gap-3">
-                <Button type="submit" :disabled="processing">
-                    {{ isNew ? 'Create attribute' : 'Save attribute' }}
-                </Button>
-                <Button variant="ghost" as-child>
-                    <Link :href="adminAttributes()">Cancel</Link>
-                </Button>
-            </div>
+                </div>
+            </AdminCard>
         </Form>
 
-        <Card v-if="!isNew">
-            <CardHeader>
-                <CardTitle>Delete this attribute</CardTitle>
-                <CardDescription>
+        <AdminCard v-if="!isNew">
+            <AdminCardHeader title="Delete this attribute" :icon="Trash2" />
+
+            <div class="space-y-4 p-5">
+                <p class="text-muted-foreground text-sm">
                     Its values go with it. An attribute a product still uses is
                     refused — removing it would unpick every variant built on
                     it.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
+                </p>
+
                 <Form
                     v-bind="AttributeController.destroy.form(attributeId)"
                     v-slot="{ errors: deleteErrors, processing: deleting }"
@@ -386,9 +409,12 @@ function reseedFromProps(): void {
                         <Trash2 class="size-4" aria-hidden="true" />
                         Delete attribute
                     </Button>
-                    <InputError class="mt-2" :message="deleteErrors.attribute" />
+                    <InputError
+                        class="mt-2"
+                        :message="deleteErrors.attribute"
+                    />
                 </Form>
-            </CardContent>
-        </Card>
+            </div>
+        </AdminCard>
     </div>
 </template>

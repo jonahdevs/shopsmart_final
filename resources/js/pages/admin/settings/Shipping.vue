@@ -11,11 +11,19 @@ import {
     NativeSelectOption,
 } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
-import { shipping as shippingRoute } from '@/routes/admin/settings';
+import { dashboard as adminDashboard } from '@/routes/admin';
+import {
+    index as adminSettings,
+    shipping as shippingRoute,
+} from '@/routes/admin/settings';
 
 defineOptions({
     layout: {
-        breadcrumbs: [{ title: 'Shipping & tax', href: shippingRoute() }],
+        breadcrumbs: [
+            { title: 'Dashboard', href: adminDashboard().url },
+            { title: 'Settings', href: adminSettings().url },
+            { title: 'Shipping & tax', href: shippingRoute().url },
+        ],
     },
 });
 
@@ -37,7 +45,7 @@ defineProps<{
 </script>
 
 <template>
-    <div>
+    <div class="flex flex-col gap-6">
         <Head title="Shipping and tax settings" />
 
         <SettingsForm

@@ -2,11 +2,12 @@
 import { Form, Head, Link } from '@inertiajs/vue3';
 import { Plus, ShieldCheck } from '@lucide/vue';
 import { destroy } from '@/actions/App/Http/Controllers/Admin/RoleController';
+import AdminCard from '@/components/admin/AdminCard.vue';
+import AdminEmptyState from '@/components/admin/AdminEmptyState.vue';
 import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
+import AdminStatusBadge from '@/components/admin/AdminStatusBadge.vue';
 import InputError from '@/components/InputError.vue';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import {
     Dialog,
     DialogClose,
@@ -25,7 +26,12 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { create as createRole, edit as editRole } from '@/routes/admin/roles';
+import { dashboard as adminDashboard } from '@/routes/admin';
+import {
+    create as createRole,
+    edit as editRole,
+    index as adminRoles,
+} from '@/routes/admin/roles';
 
 const { roles, permissionCount } = defineProps<{
     roles: App.Data.AdminRoleRowData[];
@@ -35,8 +41,8 @@ const { roles, permissionCount } = defineProps<{
 defineOptions({
     layout: {
         breadcrumbs: [
-            { title: 'Dashboard', href: '/admin' },
-            { title: 'Roles', href: '/admin/roles' },
+            { title: 'Dashboard', href: adminDashboard().url },
+            { title: 'Roles', href: adminRoles().url },
         ],
     },
 });
@@ -52,10 +58,11 @@ function blockedReason(role: App.Data.AdminRoleRowData): string {
 </script>
 
 <template>
-    <div class="flex flex-col gap-6 p-4">
+    <div class="flex flex-col gap-6">
         <Head title="Roles" />
 
         <AdminPageHeader
+            eyebrow="System"
             title="Roles and permissions"
             :description="`${roles.length} ${roles.length === 1 ? 'role' : 'roles'} across ${permissionCount} permissions. A role is the only thing that makes somebody staff.`"
         >
@@ -69,148 +76,173 @@ function blockedReason(role: App.Data.AdminRoleRowData): string {
             </template>
         </AdminPageHeader>
 
-        <Card>
-            <CardContent class="pt-6">
-                <div class="overflow-x-auto">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Role</TableHead>
-                                <TableHead>Permissions</TableHead>
-                                <TableHead>Members</TableHead>
-                                <TableHead class="w-0">
-                                    <span class="sr-only">Actions</span>
-                                </TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow v-for="role in roles" :key="role.id">
-                                <TableCell class="font-medium">
-                                    <span class="flex items-center gap-2">
-                                        {{ role.name }}
-                                        <ShieldCheck
-                                            v-if="role.isProtected"
-                                            class="text-muted-foreground size-4"
-                                            aria-label="Built-in role"
-                                        />
-                                    </span>
-                                    <span
+        <AdminCard>
+            <!--
+              The list is never filtered, so an empty table can only mean the
+              seeder has not run — the invitation to create one is always the
+              right offer here.
+            -->
+            <AdminEmptyState
+                v-if="roles.length === 0"
+                :icon="ShieldCheck"
+                title="No roles yet"
+                description="Until a role exists, nobody can be made staff."
+            >
+                <template #action>
+                    <Button size="sm" as-child>
+                        <Link :href="createRole()">
+                            <Plus class="size-4" aria-hidden="true" />
+                            New role
+                        </Link>
+                    </Button>
+                </template>
+            </AdminEmptyState>
+
+            <!--
+              Wide content scrolls inside its own container so the page body
+              never scrolls sideways on a narrow screen.
+            -->
+            <div v-else class="overflow-x-auto">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Role</TableHead>
+                            <TableHead>Permissions</TableHead>
+                            <TableHead>Members</TableHead>
+                            <TableHead class="w-0">
+                                <span class="sr-only">Actions</span>
+                            </TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        <TableRow v-for="role in roles" :key="role.id">
+                            <TableCell class="font-medium">
+                                <span class="flex items-center gap-2">
+                                    {{ role.name }}
+                                    <ShieldCheck
                                         v-if="role.isProtected"
-                                        class="text-muted-foreground block text-xs"
+                                        class="text-muted-foreground size-4"
+                                        aria-label="Built-in role"
+                                    />
+                                </span>
+                                <span
+                                    v-if="role.isProtected"
+                                    class="text-muted-foreground block text-xs"
+                                >
+                                    Built in — defined by the seeder, not
+                                    editable here
+                                </span>
+                            </TableCell>
+                            <TableCell class="max-w-md">
+                                <div class="flex flex-wrap gap-1">
+                                    <AdminStatusBadge
+                                        v-for="permission in role.permissions"
+                                        :key="permission"
+                                        :label="permission"
+                                        tone="neutral"
+                                    />
+                                    <span
+                                        v-if="role.permissions.length === 0"
+                                        class="text-muted-foreground text-sm"
                                     >
-                                        Built in — defined by the seeder, not
-                                        editable here
+                                        No permissions yet
                                     </span>
-                                </TableCell>
-                                <TableCell class="max-w-md">
-                                    <div class="flex flex-wrap gap-1">
-                                        <Badge
-                                            v-for="permission in role.permissions"
-                                            :key="permission"
-                                            variant="outline"
-                                        >
-                                            {{ permission }}
-                                        </Badge>
-                                        <span
-                                            v-if="role.permissions.length === 0"
-                                            class="text-muted-foreground text-sm"
-                                        >
-                                            No permissions yet
-                                        </span>
-                                    </div>
-                                </TableCell>
-                                <TableCell class="tabular-nums">
-                                    {{ role.memberCount }}
-                                </TableCell>
-                                <TableCell>
-                                    <div class="flex items-center gap-1">
-                                        <Button
-                                            v-if="role.editable"
-                                            variant="ghost"
-                                            size="sm"
-                                            as-child
-                                        >
-                                            <Link :href="editRole(role.id)">
-                                                Edit
+                                </div>
+                            </TableCell>
+                            <TableCell class="tabular-nums">
+                                {{ role.memberCount }}
+                            </TableCell>
+                            <TableCell>
+                                <div class="flex items-center gap-1">
+                                    <Button
+                                        v-if="role.editable"
+                                        variant="ghost"
+                                        size="sm"
+                                        as-child
+                                    >
+                                        <Link :href="editRole(role.id)">
+                                            Edit
+                                            <span class="sr-only">
+                                                {{ role.name }}
+                                            </span>
+                                        </Link>
+                                    </Button>
+
+                                    <Dialog v-if="role.deletable">
+                                        <DialogTrigger as-child>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                class="text-destructive"
+                                            >
+                                                Delete
                                                 <span class="sr-only">
                                                     {{ role.name }}
                                                 </span>
-                                            </Link>
-                                        </Button>
-
-                                        <Dialog v-if="role.deletable">
-                                            <DialogTrigger as-child>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    class="text-destructive"
-                                                >
-                                                    Delete
-                                                    <span class="sr-only">
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent>
+                                            <Form
+                                                v-bind="destroy.form(role.id)"
+                                                :options="{
+                                                    preserveScroll: true,
+                                                }"
+                                                v-slot="{ errors, processing }"
+                                                class="space-y-6"
+                                            >
+                                                <DialogHeader class="space-y-3">
+                                                    <DialogTitle>
+                                                        Delete the
                                                         {{ role.name }}
-                                                    </span>
-                                                </Button>
-                                            </DialogTrigger>
-                                            <DialogContent>
-                                                <Form
-                                                    v-bind="destroy.form(role.id)"
-                                                    :options="{ preserveScroll: true }"
-                                                    v-slot="{ errors, processing }"
-                                                    class="space-y-6"
-                                                >
-                                                    <DialogHeader class="space-y-3">
-                                                        <DialogTitle>
-                                                            Delete the
-                                                            {{ role.name }} role?
-                                                        </DialogTitle>
-                                                        <DialogDescription>
-                                                            Nobody holds this role,
-                                                            so nobody loses access.
-                                                            It cannot be undone.
-                                                        </DialogDescription>
-                                                    </DialogHeader>
+                                                        role?
+                                                    </DialogTitle>
+                                                    <DialogDescription>
+                                                        Nobody holds this role,
+                                                        so nobody loses access.
+                                                        It cannot be undone.
+                                                    </DialogDescription>
+                                                </DialogHeader>
 
-                                                    <InputError
-                                                        :message="errors.name"
-                                                    />
+                                                <InputError
+                                                    :message="errors.name"
+                                                />
 
-                                                    <DialogFooter class="gap-2">
-                                                        <DialogClose as-child>
-                                                            <Button
-                                                                variant="secondary"
-                                                            >
-                                                                Cancel
-                                                            </Button>
-                                                        </DialogClose>
+                                                <DialogFooter class="gap-2">
+                                                    <DialogClose as-child>
                                                         <Button
-                                                            type="submit"
-                                                            variant="destructive"
-                                                            :disabled="processing"
+                                                            variant="secondary"
                                                         >
-                                                            {{
-                                                                processing
-                                                                    ? 'Deleting…'
-                                                                    : 'Delete role'
-                                                            }}
+                                                            Cancel
                                                         </Button>
-                                                    </DialogFooter>
-                                                </Form>
-                                            </DialogContent>
-                                        </Dialog>
+                                                    </DialogClose>
+                                                    <Button
+                                                        type="submit"
+                                                        variant="destructive"
+                                                        :disabled="processing"
+                                                    >
+                                                        {{
+                                                            processing
+                                                                ? 'Deleting…'
+                                                                : 'Delete role'
+                                                        }}
+                                                    </Button>
+                                                </DialogFooter>
+                                            </Form>
+                                        </DialogContent>
+                                    </Dialog>
 
-                                        <span
-                                            v-else
-                                            class="text-muted-foreground px-2 text-xs"
-                                        >
-                                            {{ blockedReason(role) }}
-                                        </span>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
-        </Card>
+                                    <span
+                                        v-else
+                                        class="text-muted-foreground px-2 text-xs"
+                                    >
+                                        {{ blockedReason(role) }}
+                                    </span>
+                                </div>
+                            </TableCell>
+                        </TableRow>
+                    </TableBody>
+                </Table>
+            </div>
+        </AdminCard>
     </div>
 </template>

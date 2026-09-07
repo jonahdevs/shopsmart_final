@@ -2,7 +2,7 @@
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import AccountLayout from '@/layouts/account/AccountLayout.vue';
-import AppLayout from '@/layouts/AppLayout.vue';
+import AdminLayout from '@/layouts/admin/AdminLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import StorefrontLayout from '@/layouts/StorefrontLayout.vue';
 import type { BreadcrumbItem } from '@/types';
@@ -20,6 +20,11 @@ import type { BreadcrumbItem } from '@/types';
  * So the switch in app.ts resolves one component — this one — and the branch
  * happens here, on the `auth.isStaff` flag HandleInertiaRequests shares on every
  * response. The pages themselves are untouched and unaware.
+ *
+ * The staff branch is AdminLayout, the same shell the thirty-four admin screens
+ * wear. It has to be: a staff member steps into settings from the admin rail and
+ * expects to step back out of it, and a second sidebar that happens to hold the
+ * same links is just a way for the two to drift apart.
  *
  * Appearance is deliberately absent from the customer nav: dark mode is a staff
  * affordance and the storefront is always light. A customer who reaches the page
@@ -52,11 +57,11 @@ const storeBreadcrumbs = computed<App.Data.BreadcrumbData[]>(() => [
 </script>
 
 <template>
-    <AppLayout v-if="isStaff" :breadcrumbs="breadcrumbs">
+    <AdminLayout v-if="isStaff" :breadcrumbs="breadcrumbs">
         <SettingsLayout>
             <slot />
         </SettingsLayout>
-    </AppLayout>
+    </AdminLayout>
 
     <StorefrontLayout v-else>
         <AccountLayout :breadcrumbs="storeBreadcrumbs">

@@ -1,11 +1,22 @@
 <script setup lang="ts">
 import { Form } from '@inertiajs/vue3';
+import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
 import { Button } from '@/components/ui/button';
 import type { RouteFormDefinition } from '@/wayfinder';
 
 /**
- * The shell every settings screen shares: page heading, the form itself, and
- * one save button at the end of it.
+ * The shell every settings screen shares: the page header, the form itself,
+ * and the one save button that belongs to it.
+ *
+ * The heading is {@see AdminPageHeader} rather than a scale of its own. Seven
+ * screens each carrying a slightly smaller H1 than the other thirty-four is the
+ * kind of drift nobody reports and everybody feels, and the eyebrow is what
+ * tells a staff member which of the settings screens they landed on.
+ *
+ * The header sits *inside* the `<Form>`, which is why this wrapper renders it
+ * instead of the pages: the save button belongs in the header's actions like it
+ * does on every other admin form, and it needs the `processing` flag that only
+ * the form's slot can hand it.
  *
  * The form is uncontrolled throughout — inputs carry `name` and
  * `:default-value` and nothing is mirrored into a ref — so this wrapper only
@@ -19,26 +30,23 @@ defineProps<{
 </script>
 
 <template>
-    <div class="flex flex-col gap-8">
-        <header class="space-y-1">
-            <h1 class="text-xl font-semibold tracking-tight">{{ title }}</h1>
-            <p v-if="description" class="text-muted-foreground text-sm">
-                {{ description }}
-            </p>
-        </header>
-
-        <Form
-            v-bind="action"
-            v-slot="{ errors, processing }"
-            class="flex flex-col gap-6"
+    <Form
+        v-bind="action"
+        v-slot="{ errors, processing }"
+        class="flex flex-col gap-6"
+    >
+        <AdminPageHeader
+            eyebrow="Settings"
+            :title="title"
+            :description="description"
         >
-            <slot :errors="errors" />
-
-            <div class="flex items-center justify-end">
+            <template #actions>
                 <Button type="submit" :disabled="processing">
                     Save changes
                 </Button>
-            </div>
-        </Form>
-    </div>
+            </template>
+        </AdminPageHeader>
+
+        <slot :errors="errors" />
+    </Form>
 </template>

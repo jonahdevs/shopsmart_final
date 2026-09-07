@@ -28,10 +28,18 @@ export type AdminNavItem = {
     permissions?: string[];
     /** Match the URL exactly rather than by prefix. */
     exact?: boolean;
+    /**
+     * Sub-destinations, rendered as a disclosure under the parent.
+     *
+     * A parent with children is a heading, not a link: clicking it opens the
+     * group. This is what keeps a section like Settings — seven screens that
+     * would otherwise outnumber every trading destination in the rail — to one
+     * row until a staff member asks for it.
+     */
+    children?: AdminNavItem[];
 };
 
 export type AdminNavGroup = {
     label: string;
     items: AdminNavItem[];
 };
-

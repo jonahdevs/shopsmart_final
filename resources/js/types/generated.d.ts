@@ -135,6 +135,11 @@ sortOrder: number,
 productCount: number,
 childCount: number,
 };
+export type AdminChartSliceData = {
+label: string,
+value: number,
+formatted: string,
+};
 export type AdminCouponDetailData = {
 coupon: App.Data.AdminCouponRowData,
 redemptions: App.Data.AdminCouponUseData[],
@@ -196,6 +201,16 @@ lifetimeSpentFormatted: string,
 lastOrderAt: string | null,
 registeredAt: string,
 };
+export type AdminDashboardChartsData = {
+timeline: App.Data.AdminDashboardTimelineData,
+ordersByStatus: Array<any>,
+revenueByMethod: Array<any>,
+topProducts: Array<any>,
+topCategories: Array<any>,
+ratings: Array<any>,
+averageRating: number | null,
+reviewCount: number,
+};
 export type AdminDashboardStatsData = {
 revenueCents: number,
 revenueFormatted: string,
@@ -204,11 +219,20 @@ paidOrderCount: number,
 paidOrderChangePercent: number | null,
 averageOrderValueCents: number,
 averageOrderValueFormatted: string,
+averageOrderValueChangePercent: number | null,
 newCustomerCount: number,
+newCustomerChangePercent: number | null,
 awaitingPaymentCount: number,
 awaitingFulfilmentCount: number,
 lowStockCount: number,
 periodLabel: string,
+};
+export type AdminDashboardTimelineData = {
+labels: Array<any>,
+revenue: Array<any>,
+orders: Array<any>,
+customers: Array<any>,
+currencySymbol: string,
 };
 export type AdminOrderDetailData = {
 order: App.Data.OrderData,
@@ -683,6 +707,13 @@ body: string,
 verifiedPurchase: boolean,
 publishedAt: string | null,
 publishedAtForHumans: string | null,
+};
+export type SeoData = {
+title: string,
+description: string | null,
+canonicalUrl: string | null,
+robots: string,
+jsonLd: Record<string, any>[],
 };
 export type ShopperStateData = {
 cartCount: number,

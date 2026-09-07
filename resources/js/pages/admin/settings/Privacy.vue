@@ -9,11 +9,19 @@ import SettingsSection from '@/components/admin/settings/SettingsSection.vue';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { privacy as privacyRoute } from '@/routes/admin/settings';
+import { dashboard as adminDashboard } from '@/routes/admin';
+import {
+    index as adminSettings,
+    privacy as privacyRoute,
+} from '@/routes/admin/settings';
 
 defineOptions({
     layout: {
-        breadcrumbs: [{ title: 'Privacy', href: privacyRoute() }],
+        breadcrumbs: [
+            { title: 'Dashboard', href: adminDashboard().url },
+            { title: 'Settings', href: adminSettings().url },
+            { title: 'Privacy', href: privacyRoute().url },
+        ],
     },
 });
 
@@ -95,7 +103,7 @@ const ungatedTags = computed(() => tags.value.filter((tag) => !tag.gated));
 </script>
 
 <template>
-    <div>
+    <div class="flex flex-col gap-6">
         <Head title="Privacy settings" />
 
         <SettingsForm

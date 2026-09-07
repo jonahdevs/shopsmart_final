@@ -27,7 +27,7 @@ const hasNext = computed(() => pagination.currentPage < pagination.lastPage);
     <nav
         v-if="pagination.total > 0"
         aria-label="Pagination"
-        class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+        class="flex flex-col gap-3 border-t px-5 py-3 sm:flex-row sm:items-center sm:justify-between"
     >
         <p class="text-muted-foreground text-sm" aria-live="polite">
             Showing {{ pagination.from }}–{{ pagination.to }} of
@@ -35,12 +35,7 @@ const hasNext = computed(() => pagination.currentPage < pagination.lastPage);
         </p>
 
         <div class="flex items-center gap-2">
-            <Button
-                v-if="hasPrevious"
-                variant="outline"
-                size="sm"
-                as-child
-            >
+            <Button v-if="hasPrevious" variant="outline" size="sm" as-child>
                 <Link
                     :href="hrefForPage(pagination.currentPage - 1)"
                     preserve-scroll

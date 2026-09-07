@@ -1,18 +1,28 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft } from '@lucide/vue';
-import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+    ArrowLeft,
+    ArrowLeftRight,
+    Banknote,
+    CreditCard,
+    MessageSquare,
+    Package,
+    StickyNote,
+    Truck,
+    User,
+} from '@lucide/vue';
+import {
+    updateNote,
+    updateStatus,
+} from '@/actions/App/Http/Controllers/Admin/OrderController';
+import AdminCard from '@/components/admin/AdminCard.vue';
+import AdminCardHeader from '@/components/admin/AdminCardHeader.vue';
+import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
+import AdminStatCard from '@/components/admin/AdminStatCard.vue';
+import AdminStatusBadge from '@/components/admin/AdminStatusBadge.vue';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
-import { Separator } from '@/components/ui/separator';
 import {
     Table,
     TableBody,
@@ -23,8 +33,8 @@ import {
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { usePermissions } from '@/composables/usePermissions';
-import { formatIsoDate, toBadgeVariant } from '@/lib/utils';
-import { updateNote, updateStatus } from '@/actions/App/Http/Controllers/Admin/OrderController';
+import { formatIsoDate } from '@/lib/utils';
+import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as adminOrders } from '@/routes/admin/orders';
 
 const { detail } = defineProps<{
@@ -34,8 +44,8 @@ const { detail } = defineProps<{
 defineOptions({
     layout: {
         breadcrumbs: [
-            { title: 'Dashboard', href: '/admin' },
-            { title: 'Orders', href: '/admin/orders' },
+            { title: 'Dashboard', href: adminDashboard().url },
+            { title: 'Orders', href: adminOrders().url },
         ],
     },
 });
@@ -48,10 +58,11 @@ const address = order.shippingAddress;
 </script>
 
 <template>
-    <div class="flex flex-col gap-6 p-4">
+    <div class="flex flex-col gap-6">
         <Head :title="`Order ${order.orderNumber}`" />
 
         <AdminPageHeader
+            eyebrow="Sales"
             :title="order.orderNumber"
             :description="`Placed ${formatIsoDate(order.placedAt)} by ${order.customerName}.`"
         >
@@ -66,13 +77,18 @@ const address = order.shippingAddress;
         </AdminPageHeader>
 
         <div class="flex flex-wrap items-center gap-2">
-            <Badge :variant="toBadgeVariant(order.statusVariant)">
-                {{ order.statusLabel }}
-            </Badge>
-            <Badge :variant="toBadgeVariant(order.paymentStatusVariant)">
-                {{ order.paymentStatusLabel }}
-            </Badge>
-            <span v-if="order.paymentMethod" class="text-muted-foreground text-sm">
+            <AdminStatusBadge
+                :label="order.statusLabel"
+                :variant="order.statusVariant"
+            />
+            <AdminStatusBadge
+                :label="order.paymentStatusLabel"
+                :variant="order.paymentStatusVariant"
+            />
+            <span
+                v-if="order.paymentMethod"
+                class="text-muted-foreground text-sm"
+            >
                 via {{ order.paymentMethod }}
             </span>
             <span
@@ -83,74 +99,103 @@ const address = order.shippingAddress;
             </span>
         </div>
 
-        <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-            <div class="flex flex-col gap-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Items</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div class="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Product</TableHead>
-                                        <TableHead class="text-right">
-                                            Unit
-                                        </TableHead>
-                                        <TableHead class="text-right">
-                                            Qty
-                                        </TableHead>
-                                        <TableHead class="text-right">
-                                            Total
-                                        </TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow
-                                        v-for="line in order.lines"
-                                        :key="`${line.productId}-${line.variantId}`"
+        <!--
+          The three figures a staff member is asked about on the phone. The
+          full breakdown stays under the items table, where the arithmetic can
+          be checked line by line.
+        -->
+        <div class="grid gap-4 sm:grid-cols-3">
+            <AdminStatCard
+                label="Order total"
+                tone="brand"
+                :value="totals.totalFormatted"
+                :icon="Banknote"
+                :hint="
+                    totals.couponCode
+                        ? `Coupon ${totals.couponCode}`
+                        : undefined
+                "
+            />
+            <AdminStatCard
+                label="Items"
+                :value="String(order.itemCount)"
+                :icon="Package"
+                :hint="`${order.lines.length} line${order.lines.length === 1 ? '' : 's'}`"
+            />
+            <AdminStatCard
+                label="Delivery"
+                tone="info"
+                :value="totals.shippingFormatted"
+                :icon="Truck"
+                :hint="totals.shippingIsFree ? 'Free delivery' : undefined"
+            />
+        </div>
+
+        <div class="grid gap-6 lg:grid-cols-3">
+            <div class="flex flex-col gap-6 lg:col-span-2">
+                <AdminCard>
+                    <AdminCardHeader title="Items" :icon="Package" />
+
+                    <!--
+                      Wide content scrolls inside its own container so the page
+                      body never scrolls sideways on a narrow screen.
+                    -->
+                    <div class="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Product</TableHead>
+                                    <TableHead class="text-right">
+                                        Unit
+                                    </TableHead>
+                                    <TableHead class="text-right">
+                                        Qty
+                                    </TableHead>
+                                    <TableHead class="text-right">
+                                        Total
+                                    </TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow
+                                    v-for="line in order.lines"
+                                    :key="`${line.productId}-${line.variantId}`"
+                                >
+                                    <TableCell>
+                                        <span class="font-medium">
+                                            {{ line.name }}
+                                        </span>
+                                        <span
+                                            v-if="line.optionLabel"
+                                            class="text-muted-foreground block text-xs"
+                                        >
+                                            {{ line.optionLabel }}
+                                        </span>
+                                        <span
+                                            v-if="line.sku"
+                                            class="text-muted-foreground block text-xs"
+                                        >
+                                            {{ line.sku }}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell class="text-right tabular-nums">
+                                        {{ line.unitPriceFormatted }}
+                                    </TableCell>
+                                    <TableCell class="text-right tabular-nums">
+                                        {{ line.quantity }}
+                                    </TableCell>
+                                    <TableCell
+                                        class="text-right font-medium tabular-nums"
                                     >
-                                        <TableCell>
-                                            <span class="font-medium">
-                                                {{ line.name }}
-                                            </span>
-                                            <span
-                                                v-if="line.optionLabel"
-                                                class="text-muted-foreground block text-xs"
-                                            >
-                                                {{ line.optionLabel }}
-                                            </span>
-                                            <span
-                                                v-if="line.sku"
-                                                class="text-muted-foreground block text-xs"
-                                            >
-                                                {{ line.sku }}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell
-                                            class="text-right tabular-nums"
-                                        >
-                                            {{ line.unitPriceFormatted }}
-                                        </TableCell>
-                                        <TableCell
-                                            class="text-right tabular-nums"
-                                        >
-                                            {{ line.quantity }}
-                                        </TableCell>
-                                        <TableCell
-                                            class="text-right font-medium tabular-nums"
-                                        >
-                                            {{ line.totalFormatted }}
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
-                        </div>
+                                        {{ line.totalFormatted }}
+                                    </TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </div>
 
-                        <Separator class="my-4" />
-
-                        <dl class="ml-auto max-w-xs space-y-1.5 text-sm">
+                    <div class="flex justify-end border-t px-5 py-4">
+                        <dl class="w-full max-w-xs space-y-1.5 text-sm">
                             <div class="flex justify-between">
                                 <dt class="text-muted-foreground">Subtotal</dt>
                                 <dd class="tabular-nums">
@@ -185,105 +230,98 @@ const address = order.shippingAddress;
                                     {{ totals.taxFormatted }}
                                 </dd>
                             </div>
-                            <Separator class="my-2" />
-                            <div class="flex justify-between font-semibold">
+                            <div
+                                class="flex justify-between border-t pt-2 font-semibold"
+                            >
                                 <dt>Total</dt>
                                 <dd class="tabular-nums">
                                     {{ totals.totalFormatted }}
                                 </dd>
                             </div>
                         </dl>
-                    </CardContent>
-                </Card>
+                    </div>
+                </AdminCard>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Payments</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p
-                            v-if="detail.payments.length === 0"
-                            class="text-muted-foreground text-sm"
-                        >
-                            No collection has been attempted for this order.
-                        </p>
+                <AdminCard>
+                    <AdminCardHeader title="Payments" :icon="CreditCard" />
 
-                        <div v-else class="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Reference</TableHead>
-                                        <TableHead>Gateway</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead class="text-right">
-                                            Amount
-                                        </TableHead>
-                                        <TableHead>Attempted</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow
-                                        v-for="payment in detail.payments"
-                                        :key="payment.id"
+                    <p
+                        v-if="detail.payments.length === 0"
+                        class="text-muted-foreground px-5 py-4 text-sm"
+                    >
+                        No collection has been attempted for this order.
+                    </p>
+
+                    <div v-else class="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Reference</TableHead>
+                                    <TableHead>Gateway</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead class="text-right">
+                                        Amount
+                                    </TableHead>
+                                    <TableHead>Attempted</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow
+                                    v-for="payment in detail.payments"
+                                    :key="payment.id"
+                                >
+                                    <TableCell
+                                        class="font-mono text-xs break-all"
                                     >
-                                        <TableCell
-                                            class="font-mono text-xs break-all"
+                                        {{ payment.reference }}
+                                    </TableCell>
+                                    <TableCell>
+                                        {{ payment.gateway }}
+                                        <span
+                                            v-if="payment.channel"
+                                            class="text-muted-foreground block text-xs"
                                         >
-                                            {{ payment.reference }}
-                                        </TableCell>
-                                        <TableCell>
-                                            {{ payment.gateway }}
-                                            <span
-                                                v-if="payment.channel"
-                                                class="text-muted-foreground block text-xs"
-                                            >
-                                                {{ payment.channel }}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge
-                                                :variant="
-                                                    toBadgeVariant(
-                                                        payment.statusVariant,
-                                                    )
-                                                "
-                                            >
-                                                {{ payment.statusLabel }}
-                                            </Badge>
-                                            <span
-                                                v-if="payment.failureReason"
-                                                class="text-muted-foreground block text-xs"
-                                            >
-                                                {{ payment.failureReason }}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell
-                                            class="text-right tabular-nums"
+                                            {{ payment.channel }}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell>
+                                        <AdminStatusBadge
+                                            :label="payment.statusLabel"
+                                            :variant="payment.statusVariant"
+                                        />
+                                        <span
+                                            v-if="payment.failureReason"
+                                            class="text-muted-foreground block text-xs"
                                         >
-                                            {{ payment.amountFormatted }}
-                                        </TableCell>
-                                        <TableCell class="text-muted-foreground">
-                                            {{ formatIsoDate(payment.createdAt) }}
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </CardContent>
-                </Card>
+                                            {{ payment.failureReason }}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell class="text-right tabular-nums">
+                                        {{ payment.amountFormatted }}
+                                    </TableCell>
+                                    <TableCell class="text-muted-foreground">
+                                        {{ formatIsoDate(payment.createdAt) }}
+                                    </TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </div>
+                </AdminCard>
             </div>
 
             <div class="flex flex-col gap-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Customer</CardTitle>
-                    </CardHeader>
-                    <CardContent class="space-y-1 text-sm">
+                <AdminCard>
+                    <AdminCardHeader title="Customer" :icon="User" />
+
+                    <div class="space-y-1 px-5 py-4 text-sm">
                         <p class="font-medium">{{ order.customerName }}</p>
                         <p class="text-muted-foreground break-all">
                             {{ order.customerEmail }}
                         </p>
-                        <p v-if="order.customerPhone" class="text-muted-foreground">
+                        <p
+                            v-if="order.customerPhone"
+                            class="text-muted-foreground"
+                        >
                             {{ order.customerPhone }}
                         </p>
                         <p
@@ -293,14 +331,13 @@ const address = order.shippingAddress;
                             This account has since been deleted. The order keeps
                             its own record of who placed it.
                         </p>
-                    </CardContent>
-                </Card>
+                    </div>
+                </AdminCard>
 
-                <Card v-if="address">
-                    <CardHeader>
-                        <CardTitle>Delivery</CardTitle>
-                    </CardHeader>
-                    <CardContent class="space-y-0.5 text-sm">
+                <AdminCard v-if="address">
+                    <AdminCardHeader title="Delivery" :icon="Truck" />
+
+                    <div class="space-y-0.5 px-5 py-4 text-sm">
                         <p>{{ address.firstName }} {{ address.lastName }}</p>
                         <p class="text-muted-foreground">{{ address.line1 }}</p>
                         <p v-if="address.line2" class="text-muted-foreground">
@@ -315,25 +352,27 @@ const address = order.shippingAddress;
                         <p v-if="address.phone" class="text-muted-foreground">
                             {{ address.phone }}
                         </p>
-                    </CardContent>
-                </Card>
+                    </div>
+                </AdminCard>
 
-                <Card v-if="order.customerNote">
-                    <CardHeader>
-                        <CardTitle>Customer note</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p class="text-sm whitespace-pre-line">
-                            {{ order.customerNote }}
-                        </p>
-                    </CardContent>
-                </Card>
+                <AdminCard v-if="order.customerNote">
+                    <AdminCardHeader
+                        title="Customer note"
+                        :icon="MessageSquare"
+                    />
 
-                <Card v-if="can('orders.manage')">
-                    <CardHeader>
-                        <CardTitle>Move status</CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                    <p class="px-5 py-4 text-sm whitespace-pre-line">
+                        {{ order.customerNote }}
+                    </p>
+                </AdminCard>
+
+                <AdminCard v-if="can('orders.manage')">
+                    <AdminCardHeader
+                        title="Move status"
+                        :icon="ArrowLeftRight"
+                    />
+
+                    <div class="px-5 py-4">
                         <p
                             v-if="detail.availableStatuses.length === 0"
                             class="text-muted-foreground text-sm"
@@ -376,14 +415,13 @@ const address = order.shippingAddress;
                                 {{ processing ? 'Saving…' : 'Update status' }}
                             </Button>
                         </Form>
-                    </CardContent>
-                </Card>
+                    </div>
+                </AdminCard>
 
-                <Card v-if="can('orders.manage')">
-                    <CardHeader>
-                        <CardTitle>Internal note</CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                <AdminCard v-if="can('orders.manage')">
+                    <AdminCardHeader title="Internal note" :icon="StickyNote" />
+
+                    <div class="px-5 py-4">
                         <Form
                             v-bind="updateNote.form(order.orderNumber)"
                             :options="{ preserveScroll: true }"
@@ -418,8 +456,8 @@ const address = order.shippingAddress;
                                 {{ processing ? 'Saving…' : 'Save note' }}
                             </Button>
                         </Form>
-                    </CardContent>
-                </Card>
+                    </div>
+                </AdminCard>
             </div>
         </div>
     </div>

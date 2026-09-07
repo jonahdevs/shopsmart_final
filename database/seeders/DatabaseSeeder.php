@@ -38,6 +38,9 @@ class DatabaseSeeder extends Seeder
             TagSeeder::class,
             ReviewSeeder::class,
             CouponSeeder::class,
+            // Last: it sells the catalog above it and needs the coupons to
+            // discount with.
+            DemoCommerceSeeder::class,
         ]);
 
         $this->announceImageConversions();

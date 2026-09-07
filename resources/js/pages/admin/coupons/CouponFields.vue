@@ -135,7 +135,9 @@ const type = ref<string>(coupon?.type ?? 'fixed');
 
         <div class="grid gap-4 sm:grid-cols-2">
             <div class="space-y-1.5">
-                <Label for="coupon-usage-limit">Total redemptions allowed</Label>
+                <Label for="coupon-usage-limit"
+                    >Total redemptions allowed</Label
+                >
                 <Input
                     id="coupon-usage-limit"
                     name="usage_limit"

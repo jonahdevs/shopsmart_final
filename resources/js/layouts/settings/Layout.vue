@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import Heading from '@/components/Heading.vue';
+import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
@@ -29,10 +29,15 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
 </script>
 
 <template>
-    <div class="px-4 py-6">
-        <Heading
+    <!--
+      No padding of its own: AdminLayout owns the page gutter, and this used to
+      add a second one on top of it.
+    -->
+    <div class="flex flex-col gap-6">
+        <AdminPageHeader
+            eyebrow="Account"
             title="Settings"
-            description="Manage your profile and account settings"
+            description="Manage your profile and account settings."
         />
 
         <div class="flex flex-col lg:flex-row lg:space-x-12">

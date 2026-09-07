@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
-import { Search } from '@lucide/vue';
-import { ref, watch } from 'vue';
+import { Head, Link } from '@inertiajs/vue3';
+import { Users } from '@lucide/vue';
+import AdminCard from '@/components/admin/AdminCard.vue';
+import AdminEmptyState from '@/components/admin/AdminEmptyState.vue';
+import AdminFilterBar from '@/components/admin/AdminFilterBar.vue';
 import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
 import AdminPagination from '@/components/admin/AdminPagination.vue';
-import { Badge } from '@/components/ui/badge';
+import AdminSortableHead from '@/components/admin/AdminSortableHead.vue';
+import AdminStatusBadge from '@/components/admin/AdminStatusBadge.vue';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Table,
     TableBody,
@@ -17,7 +17,9 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useIndexTable } from '@/composables/useIndexTable';
 import { formatIsoDate } from '@/lib/utils';
+import { dashboard as adminDashboard } from '@/routes/admin';
 import {
     index as adminCustomers,
     show as adminCustomer,
@@ -38,8 +40,8 @@ const { customers, pagination, filters } = defineProps<{
 defineOptions({
     layout: {
         breadcrumbs: [
-            { title: 'Dashboard', href: '/admin' },
-            { title: 'Customers', href: '/admin/customers' },
+            { title: 'Dashboard', href: adminDashboard().url },
+            { title: 'Customers', href: adminCustomers().url },
         ],
     },
 });
@@ -47,241 +49,160 @@ defineOptions({
 /**
  * The filter bar is local state that syncs to the URL, not a form post: a
  * filtered table has to be a shareable link, and staff expect the back button
- * to undo a filter.
+ * to undo a filter. `useIndexTable` owns the debounce, the visit options and
+ * the rule that empty filters are omitted rather than sent blank.
  */
-const form = ref({
-    search: filters.search ?? '',
-});
-
-/**
- * Only the filters that are actually set. Sending empty strings would put
- * `?search=` on every URL and make two identical views look like different
- * pages to the browser's history.
- */
-function activeQuery(overrides: Record<string, string | number> = {}) {
-    const query: Record<string, string | number> = {};
-
-    for (const [key, value] of Object.entries(form.value)) {
-        if (value !== '') {
-            query[key] = value;
-        }
-    }
-
-    if (filters.sort !== 'created_at' || filters.direction !== 'desc') {
-        query.sort = filters.sort;
-        query.direction = filters.direction;
-    }
-
-    return { ...query, ...overrides };
-}
-
-let debounce: ReturnType<typeof setTimeout> | undefined;
-
-/**
- * `replace` so typing in the search box does not push a history entry per
- * keystroke, and `preserveState` so the input keeps focus and its value across
- * the visit — without it the Vue adapter re-keys the page and the box you are
- * typing in is unmounted mid-word.
- */
-watch(
-    form,
-    () => {
-        clearTimeout(debounce);
-        debounce = setTimeout(() => {
-            router.get(adminCustomers.url({ query: activeQuery() }), undefined, {
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-            });
-        }, 300);
-    },
-    { deep: true },
-);
-
-function hrefForPage(page: number): string {
-    return adminCustomers.url({ query: activeQuery({ page }) });
-}
-
-/** Clicking a sortable heading flips direction when it is already the sort. */
-function sortHref(column: string): string {
-    const direction =
-        filters.sort === column && filters.direction === 'asc' ? 'desc' : 'asc';
-
-    return adminCustomers.url({
-        query: activeQuery({ sort: column, direction }),
+const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
+    useIndexTable({
+        toUrl: (query) => adminCustomers.url({ query }),
+        sortState: () => filters,
+        defaultSort: { column: 'created_at', direction: 'desc' },
+        fields: {
+            search: filters.search ?? '',
+        },
     });
-}
-
-function ariaSort(column: string): 'ascending' | 'descending' | 'none' {
-    if (filters.sort !== column) {
-        return 'none';
-    }
-
-    return filters.direction === 'asc' ? 'ascending' : 'descending';
-}
 </script>
 
 <template>
-    <div class="flex flex-col gap-6 p-4">
+    <div class="flex flex-col gap-6">
         <Head title="Customers" />
 
         <AdminPageHeader
+            eyebrow="Customers"
             title="Customers"
             :description="`${pagination.total} registered customer${pagination.total === 1 ? '' : 's'}.`"
         />
 
-        <Card>
-            <CardContent class="pt-6">
-                <div class="space-y-1.5 sm:max-w-sm">
-                    <Label for="customer-search">Search</Label>
-                    <div class="relative">
-                        <Search
-                            class="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2"
-                            aria-hidden="true"
-                        />
-                        <Input
-                            id="customer-search"
-                            v-model="form.search"
-                            class="pl-8"
-                            placeholder="Name or email"
-                            type="search"
-                        />
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
+        <!--
+          One card, three strips: filters, table, pagination. Not three cards —
+          they are one object, and the borders between them say so.
+        -->
+        <AdminCard>
+            <AdminFilterBar
+                v-model:search="form.search"
+                search-placeholder="Name or email"
+                search-label="Search customers"
+                :show-clear="isFiltered"
+                @clear="clear"
+            />
 
-        <Card>
-            <CardContent class="pt-6">
-                <p
-                    v-if="customers.length === 0"
-                    class="text-muted-foreground py-12 text-center text-sm"
-                >
-                    No customers match this search.
-                </p>
+            <AdminEmptyState
+                v-if="customers.length === 0"
+                :icon="Users"
+                :filtered="isFiltered"
+                :title="
+                    isFiltered ? 'No matching customers' : 'No customers yet'
+                "
+                :description="
+                    isFiltered
+                        ? 'No customers match this search.'
+                        : 'Accounts registered on the storefront land here.'
+                "
+            />
 
-                <div v-else class="overflow-x-auto">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead :aria-sort="ariaSort('name')">
-                                    <Link
-                                        :href="sortHref('name')"
-                                        preserve-scroll
-                                        class="hover:underline"
-                                    >
-                                        Customer
-                                    </Link>
-                                </TableHead>
-                                <TableHead :aria-sort="ariaSort('email')">
-                                    <Link
-                                        :href="sortHref('email')"
-                                        preserve-scroll
-                                        class="hover:underline"
-                                    >
-                                        Email
-                                    </Link>
-                                </TableHead>
-                                <TableHead :aria-sort="ariaSort('orders_count')">
-                                    <Link
-                                        :href="sortHref('orders_count')"
-                                        preserve-scroll
-                                        class="hover:underline"
-                                    >
-                                        Orders
-                                    </Link>
-                                </TableHead>
-                                <TableHead
-                                    class="text-right"
-                                    :aria-sort="ariaSort('lifetime_spent_cents')"
+            <!--
+              Wide content scrolls inside its own container so the page body
+              never scrolls sideways on a narrow screen.
+            -->
+            <div v-else class="overflow-x-auto">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <AdminSortableHead
+                                label="Customer"
+                                :href="sortHref('name')"
+                                :sort="ariaSort('name')"
+                            />
+                            <AdminSortableHead
+                                label="Email"
+                                :href="sortHref('email')"
+                                :sort="ariaSort('email')"
+                            />
+                            <AdminSortableHead
+                                label="Orders"
+                                :href="sortHref('orders_count')"
+                                :sort="ariaSort('orders_count')"
+                            />
+                            <AdminSortableHead
+                                label="Lifetime spend"
+                                align="end"
+                                class="text-right"
+                                :href="sortHref('lifetime_spent_cents')"
+                                :sort="ariaSort('lifetime_spent_cents')"
+                            />
+                            <TableHead>Last order</TableHead>
+                            <AdminSortableHead
+                                label="Registered"
+                                :href="sortHref('created_at')"
+                                :sort="ariaSort('created_at')"
+                            />
+                            <TableHead class="w-0">
+                                <span class="sr-only">Actions</span>
+                            </TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        <TableRow
+                            v-for="customer in customers"
+                            :key="customer.id"
+                        >
+                            <TableCell class="max-w-56 font-medium">
+                                <Link
+                                    :href="adminCustomer(customer.id)"
+                                    class="hover:text-primary block truncate transition-colors"
                                 >
-                                    <Link
-                                        :href="sortHref('lifetime_spent_cents')"
-                                        preserve-scroll
-                                        class="hover:underline"
-                                    >
-                                        Lifetime spend
-                                    </Link>
-                                </TableHead>
-                                <TableHead>Last order</TableHead>
-                                <TableHead :aria-sort="ariaSort('created_at')">
-                                    <Link
-                                        :href="sortHref('created_at')"
-                                        preserve-scroll
-                                        class="hover:underline"
-                                    >
-                                        Registered
-                                    </Link>
-                                </TableHead>
-                                <TableHead class="w-0">
-                                    <span class="sr-only">Actions</span>
-                                </TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow
-                                v-for="customer in customers"
-                                :key="customer.id"
+                                    {{ customer.name }}
+                                </Link>
+                            </TableCell>
+                            <TableCell class="max-w-64">
+                                <span
+                                    class="text-muted-foreground block truncate"
+                                >
+                                    {{ customer.email }}
+                                </span>
+                                <AdminStatusBadge
+                                    v-if="!customer.emailVerifiedAt"
+                                    label="Unverified"
+                                    tone="warning"
+                                    class="mt-1"
+                                />
+                            </TableCell>
+                            <TableCell class="tabular-nums">
+                                {{ customer.orderCount }}
+                            </TableCell>
+                            <TableCell
+                                class="text-right font-medium tabular-nums"
                             >
-                                <TableCell class="max-w-56 font-medium">
-                                    <Link
-                                        :href="adminCustomer(customer.id)"
-                                        class="block truncate hover:underline"
-                                    >
-                                        {{ customer.name }}
+                                {{ customer.lifetimeSpentFormatted }}
+                            </TableCell>
+                            <TableCell class="text-muted-foreground">
+                                <template v-if="customer.lastOrderAt">
+                                    {{ formatIsoDate(customer.lastOrderAt) }}
+                                </template>
+                                <template v-else>—</template>
+                            </TableCell>
+                            <TableCell class="text-muted-foreground">
+                                {{ formatIsoDate(customer.registeredAt) }}
+                            </TableCell>
+                            <TableCell>
+                                <Button variant="ghost" size="sm" as-child>
+                                    <Link :href="adminCustomer(customer.id)">
+                                        View
+                                        <span class="sr-only">
+                                            customer {{ customer.name }}
+                                        </span>
                                     </Link>
-                                </TableCell>
-                                <TableCell class="max-w-64">
-                                    <span
-                                        class="text-muted-foreground block truncate"
-                                    >
-                                        {{ customer.email }}
-                                    </span>
-                                    <Badge
-                                        v-if="!customer.emailVerifiedAt"
-                                        variant="outline"
-                                        class="mt-1"
-                                    >
-                                        Unverified
-                                    </Badge>
-                                </TableCell>
-                                <TableCell class="tabular-nums">
-                                    {{ customer.orderCount }}
-                                </TableCell>
-                                <TableCell
-                                    class="text-right font-medium tabular-nums"
-                                >
-                                    {{ customer.lifetimeSpentFormatted }}
-                                </TableCell>
-                                <TableCell class="text-muted-foreground">
-                                    <template v-if="customer.lastOrderAt">
-                                        {{ formatIsoDate(customer.lastOrderAt) }}
-                                    </template>
-                                    <template v-else>—</template>
-                                </TableCell>
-                                <TableCell class="text-muted-foreground">
-                                    {{ formatIsoDate(customer.registeredAt) }}
-                                </TableCell>
-                                <TableCell>
-                                    <Button variant="ghost" size="sm" as-child>
-                                        <Link :href="adminCustomer(customer.id)">
-                                            View
-                                            <span class="sr-only">
-                                                customer {{ customer.name }}
-                                            </span>
-                                        </Link>
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
-        </Card>
+                                </Button>
+                            </TableCell>
+                        </TableRow>
+                    </TableBody>
+                </Table>
+            </div>
 
-        <AdminPagination
-            :pagination="pagination"
-            :href-for-page="hrefForPage"
-        />
+            <AdminPagination
+                :pagination="pagination"
+                :href-for-page="hrefForPage"
+            />
+        </AdminCard>
     </div>
 </template>

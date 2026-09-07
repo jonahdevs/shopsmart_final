@@ -13,7 +13,10 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
  * no dashboard.
  *
  * Each figure carries its previous-period twin so the tile can show a delta
- * without the client doing arithmetic on money.
+ * without the client doing arithmetic on money. All four headline figures carry
+ * one — half the tiles used to pass null and silently print the period label
+ * instead, which read as "this metric has no trend" rather than "nobody
+ * computed it".
  */
 #[TypeScript]
 class AdminDashboardStatsData extends Data
@@ -26,7 +29,9 @@ class AdminDashboardStatsData extends Data
         public ?float $paidOrderChangePercent,
         public int $averageOrderValueCents,
         public string $averageOrderValueFormatted,
+        public ?float $averageOrderValueChangePercent,
         public int $newCustomerCount,
+        public ?float $newCustomerChangePercent,
         /** Orders placed but not yet collected. */
         public int $awaitingPaymentCount,
         /** Paid orders that have not been fulfilled yet. */

@@ -1,6 +1,7 @@
 import { createInertiaApp } from '@inertiajs/vue3';
 import { initializeTheme } from '@/composables/useAppearance';
 import AccountLayout from '@/layouts/account/AccountLayout.vue';
+import AdminLayout from '@/layouts/admin/AdminLayout.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import SettingsShell from '@/layouts/settings/SettingsShell.vue';
@@ -20,7 +21,7 @@ void createInertiaApp({
             case name.startsWith('account/'):
                 return [StorefrontLayout, AccountLayout];
             case name.startsWith('admin/'):
-                return AppLayout;
+                return AdminLayout;
             /*
               The storefront's chrome, not the staff shell: an error page is
               most often reached by a shopper following a dead link, and it has

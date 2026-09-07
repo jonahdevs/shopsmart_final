@@ -93,6 +93,7 @@
     --color-chart-3: var(--chart-3);
     --color-chart-4: var(--chart-4);
     --color-chart-5: var(--chart-5);
+    --color-chart-6: var(--chart-6);
 
     --color-sidebar: var(--sidebar-background);
     --color-sidebar-foreground: var(--sidebar-foreground);
@@ -253,77 +254,144 @@ html:has(.storefront) {
     background-color: var(--field);
 }
 
+/*
+  ---------------------------------------------------------------------------
+  Staff identity — the back office
+  ---------------------------------------------------------------------------
+  The shop and the back office are one product, so the admin is not a second
+  palette: it is the same ink, the same electric blue and the same three darks,
+  arranged for density instead of for browsing.
+
+  Three things change on this side of the app, and only three. The page is a
+  sunken grey rather than white, so the white cards it carries read as separate
+  surfaces without needing a shadow. The radius steps down from 0.625rem to
+  0.5rem, because a screen showing forty rows wants tighter corners than one
+  showing eight products. And dark mode exists here, where the storefront pins
+  itself light.
+
+  These are the bare `:root` tokens rather than a scoped `.admin` class, which
+  matters more than it looks: Dialog, Sheet and Popover teleport their content
+  to `document.body`, outside any wrapper a layout could put on the page. The
+  storefront solves that by re-stating `class="storefront"` on the portalled
+  element. The staff side gets it for free by owning the root instead — see
+  `usePortalTheme()`, which returns `undefined` for staff for exactly this
+  reason.
+*/
 :root {
-    --background: hsl(0 0% 100%);
-    --foreground: hsl(0 0% 3.9%);
-    --card: hsl(0 0% 100%);
-    --card-foreground: hsl(0 0% 3.9%);
-    --popover: hsl(0 0% 100%);
-    --popover-foreground: hsl(0 0% 3.9%);
-    --primary: hsl(0 0% 9%);
-    --primary-foreground: hsl(0 0% 98%);
-    --secondary: hsl(0 0% 92.1%);
-    --secondary-foreground: hsl(0 0% 9%);
-    --muted: hsl(0 0% 96.1%);
-    --muted-foreground: hsl(0 0% 45.1%);
-    --accent: hsl(0 0% 96.1%);
-    --accent-foreground: hsl(0 0% 9%);
-    --destructive: hsl(0 84.2% 60.2%);
-    --destructive-foreground: hsl(0 0% 98%);
-    --border: hsl(0 0% 92.8%);
-    --input: hsl(0 0% 89.8%);
-    --ring: hsl(0 0% 3.9%);
-    --chart-1: hsl(12 76% 61%);
-    --chart-2: hsl(173 58% 39%);
-    --chart-3: hsl(197 37% 24%);
-    --chart-4: hsl(43 74% 66%);
-    --chart-5: hsl(27 87% 67%);
+    /* A sunken canvas, so white cards lift off it without a shadow. */
+    --background: #f4f6fa;
+    --foreground: var(--ink);
+
+    --card: #ffffff;
+    --card-foreground: var(--ink);
+    --popover: #ffffff;
+    --popover-foreground: var(--ink);
+
+    --primary: var(--electric);
+    --primary-foreground: #ffffff;
+    --secondary: #eef1f6;
+    --secondary-foreground: var(--ink);
+
+    --muted: #f2f5f9;
+    --muted-foreground: #667085;
+    --accent: var(--tint-strong);
+    --accent-foreground: var(--electric);
+
+    --destructive: var(--alert);
+    --destructive-foreground: #ffffff;
+
+    --border: var(--rule);
+    --input: var(--rule);
+    --ring: var(--electric);
+
+    /*
+      Chart series, assigned in this fixed order and never cycled. Blue leads
+      because it is the brand; the rest are stepped so that ADJACENT pairs stay
+      apart for a colourblind reader, which is why amber sits second rather than
+      next to the lime it would otherwise collide with under deuteranopia.
+      Verified with the dataviz validator against the white card surface: all
+      six inside the lightness band, above the chroma floor, worst adjacent CVD
+      ΔE 10.2, and every step clearing 3:1 contrast.
+
+      `--sale` and `--star` are deliberately absent: they mean "discount" and
+      "rating" everywhere else in the app, and a chart that spends them on an
+      arbitrary series teaches the reader the wrong thing.
+    */
+    --chart-1: #0a57eb;
+    --chart-2: #d97706;
+    --chart-3: #0d9488;
+    --chart-4: #e11d48;
+    --chart-5: #7c3aed;
+    --chart-6: #65a30d;
+
+    /* Tighter than the storefront's 0.625rem — this side shows more per screen. */
     --radius: 0.5rem;
-    --sidebar-background: hsl(0 0% 98%);
-    --sidebar-foreground: hsl(240 5.3% 26.1%);
-    --sidebar-primary: hsl(0 0% 10%);
-    --sidebar-primary-foreground: hsl(0 0% 98%);
-    --sidebar-accent: hsl(0 0% 94%);
-    --sidebar-accent-foreground: hsl(0 0% 30%);
-    --sidebar-border: hsl(0 0% 91%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
-    --sidebar: hsl(0 0% 98%);
+
+    /*
+      The rail is one of the storefront's own three darks, so the back office is
+      recognisably the same product seen from behind. It stays charcoal in both
+      themes; only its depth changes.
+    */
+    --sidebar-background: var(--panel);
+    --sidebar-foreground: #b8c4d6;
+    --sidebar-primary: var(--electric);
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #263b54;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #22344a;
+    --sidebar-ring: var(--electric);
+    --sidebar: var(--panel);
 }
 
 .dark {
-    --background: hsl(0 0% 3.9%);
-    --foreground: hsl(0 0% 98%);
-    --card: hsl(0 0% 3.9%);
-    --card-foreground: hsl(0 0% 98%);
-    --popover: hsl(0 0% 3.9%);
-    --popover-foreground: hsl(0 0% 98%);
-    --primary: hsl(0 0% 98%);
-    --primary-foreground: hsl(0 0% 9%);
-    --secondary: hsl(0 0% 14.9%);
-    --secondary-foreground: hsl(0 0% 98%);
-    --muted: hsl(0 0% 16.08%);
-    --muted-foreground: hsl(0 0% 63.9%);
-    --accent: hsl(0 0% 14.9%);
-    --accent-foreground: hsl(0 0% 98%);
-    --destructive: hsl(0 84% 60%);
-    --destructive-foreground: hsl(0 0% 98%);
-    --border: hsl(0 0% 14.9%);
-    --input: hsl(0 0% 14.9%);
-    --ring: hsl(0 0% 83.1%);
-    --chart-1: hsl(220 70% 50%);
-    --chart-2: hsl(160 60% 45%);
-    --chart-3: hsl(30 80% 55%);
-    --chart-4: hsl(280 65% 60%);
-    --chart-5: hsl(340 75% 55%);
-    --sidebar-background: hsl(0 0% 7%);
-    --sidebar-foreground: hsl(0 0% 95.9%);
-    --sidebar-primary: hsl(360, 100%, 100%);
-    --sidebar-primary-foreground: hsl(0 0% 100%);
-    --sidebar-accent: hsl(0 0% 15.9%);
-    --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-    --sidebar-border: hsl(0 0% 15.9%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
-    --sidebar: hsl(240 5.9% 10%);
+    --background: #0d1522;
+    --foreground: #e8edf5;
+
+    --card: #131d2c;
+    --card-foreground: #e8edf5;
+    --popover: #131d2c;
+    --popover-foreground: #e8edf5;
+
+    /* Lifted off the electric blue: #0a57eb on a near-black ground is a hole. */
+    --primary: #4d8bff;
+    --primary-foreground: #08172e;
+    --secondary: #1a2634;
+    --secondary-foreground: #e8edf5;
+
+    --muted: #1a2634;
+    --muted-foreground: #8fa0b5;
+    --accent: #1b2c45;
+    --accent-foreground: #93b6ff;
+
+    --destructive: #f0564a;
+    --destructive-foreground: #1a0b0a;
+
+    --border: #22303f;
+    --input: #22303f;
+    --ring: #4d8bff;
+
+    /*
+      Not a lightened copy of the light ramp — its own steps, chosen for the
+      dark card surface and validated against it. The dark lightness band is
+      narrower (OKLCH L 0.48–0.67), so a pastel version of the light palette
+      fails it outright.
+    */
+    --chart-1: #4d8bff;
+    --chart-2: #c2790c;
+    --chart-3: #0d9488;
+    --chart-4: #f43f5e;
+    --chart-5: #9b6bfa;
+    --chart-6: #65a30d;
+
+    --sidebar-background: #101b29;
+    --sidebar-foreground: #a8b6c9;
+    --sidebar-primary: #4d8bff;
+    --sidebar-primary-foreground: #08172e;
+    --sidebar-accent: #1d2d41;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #1c2b3c;
+    --sidebar-ring: #4d8bff;
+    --sidebar: #101b29;
 }
 
 @layer base {

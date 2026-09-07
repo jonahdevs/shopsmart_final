@@ -7,11 +7,19 @@ import SettingsSection from '@/components/admin/settings/SettingsSection.vue';
 import SettingsToggle from '@/components/admin/settings/SettingsToggle.vue';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { checkout as checkoutRoute } from '@/routes/admin/settings';
+import { dashboard as adminDashboard } from '@/routes/admin';
+import {
+    checkout as checkoutRoute,
+    index as adminSettings,
+} from '@/routes/admin/settings';
 
 defineOptions({
     layout: {
-        breadcrumbs: [{ title: 'Checkout', href: checkoutRoute() }],
+        breadcrumbs: [
+            { title: 'Dashboard', href: adminDashboard().url },
+            { title: 'Settings', href: adminSettings().url },
+            { title: 'Checkout', href: checkoutRoute().url },
+        ],
     },
 });
 
@@ -36,7 +44,7 @@ defineProps<{
 </script>
 
 <template>
-    <div>
+    <div class="flex flex-col gap-6">
         <Head title="Checkout settings" />
 
         <SettingsForm

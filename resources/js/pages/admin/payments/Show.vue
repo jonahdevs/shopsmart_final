@@ -1,16 +1,13 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft } from '@lucide/vue';
+import { ArrowLeft, Package, TriangleAlert, Wallet } from '@lucide/vue';
+import AdminCard from '@/components/admin/AdminCard.vue';
+import AdminCardHeader from '@/components/admin/AdminCardHeader.vue';
 import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
-import { Badge } from '@/components/ui/badge';
+import AdminStatusBadge from '@/components/admin/AdminStatusBadge.vue';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import { formatIsoDate, toBadgeVariant } from '@/lib/utils';
+import { formatIsoDate } from '@/lib/utils';
+import { dashboard as adminDashboard } from '@/routes/admin';
 import { show as adminOrder } from '@/routes/admin/orders';
 import { index as adminPayments } from '@/routes/admin/payments';
 
@@ -21,8 +18,8 @@ const { payment } = defineProps<{
 defineOptions({
     layout: {
         breadcrumbs: [
-            { title: 'Dashboard', href: '/admin' },
-            { title: 'Payments', href: '/admin/payments' },
+            { title: 'Dashboard', href: adminDashboard().url },
+            { title: 'Payments', href: adminPayments().url },
         ],
     },
 });
@@ -46,10 +43,11 @@ const rows = [
 </script>
 
 <template>
-    <div class="flex flex-col gap-6 p-4">
+    <div class="flex flex-col gap-6">
         <Head :title="`Payment ${payment.reference}`" />
 
         <AdminPageHeader
+            eyebrow="Sales"
             title="Payment"
             :description="payment.reference"
         >
@@ -63,13 +61,12 @@ const rows = [
             </template>
         </AdminPageHeader>
 
-        <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Details</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <dl class="grid gap-3 text-sm sm:grid-cols-2">
+        <div class="grid gap-6 lg:grid-cols-3">
+            <div class="flex flex-col gap-6 lg:col-span-2">
+                <AdminCard>
+                    <AdminCardHeader title="Details" :icon="Wallet" />
+
+                    <dl class="grid gap-3 px-5 py-4 text-sm sm:grid-cols-2">
                         <div v-for="row in rows" :key="row.label">
                             <dt class="text-muted-foreground">
                                 {{ row.label }}
@@ -79,50 +76,59 @@ const rows = [
                             </dd>
                         </div>
                     </dl>
+                </AdminCard>
 
-                    <div
-                        v-if="payment.failureReason"
-                        class="border-destructive/30 bg-destructive/5 mt-6 rounded-lg border p-4"
-                    >
-                        <p class="text-sm font-medium">Why it failed</p>
-                        <p class="text-muted-foreground mt-1 text-sm">
-                            {{ payment.failureReason }}
-                        </p>
-                    </div>
-                </CardContent>
-            </Card>
+                <!--
+                  A failure gets its own panel rather than a footnote inside
+                  Details: it is the reason the page was opened at all.
+                -->
+                <AdminCard
+                    v-if="payment.failureReason"
+                    class="border-destructive/30"
+                >
+                    <AdminCardHeader
+                        title="Why it failed"
+                        :icon="TriangleAlert"
+                    />
+
+                    <p class="text-muted-foreground px-5 py-4 text-sm">
+                        {{ payment.failureReason }}
+                    </p>
+                </AdminCard>
+            </div>
 
             <div class="flex flex-col gap-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Amount</CardTitle>
-                    </CardHeader>
-                    <CardContent class="space-y-2">
-                        <p class="text-2xl font-semibold tabular-nums">
+                <AdminCard>
+                    <AdminCardHeader title="Amount" />
+
+                    <div class="space-y-2 px-5 py-4">
+                        <p
+                            class="font-display text-2xl font-extrabold tracking-[-0.02em] tabular-nums"
+                        >
                             {{ payment.amountFormatted }}
                         </p>
-                        <Badge :variant="toBadgeVariant(payment.statusVariant)">
-                            {{ payment.statusLabel }}
-                        </Badge>
+                        <AdminStatusBadge
+                            :label="payment.statusLabel"
+                            :variant="payment.statusVariant"
+                        />
                         <p class="text-muted-foreground pt-2 text-xs">
                             Frozen when the attempt was created. A verification
                             is checked against this, never the live order total.
                         </p>
-                    </CardContent>
-                </Card>
+                    </div>
+                </AdminCard>
 
-                <Card v-if="payment.orderNumber">
-                    <CardHeader>
-                        <CardTitle>Order</CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                <AdminCard v-if="payment.orderNumber">
+                    <AdminCardHeader title="Order" :icon="Package" />
+
+                    <div class="px-5 py-4">
                         <Button variant="outline" size="sm" as-child>
                             <Link :href="adminOrder(payment.orderNumber)">
                                 {{ payment.orderNumber }}
                             </Link>
                         </Button>
-                    </CardContent>
-                </Card>
+                    </div>
+                </AdminCard>
             </div>
         </div>
     </div>

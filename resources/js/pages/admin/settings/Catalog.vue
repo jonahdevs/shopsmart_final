@@ -10,11 +10,19 @@ import {
     NativeSelect,
     NativeSelectOption,
 } from '@/components/ui/native-select';
-import { catalog as catalogRoute } from '@/routes/admin/settings';
+import { dashboard as adminDashboard } from '@/routes/admin';
+import {
+    catalog as catalogRoute,
+    index as adminSettings,
+} from '@/routes/admin/settings';
 
 defineOptions({
     layout: {
-        breadcrumbs: [{ title: 'Catalog', href: catalogRoute() }],
+        breadcrumbs: [
+            { title: 'Dashboard', href: adminDashboard().url },
+            { title: 'Settings', href: adminSettings().url },
+            { title: 'Catalog', href: catalogRoute().url },
+        ],
     },
 });
 
@@ -36,7 +44,7 @@ defineProps<{
 </script>
 
 <template>
-    <div>
+    <div class="flex flex-col gap-6">
         <Head title="Catalog settings" />
 
         <SettingsForm

@@ -5,6 +5,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | Applies to | Rule file |
 | --- | --- |
 | app/Http/Controllers/Account/**, resources/js/pages/account/**, resources/js/layouts/account/** | .ai/rules/account.md |
+| resources/js/pages/admin/**, resources/js/components/admin/**, resources/js/layouts/admin/** | .ai/rules/admin.md |
 | app/** | .ai/rules/app.md |
 | app/Data/** | .ai/rules/data.md |
 | ** | .ai/rules/general.md |

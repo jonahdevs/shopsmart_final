@@ -6,11 +6,19 @@ import SettingsForm from '@/components/admin/settings/SettingsForm.vue';
 import SettingsSection from '@/components/admin/settings/SettingsSection.vue';
 import SettingsToggle from '@/components/admin/settings/SettingsToggle.vue';
 import { Input } from '@/components/ui/input';
-import { branding as brandingRoute } from '@/routes/admin/settings';
+import { dashboard as adminDashboard } from '@/routes/admin';
+import {
+    branding as brandingRoute,
+    index as adminSettings,
+} from '@/routes/admin/settings';
 
 defineOptions({
     layout: {
-        breadcrumbs: [{ title: 'Branding', href: brandingRoute() }],
+        breadcrumbs: [
+            { title: 'Dashboard', href: adminDashboard().url },
+            { title: 'Settings', href: adminSettings().url },
+            { title: 'Branding', href: brandingRoute().url },
+        ],
     },
 });
 
@@ -45,7 +53,7 @@ const profiles = [
 </script>
 
 <template>
-    <div>
+    <div class="flex flex-col gap-6">
         <Head title="Branding settings" />
 
         <SettingsForm
