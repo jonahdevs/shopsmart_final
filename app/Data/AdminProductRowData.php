@@ -2,6 +2,7 @@
 
 namespace App\Data;
 
+use App\Enums\ProductStatus;
 use App\Enums\StockStatus;
 use App\Models\Product;
 use Spatie\LaravelData\Data;
@@ -14,6 +15,10 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
  * rendition and the review aggregates, which a storefront tile needs and a
  * table of fifty rows does not. This carries only what the table prints.
  *
+ * `thumbUrl` is one string, not an {@see ImageData}. The table draws a 40px
+ * square; the webp, zoom and blur-up renditions that object also resolves would
+ * be four more lookups per row for pixels nothing on this screen displays.
+ *
  * `variantCount` arrives as a `withCount` aggregate rather than a loaded
  * relation — the one number here that would otherwise grow with the catalog.
  */
@@ -25,6 +30,18 @@ class AdminProductRowData extends Data
         public string $name,
         public string $slug,
         public ?string $sku,
+        /** The thumb rendition of the cover image, null while none is uploaded. */
+        public ?string $thumbUrl,
+        /**
+         * The state itself, alongside the label the badge prints.
+         *
+         * The row's Actions menu offers a status change and must not offer the
+         * one the product already holds, and a label is the wrong thing to
+         * compare: it is translated and the bulk endpoint's options are keyed
+         * by value. Typed as the enum so a renamed case fails the TypeScript
+         * build rather than quietly matching nothing.
+         */
+        public ProductStatus $status,
         public string $statusLabel,
         public string $statusVariant,
         public string $visibilityLabel,
@@ -42,8 +59,36 @@ class AdminProductRowData extends Data
         public int $variantCount,
         /** True for a soft-deleted product, which the storefront no longer shows. */
         public bool $isDeleted,
+        /**
+         * Whether `product.show` would render this product rather than 404.
+         *
+         * Decided by {@see Product::isViewableOnStore()}, the same call the
+         * storefront controller aborts on, so the row's "View on store" link is
+         * offered exactly when it leads somewhere.
+         */
+        public bool $isViewableOnStore,
         public string $updatedAt,
     ) {}
+
+    /**
+     * The cover thumbnail, or null.
+     *
+     * Falls back to the original file when the conversion has not been
+     * generated yet — a product uploaded seconds ago should still show its
+     * picture rather than a grey square, and the table scales it down anyway.
+     */
+    private static function thumbUrl(Product $product): ?string
+    {
+        $media = $product->getFirstMedia('images');
+
+        if ($media === null) {
+            return null;
+        }
+
+        return $media->hasGeneratedConversion('thumb')
+            ? $media->getUrl('thumb')
+            : $media->getUrl();
+    }
 
     public static function fromModel(Product $product): self
     {
@@ -54,6 +99,8 @@ class AdminProductRowData extends Data
             name: $product->name,
             slug: $product->slug,
             sku: $product->sku,
+            thumbUrl: self::thumbUrl($product),
+            status: $product->status,
             statusLabel: $product->status->label(),
             statusVariant: $product->status->badgeVariant(),
             visibilityLabel: $product->visibility->label(),
@@ -70,6 +117,7 @@ class AdminProductRowData extends Data
             // plain model, which the table never does.
             variantCount: (int) ($product->getAttribute('variants_count') ?? 0),
             isDeleted: $product->trashed(),
+            isViewableOnStore: $product->isViewableOnStore(),
             updatedAt: ($product->updated_at ?? $product->freshTimestamp())->toIso8601String(),
         );
     }

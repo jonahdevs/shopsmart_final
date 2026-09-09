@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import { ArrowLeft, ArrowRight, Package } from '@lucide/vue';
+import { ArrowLeft, ArrowRight } from '@lucide/vue';
 import { computed } from 'vue';
+import NoOrders from '@/components/illustrations/NoOrders.vue';
 import OrderCard from '@/components/storefront/OrderCard.vue';
 import {
     Empty,
@@ -59,8 +60,9 @@ const currentPage = computed(() => {
                 class="border-rule rounded-lg border"
             >
                 <EmptyHeader>
-                    <EmptyMedia variant="icon">
-                        <Package aria-hidden="true" />
+                    <!-- Shared with the dashboard's empty history; see there. -->
+                    <EmptyMedia variant="default" class="w-[180px]">
+                        <NoOrders />
                     </EmptyMedia>
                     <EmptyTitle
                         class="font-display text-lg font-extrabold tracking-[-0.02em]"

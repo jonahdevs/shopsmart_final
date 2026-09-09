@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\User;
 use App\Notifications\OrderStatusChanged;
 use Database\Seeders\PermissionSeeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Spatie\LaravelPdf\Facades\Pdf;
 use Spatie\LaravelPdf\PdfBuilder;
@@ -144,6 +145,95 @@ test('a range whose end precedes its start is refused', function () {
             'to' => now()->subWeek()->toDateString(),
         ]))
         ->assertSessionHasErrors('to');
+});
+
+test('the tiles count both queues and total the money collected in the window', function () {
+    Order::factory()->create(['payment_status' => PaymentStatus::Pending]);
+    Order::factory()->paid()->create(['total_cents' => 120_000]);
+    Order::factory()->paid()->create(['total_cents' => 80_000]);
+
+    $this->actingAs($this->manager)
+        ->get(route('admin.orders.index'))
+        ->assertInertia(
+            fn ($page) => $page
+                // Each queue must equal the list its tile links to: "awaiting
+                // payment" is the payment_status=pending filter, and "being
+                // packed" is status=processing, which is where paid() leaves an
+                // order.
+                ->where('stats.awaitingPaymentCount', 1)
+                ->where('stats.awaitingFulfilmentCount', 2)
+                ->where('stats.revenueCents', 200_000)
+                ->where('stats.revenueFormatted', money(200_000))
+                ->where('stats.averageOrderValueCents', 100_000)
+                ->where('stats.averageOrderValueFormatted', money(100_000))
+        );
+});
+
+test('the tiles bank revenue when the money arrived, not when the order was placed', function () {
+    // Placed inside the window and never collected: not money the store has.
+    Order::factory()->create(['total_cents' => 500_000]);
+    // Collected inside the window, placed months before it: this window's.
+    Order::factory()->paid()->create([
+        'placed_at' => now()->subMonths(3),
+        'total_cents' => 90_000,
+    ]);
+    // Collected before the window opened: the period the tile compares against.
+    Order::factory()->paid()->create([
+        'paid_at' => now()->subDays(45),
+        'total_cents' => 400_000,
+    ]);
+
+    $this->actingAs($this->manager)
+        ->get(route('admin.orders.index'))
+        ->assertInertia(
+            fn ($page) => $page
+                ->where('stats.revenueCents', 90_000)
+                ->where('stats.revenueChangePercent', -77.5)
+        );
+});
+
+test('the tiles show no average and no trend before the store has traded', function () {
+    $this->actingAs($this->manager)
+        ->get(route('admin.orders.index'))
+        ->assertInertia(
+            fn ($page) => $page
+                ->where('stats.revenueCents', 0)
+                // Not "-100%" and not a division by zero: a store with nothing
+                // to compare against is shown no trend at all.
+                ->where('stats.averageOrderValueCents', 0)
+                ->where('stats.revenueChangePercent', null)
+                ->where('stats.averageOrderValueChangePercent', null)
+        );
+});
+
+test('the table and its tiles cost a fixed number of queries whatever the page holds', function () {
+    Order::factory()->count(30)->create();
+
+    $queries = 0;
+    DB::listen(function () use (&$queries): void {
+        $queries++;
+    });
+
+    $this->actingAs($this->manager)
+        ->get(route('admin.orders.index'))
+        ->assertOk();
+
+    // Nineteen at the time of writing: the shared layout props, the permission
+    // cache the `can:` middleware warms, the paginator count and the page of
+    // orders itself, the settings groups behind money formatting and the
+    // document head — and ONE aggregate for the whole tile row.
+    //
+    // That last one is why this test exists. Four tiles could just as easily
+    // have been four counts, and the cap is what stops a fifth tile arriving
+    // with a fifth query. It is a coarse tripwire, not an N+1 guard: nothing
+    // here may grow with the thirty orders above, which is what makes a fixed
+    // number the right assertion.
+    //
+    // Raised by one for the header's notification bell: HandleInertiaRequests
+    // counts the viewer's unread, permission-filtered notifications on every
+    // admin response so the badge is right the moment the page paints. The
+    // fifteen rows behind the bell are an optional prop and cost nothing here.
+    expect($queries)->toBeLessThanOrEqual(20);
 });
 
 test('the detail page carries the staff note and the collection attempts', function () {

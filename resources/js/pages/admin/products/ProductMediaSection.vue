@@ -2,13 +2,12 @@
 import { Form } from '@inertiajs/vue3';
 import { Images, Trash2 } from '@lucide/vue';
 import ProductController from '@/actions/App/Http/Controllers/Admin/ProductController';
-import AdminCard from '@/components/admin/AdminCard.vue';
-import AdminCardHeader from '@/components/admin/AdminCardHeader.vue';
 import AdminEmptyState from '@/components/admin/AdminEmptyState.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import ProductSectionCard from './ProductSectionCard.vue';
 
 /**
  * Images post on their own route rather than as part of the save: a multipart
@@ -26,9 +25,7 @@ defineProps<{
 </script>
 
 <template>
-    <AdminCard>
-        <AdminCardHeader title="Images" :icon="Images" />
-
+    <ProductSectionCard title="Images" :icon="Images">
         <AdminEmptyState
             v-if="media.length === 0"
             :icon="Images"
@@ -96,5 +93,5 @@ defineProps<{
                 Upload
             </Button>
         </Form>
-    </AdminCard>
+    </ProductSectionCard>
 </template>

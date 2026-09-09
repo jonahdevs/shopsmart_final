@@ -81,7 +81,12 @@ test('search suggest does not aggregate the whole catalog to answer a keystroke'
     // honorStockVisibility(), the product search, its brand and media eager
     // loads, the currency settings read behind money(), then the category and
     // brand lookups.
-    expect($queries)->toBeLessThanOrEqual(8);
+    //
+    // Raised by one for maintenance mode: EnsureStoreIsOpen wraps every
+    // storefront route and reads whether the shop is closed. Cached under
+    // StorefrontCache::MAINTENANCE on the same terms as every other settings
+    // group here, so this is the cold-cache read, not a per-request cost.
+    expect($queries)->toBeLessThanOrEqual(9);
 
     // The count that actually matters, stated directly rather than as a number:
     // decorating category rows with live product counts pulls in a store-wide

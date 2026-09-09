@@ -4,6 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
+use App\Http\Requests\Concerns\FiltersByDateRange;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -17,6 +18,9 @@ use Illuminate\Validation\Rule;
  */
 class OrderIndexRequest extends FormRequest
 {
+    /** Shared with every other date-filtered admin screen. */
+    use FiltersByDateRange;
+
     /**
      * Columns the table may be sorted by. Anything else is rejected before it
      * can reach `orderBy`.
@@ -34,8 +38,7 @@ class OrderIndexRequest extends FormRequest
             'search' => ['nullable', 'string', 'max:120'],
             'status' => ['nullable', Rule::enum(OrderStatus::class)],
             'payment_status' => ['nullable', Rule::enum(PaymentStatus::class)],
-            'from' => ['nullable', 'date'],
-            'to' => ['nullable', 'date', 'after_or_equal:from'],
+            ...$this->dateRangeRules(),
             'sort' => ['nullable', Rule::in(self::SORTABLE)],
             'direction' => ['nullable', Rule::in(['asc', 'desc'])],
             'page' => ['nullable', 'integer', 'min:1'],

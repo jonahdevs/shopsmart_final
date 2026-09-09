@@ -5,14 +5,18 @@ namespace App\Http\Controllers\Admin;
 use App\Concerns\BuildsLikeQueries;
 use App\Data\AdminCustomerDetailData;
 use App\Data\AdminCustomerRowData;
+use App\Data\AdminCustomerStatsData;
+use App\Data\AdminDashboardStatsData;
 use App\Data\PaginationData;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CustomerIndexRequest;
 use App\Http\Requests\Admin\UpdateCustomerRequest;
+use App\Models\Order;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -39,6 +43,9 @@ class CustomerController extends Controller
 
     /** Rows per page in the customers table. */
     private const PER_PAGE = 25;
+
+    /** The trailing window the registration tile is measured over. */
+    private const WINDOW_DAYS = 30;
 
     public function index(CustomerIndexRequest $request): Response
     {
@@ -73,6 +80,7 @@ class CustomerController extends Controller
                 'sort' => $sort,
                 'direction' => $direction,
             ],
+            'stats' => $this->stats(),
         ]);
     }
 
@@ -110,6 +118,76 @@ class CustomerController extends Controller
     private function abortUnlessCustomer(User $customer): void
     {
         abort_unless($customer->isCustomer(), 404);
+    }
+
+    /**
+     * The four tiles above the table.
+     *
+     * Two queries, not four. The first is one pass over `users` for the head
+     * count and both sides of the registration delta; the second is one pass
+     * over `orders` for who has actually paid and what they paid in total. They
+     * cannot be a single statement: joining customers to their orders would
+     * multiply the user rows and quietly overstate every count taken from them.
+     *
+     * The order-side pass qualifies its customers through the relation rather
+     * than reading `orders.user_id` on its own, so a colleague who shops here on
+     * a staff account stays outside a figure the customers page is describing.
+     *
+     * The live window closes on `<=` and the previous one on `<`. Both matter:
+     * somebody who registered this very second belongs to today rather than to
+     * nowhere, and the two windows still meet without an account that lands on
+     * the seam being counted twice.
+     */
+    private function stats(): AdminCustomerStatsData
+    {
+        $now = Carbon::now();
+        $windowStart = $now->copy()->subDays(self::WINDOW_DAYS);
+        $previousStart = $now->copy()->subDays(self::WINDOW_DAYS * 2);
+
+        $registrations = $this->customers()
+            ->selectRaw(
+                <<<'SQL'
+                    COUNT(*) as total,
+                    SUM(CASE WHEN created_at >= ? AND created_at <= ? THEN 1 ELSE 0 END) as joined_now,
+                    SUM(CASE WHEN created_at >= ? AND created_at < ? THEN 1 ELSE 0 END) as joined_before
+                    SQL,
+                [$windowStart, $now, $previousStart, $windowStart],
+            )
+            ->first();
+
+        $spend = Order::query()
+            ->where('payment_status', PaymentStatus::Success)
+            ->whereHas('user', fn (Builder $customer) => $customer->whereDoesntHave('roles'))
+            ->selectRaw('COUNT(DISTINCT user_id) as payers, COALESCE(SUM(total_cents), 0) as revenue')
+            ->first();
+
+        $customerCount = (int) ($registrations?->getAttribute('total') ?? 0);
+        $newCustomers = (int) ($registrations?->getAttribute('joined_now') ?? 0);
+        $previousCustomers = (int) ($registrations?->getAttribute('joined_before') ?? 0);
+
+        $payingCustomers = (int) ($spend?->getAttribute('payers') ?? 0);
+        $revenue = (int) ($spend?->getAttribute('revenue') ?? 0);
+
+        // Integer division on purpose: this is money, and a fractional cent has
+        // nowhere to go. A store whose customers have never paid for anything is
+        // an ordinary state, not a division by zero.
+        $averageSpend = $payingCustomers > 0 ? intdiv($revenue, $payingCustomers) : 0;
+
+        return new AdminCustomerStatsData(
+            customerCount: $customerCount,
+            newCustomerCount: $newCustomers,
+            // The overview's helper rather than a second one: what a delta means
+            // — and that a first period shows none — is settled in one place for
+            // every tile in the back office.
+            newCustomerChangePercent: AdminDashboardStatsData::changePercent($newCustomers, $previousCustomers),
+            payingCustomerCount: $payingCustomers,
+            payingCustomerSharePercent: $customerCount > 0
+                ? round(($payingCustomers / $customerCount) * 100, 1)
+                : null,
+            averageSpendCents: $averageSpend,
+            averageSpendFormatted: money($averageSpend),
+            periodLabel: __('Last :days days', ['days' => self::WINDOW_DAYS]),
+        );
     }
 
     /**

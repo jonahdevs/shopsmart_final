@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\OrderInvoiceController;
 use App\Http\Controllers\Admin\PaymentController;
+use App\Http\Middleware\EnsureStaffHasTwoFactor;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -26,7 +27,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware(['auth', 'verified', 'staff'])
+Route::middleware(['auth', 'verified', 'staff', EnsureStaffHasTwoFactor::class])
     ->prefix('admin')
     ->name('admin.')
     ->group(function (): void {
@@ -51,6 +52,9 @@ Route::middleware(['auth', 'verified', 'staff'])
             Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
             Route::get('payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
         });
+
+        // The header's notification bell. No `can:` of its own — see the file.
+        require __DIR__.'/admin/notifications.php';
 
         require __DIR__.'/admin/catalog.php';
         require __DIR__.'/admin/customers.php';

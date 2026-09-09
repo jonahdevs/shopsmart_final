@@ -14,7 +14,7 @@ import { Mail } from '@lucide/vue';
 </script>
 
 <template>
-    <section class="container pt-16 pb-14">
+    <section class="container mx-auto px-4 pt-16 pb-14 sm:px-6 lg:px-8">
         <div
             class="bg-panel flex flex-col gap-7 rounded-lg px-6 py-8 sm:px-10 lg:flex-row lg:items-center lg:justify-between lg:gap-10"
         >

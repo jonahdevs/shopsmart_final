@@ -7,9 +7,12 @@ import SettingsSection from '@/components/admin/settings/SettingsSection.vue';
 import SettingsToggle from '@/components/admin/settings/SettingsToggle.vue';
 import { Input } from '@/components/ui/input';
 import {
-    NativeSelect,
-    NativeSelectOption,
-} from '@/components/ui/native-select';
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import {
@@ -143,21 +146,31 @@ defineProps<{
                     :error="errors.default_tax_class_id"
                     v-slot="{ id }"
                 >
-                    <NativeSelect
-                        :id="id"
+                    <!--
+                      `null`, not `''`: reka-ui reserves the empty string for a
+                      cleared selection and refuses it as an item value. A null
+                      selection makes the hidden `<select>` the primitive posts fall
+                      back to its empty option, so the server still reads a blank
+                      field.
+                    -->
+                    <Select
                         name="default_tax_class_id"
-                        :model-value="tax.default_tax_class_id ?? ''"
-                        class="w-full sm:w-96"
+                        :default-value="tax.default_tax_class_id ?? undefined"
                     >
-                        <NativeSelectOption value="">None</NativeSelectOption>
-                        <NativeSelectOption
-                            v-for="taxClass in taxClasses"
-                            :key="taxClass.value"
-                            :value="taxClass.value"
-                        >
-                            {{ taxClass.label }}
-                        </NativeSelectOption>
-                    </NativeSelect>
+                        <SelectTrigger :id="id" class="w-full sm:w-96">
+                            <SelectValue placeholder="None" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem :value="null">None</SelectItem>
+                            <SelectItem
+                                v-for="taxClass in taxClasses"
+                                :key="taxClass.value"
+                                :value="taxClass.value"
+                            >
+                                {{ taxClass.label }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
                 </SettingsField>
             </SettingsSection>
         </SettingsForm>

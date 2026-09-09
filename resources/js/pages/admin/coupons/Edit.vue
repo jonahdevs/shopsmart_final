@@ -33,7 +33,6 @@ defineOptions({
         <Head :title="`Edit ${coupon.code}`" />
 
         <AdminPageHeader
-            eyebrow="Marketing"
             :title="`Edit ${coupon.code}`"
             :description="`Redeemed ${coupon.redemptionCount} time${coupon.redemptionCount === 1 ? '' : 's'}. Editing the terms does not change what past orders were charged.`"
         >

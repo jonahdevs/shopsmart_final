@@ -5,9 +5,12 @@ namespace App\Services\Paystack;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Notifications\Staff\PaymentReceived;
 use App\Services\PaymentCredentials;
+use App\Support\StaffRecipients;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use RuntimeException;
 
@@ -282,6 +285,14 @@ class PaystackPaymentService
             'payload' => $data,
             'paid_at' => now(),
         ])->save();
+
+        // Reached exactly once per payment: `verify()` returns early on a row
+        // that is already final, so the losing side of a browser/webhook race
+        // never gets here. That is what keeps the bell from ringing twice.
+        Notification::send(
+            StaffRecipients::withPermission('payments.view'),
+            new PaymentReceived($payment),
+        );
 
         // The order's own guard decides whether this is the confirmation that
         // counts; a second one returns false and changes nothing.

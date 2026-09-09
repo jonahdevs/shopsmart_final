@@ -38,6 +38,10 @@ class DatabaseSeeder extends Seeder
             // Last: it sells the catalog above it and needs the coupons to
             // discount with.
             OrderSeeder::class,
+            // Depends on nothing — visitor sessions reference no other table —
+            // so it sits at the end rather than anywhere in the dependency
+            // chain above.
+            VisitorSeeder::class,
         ]);
 
         $this->announceImageConversions();

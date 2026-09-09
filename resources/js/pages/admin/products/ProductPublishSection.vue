@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import { Globe } from '@lucide/vue';
-import AdminCard from '@/components/admin/AdminCard.vue';
-import AdminCardHeader from '@/components/admin/AdminCardHeader.vue';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { NativeSelect } from '@/components/ui/native-select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import ProductSectionCard from './ProductSectionCard.vue';
 
 type Option = { value: string; label: string };
 
@@ -25,9 +30,7 @@ defineProps<{
 </script>
 
 <template>
-    <AdminCard>
-        <AdminCardHeader title="Publication" :icon="Globe" />
-
+    <ProductSectionCard title="Publication" :icon="Globe">
         <div class="grid gap-4 p-5">
             <p class="text-muted-foreground text-sm">
                 A scheduled product needs a time to go live at.
@@ -35,37 +38,39 @@ defineProps<{
 
             <div class="space-y-1.5">
                 <Label for="status">Status</Label>
-                <NativeSelect
-                    id="status"
-                    name="status"
-                    :model-value="product.status"
-                >
-                    <option
-                        v-for="option in statusOptions"
-                        :key="option.value"
-                        :value="option.value"
-                    >
-                        {{ option.label }}
-                    </option>
-                </NativeSelect>
+                <Select name="status" :default-value="product.status">
+                    <SelectTrigger id="status">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem
+                            v-for="option in statusOptions"
+                            :key="option.value"
+                            :value="option.value"
+                        >
+                            {{ option.label }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
                 <InputError :message="errors.status" />
             </div>
 
             <div class="space-y-1.5">
                 <Label for="visibility">Visibility</Label>
-                <NativeSelect
-                    id="visibility"
-                    name="visibility"
-                    :model-value="product.visibility"
-                >
-                    <option
-                        v-for="option in visibilityOptions"
-                        :key="option.value"
-                        :value="option.value"
-                    >
-                        {{ option.label }}
-                    </option>
-                </NativeSelect>
+                <Select name="visibility" :default-value="product.visibility">
+                    <SelectTrigger id="visibility">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem
+                            v-for="option in visibilityOptions"
+                            :key="option.value"
+                            :value="option.value"
+                        >
+                            {{ option.label }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
                 <InputError :message="errors.visibility" />
             </div>
 
@@ -80,5 +85,5 @@ defineProps<{
                 <InputError :message="errors.published_at" />
             </div>
         </div>
-    </AdminCard>
+    </ProductSectionCard>
 </template>

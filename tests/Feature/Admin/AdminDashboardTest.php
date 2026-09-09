@@ -101,9 +101,12 @@ test('a period with no baseline shows no change rather than a made-up percentage
 });
 
 test('the change percentage compares the window against the one before it', function () {
+    // Ten days back sits in the window before "last 7 days", one day back sits
+    // in it. The preset is named rather than assumed, because this test is
+    // about the comparison and not about which window the dashboard opens on.
     Order::factory()->paid()->create([
         'total_cents' => 200_000,
-        'paid_at' => now()->subDays(45),
+        'paid_at' => now()->subDays(10),
     ]);
     Order::factory()->paid()->create([
         'total_cents' => 300_000,
@@ -111,7 +114,7 @@ test('the change percentage compares the window against the one before it', func
     ]);
 
     $this->actingAs($this->admin)
-        ->get(route('admin.dashboard'))
+        ->get(route('admin.dashboard', ['range' => 'last_7_days']))
         // 50, not 50.0: a whole-number float serialises to JSON without its
         // decimal, and the assertion compares identity.
         ->assertInertia(fn ($page) => $page->where('stats.revenueChangePercent', 50));

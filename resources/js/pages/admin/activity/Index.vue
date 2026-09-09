@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import { ScrollText } from '@lucide/vue';
+import { computed } from 'vue';
 import AdminCard from '@/components/admin/AdminCard.vue';
+import AdminDateRangePicker from '@/components/admin/AdminDateRangePicker.vue';
 import AdminEmptyState from '@/components/admin/AdminEmptyState.vue';
 import AdminFilterBar from '@/components/admin/AdminFilterBar.vue';
+import AdminFilterSelect from '@/components/admin/AdminFilterSelect.vue';
 import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
 import AdminPagination from '@/components/admin/AdminPagination.vue';
 import AdminSortableHead from '@/components/admin/AdminSortableHead.vue';
 import AdminStatusBadge from '@/components/admin/AdminStatusBadge.vue';
-import { Input } from '@/components/ui/input';
-import { NativeSelect } from '@/components/ui/native-select';
+import AdminTable from '@/components/admin/AdminTable.vue';
+import { SelectItem } from '@/components/ui/select';
 import {
-    Table,
     TableBody,
     TableCell,
     TableHead,
@@ -28,6 +30,7 @@ type ActivityFilters = {
     event: string | null;
     subject_type: string | null;
     causer_id: number | string | null;
+    range: string | null;
     from: string | null;
     to: string | null;
     sort: string;
@@ -38,6 +41,7 @@ const {
     entries,
     pagination,
     filters,
+    dateRange,
     logNames,
     events,
     subjectTypes,
@@ -46,6 +50,8 @@ const {
     entries: App.Data.AdminActivityRowData[];
     pagination: App.Data.PaginationData;
     filters: ActivityFilters;
+    /** The resolved window and the presets the picker offers. */
+    dateRange: App.Data.AdminDateRangeData;
     logNames: string[];
     events: string[];
     subjectTypes: { value: string; label: string }[];
@@ -77,10 +83,41 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
             subject_type: filters.subject_type ?? '',
             causer_id:
                 filters.causer_id === null ? '' : String(filters.causer_id),
+            range: filters.range ?? '',
             from: filters.from ?? '',
             to: filters.to ?? '',
         },
     });
+
+/*
+  A preset writes only its key to the URL; a drawn window writes only its two
+  dates. Never both, or a bookmarked "last 30 days" would carry the dates it
+  resolved to on the day it was made and stop moving.
+
+  All three land in one assignment, so `useIndexTable`'s deep watcher turns the
+  change into a single debounced visit rather than three.
+*/
+function setRange(preset: string, rangeFrom: string, rangeTo: string): void {
+    form.value = {
+        ...form.value,
+        range: preset,
+        from: preset === 'custom' ? rangeFrom : '',
+        to: preset === 'custom' ? rangeTo : '',
+    };
+}
+
+/*
+  What the calendar highlights. A drawn window is whatever is in the form; a
+  preset is whatever the server resolved it to, because only the server knows
+  where "this month" starts.
+*/
+const pickedFrom = computed(() =>
+    form.value.range === 'custom' ? form.value.from : (dateRange.start ?? ''),
+);
+
+const pickedTo = computed(() =>
+    form.value.range === 'custom' ? form.value.to : (dateRange.end ?? ''),
+);
 
 /** "not set" reads better than an empty cell for a value that was null. */
 function shown(value: string | null): string {
@@ -93,7 +130,6 @@ function shown(value: string | null): string {
         <Head title="Activity" />
 
         <AdminPageHeader
-            eyebrow="System"
             title="Activity"
             :description="`${pagination.total} recorded ${pagination.total === 1 ? 'event' : 'events'}. Read-only — nothing here can be edited or deleted.`"
         />
@@ -108,69 +144,74 @@ function shown(value: string | null): string {
                 :show-clear="isFiltered"
                 @clear="clear"
             >
-                <NativeSelect
+                <AdminFilterSelect
                     v-model="form.log_name"
                     class="w-40"
-                    aria-label="Log"
+                    label="Log"
+                    all-label="All logs"
                 >
-                    <option value="">All logs</option>
-                    <option v-for="name in logNames" :key="name" :value="name">
+                    <SelectItem
+                        v-for="name in logNames"
+                        :key="name"
+                        :value="name"
+                    >
                         {{ name }}
-                    </option>
-                </NativeSelect>
+                    </SelectItem>
+                </AdminFilterSelect>
 
-                <NativeSelect
+                <AdminFilterSelect
                     v-model="form.event"
                     class="w-40"
-                    aria-label="Event"
+                    label="Event"
+                    all-label="All events"
                 >
-                    <option value="">All events</option>
-                    <option v-for="event in events" :key="event" :value="event">
+                    <SelectItem
+                        v-for="event in events"
+                        :key="event"
+                        :value="event"
+                    >
                         {{ event }}
-                    </option>
-                </NativeSelect>
+                    </SelectItem>
+                </AdminFilterSelect>
 
-                <NativeSelect
+                <AdminFilterSelect
                     v-model="form.subject_type"
                     class="w-40"
-                    aria-label="Subject"
+                    label="Subject"
+                    all-label="All subjects"
                 >
-                    <option value="">All subjects</option>
-                    <option
+                    <SelectItem
                         v-for="subject in subjectTypes"
                         :key="subject.value"
                         :value="subject.value"
                     >
                         {{ subject.label }}
-                    </option>
-                </NativeSelect>
+                    </SelectItem>
+                </AdminFilterSelect>
 
-                <NativeSelect
+                <AdminFilterSelect
                     v-model="form.causer_id"
                     class="w-40"
-                    aria-label="Who"
+                    label="Who"
+                    all-label="Anyone"
                 >
-                    <option value="">Anyone</option>
-                    <option
+                    <SelectItem
                         v-for="causer in causers"
                         :key="causer.value"
                         :value="String(causer.value)"
                     >
                         {{ causer.label }}
-                    </option>
-                </NativeSelect>
+                    </SelectItem>
+                </AdminFilterSelect>
 
-                <Input
-                    v-model="form.from"
-                    type="date"
-                    class="w-36"
-                    aria-label="Recorded from"
-                />
-                <Input
-                    v-model="form.to"
-                    type="date"
-                    class="w-36"
-                    aria-label="Recorded to"
+                <AdminDateRangePicker
+                    :presets="dateRange.presets"
+                    :preset="form.range"
+                    :from="pickedFrom"
+                    :to="pickedTo"
+                    clearable
+                    aria-label="Filter by when it was recorded"
+                    @change="setRange"
                 />
             </AdminFilterBar>
 
@@ -191,7 +232,7 @@ function shown(value: string | null): string {
               never scrolls sideways on a narrow screen.
             -->
             <div v-else class="overflow-x-auto">
-                <Table>
+                <AdminTable>
                     <TableHeader>
                         <TableRow>
                             <AdminSortableHead
@@ -296,7 +337,7 @@ function shown(value: string | null): string {
                             </TableCell>
                         </TableRow>
                     </TableBody>
-                </Table>
+                </AdminTable>
             </div>
 
             <AdminPagination

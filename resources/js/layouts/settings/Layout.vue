@@ -1,76 +1,35 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { useCurrentUrl } from '@/composables/useCurrentUrl';
-import { toUrl } from '@/lib/utils';
-import { edit as editAppearance } from '@/routes/appearance';
-import { edit as editProfile } from '@/routes/profile';
-import { edit as editSecurity } from '@/routes/security';
-import type { NavItem } from '@/types';
+import SettingsScreen from '@/components/admin/settings/SettingsScreen.vue';
+import { useSettingsNav } from '@/components/admin/settings/settingsNav';
 
-const sidebarNavItems: NavItem[] = [
-    {
-        title: 'Profile',
-        href: editProfile(),
-    },
-    {
-        title: 'Security',
-        href: editSecurity(),
-    },
-    {
-        title: 'Appearance',
-        href: editAppearance(),
-    },
-];
-
-const { isCurrentOrParentUrl } = useCurrentUrl();
+/**
+ * The staff side of the account settings screens.
+ *
+ * These pages are the General tab, which is why they wear the same chrome as
+ * the store's settings rather than a nav of their own. Both the wryterscript
+ * and new-ecommerce builds file a staff member's own account under General, and
+ * this used to be a parallel aside listing Profile, Security and Appearance — a
+ * second nav holding the same three links, free to drift.
+ *
+ * The title comes from `settingsNav.ts` so the heading and the highlighted row
+ * in the sub-nav cannot disagree. The pages carry their own section headings
+ * under it and are unaware of any of this.
+ */
+const { activeScreen } = useSettingsNav();
 </script>
 
 <template>
-    <!--
-      No padding of its own: AdminLayout owns the page gutter, and this used to
-      add a second one on top of it.
-    -->
-    <div class="flex flex-col gap-6">
-        <AdminPageHeader
-            eyebrow="Account"
-            title="Settings"
-            description="Manage your profile and account settings."
-        />
-
-        <div class="flex flex-col lg:flex-row lg:space-x-12">
-            <aside class="w-full max-w-xl lg:w-48">
-                <nav
-                    class="flex flex-col space-y-1 space-x-0"
-                    aria-label="Settings"
-                >
-                    <Button
-                        v-for="item in sidebarNavItems"
-                        :key="toUrl(item.href)"
-                        variant="ghost"
-                        :class="[
-                            'w-full justify-start',
-                            { 'bg-muted': isCurrentOrParentUrl(item.href) },
-                        ]"
-                        as-child
-                    >
-                        <Link :href="item.href">
-                            <component :is="item.icon" class="h-4 w-4" />
-                            {{ item.title }}
-                        </Link>
-                    </Button>
-                </nav>
-            </aside>
-
-            <Separator class="my-6 lg:hidden" />
-
-            <div class="flex-1 md:max-w-2xl">
-                <section class="max-w-xl space-y-12">
-                    <slot />
-                </section>
-            </div>
-        </div>
-    </div>
+    <SettingsScreen
+        :title="activeScreen?.title ?? 'Account'"
+        description="Your own account, separate from the store's settings."
+    >
+        <!--
+          The same rhythm the store settings screens use between their cards.
+          The measure is no longer held here: every section on these pages is
+          now a card, and a card is its own measure.
+        -->
+        <section class="flex flex-col gap-6">
+            <slot />
+        </section>
+    </SettingsScreen>
 </template>

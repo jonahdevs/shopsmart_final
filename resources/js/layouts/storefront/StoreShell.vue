@@ -71,6 +71,6 @@ const categories = computed<NavCategory[]>(
         -->
         <ConsentBanner />
 
-        <Toaster position="top-center" />
+        <Toaster position="top-center" richColors />
     </div>
 </template>

@@ -4,14 +4,15 @@ import { Plus, TicketPercent } from '@lucide/vue';
 import AdminCard from '@/components/admin/AdminCard.vue';
 import AdminEmptyState from '@/components/admin/AdminEmptyState.vue';
 import AdminFilterBar from '@/components/admin/AdminFilterBar.vue';
+import AdminFilterSelect from '@/components/admin/AdminFilterSelect.vue';
 import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
 import AdminPagination from '@/components/admin/AdminPagination.vue';
 import AdminSortableHead from '@/components/admin/AdminSortableHead.vue';
 import AdminStatusBadge from '@/components/admin/AdminStatusBadge.vue';
+import AdminTable from '@/components/admin/AdminTable.vue';
 import { Button } from '@/components/ui/button';
-import { NativeSelect } from '@/components/ui/native-select';
+import { SelectItem } from '@/components/ui/select';
 import {
-    Table,
     TableBody,
     TableCell,
     TableHead,
@@ -84,7 +85,6 @@ function usageLabel(coupon: App.Data.AdminCouponRowData): string {
         <Head title="Coupons" />
 
         <AdminPageHeader
-            eyebrow="Marketing"
             title="Coupons"
             :description="`${pagination.total} discount code${pagination.total === 1 ? '' : 's'}.`"
         >
@@ -110,35 +110,35 @@ function usageLabel(coupon: App.Data.AdminCouponRowData): string {
                 :show-clear="isFiltered"
                 @clear="clear"
             >
-                <NativeSelect
+                <AdminFilterSelect
                     v-model="form.type"
                     class="w-40"
-                    aria-label="Discount type"
+                    label="Discount type"
+                    all-label="All types"
                 >
-                    <option value="">All types</option>
-                    <option
+                    <SelectItem
                         v-for="option in typeOptions"
                         :key="option.value"
                         :value="option.value"
                     >
                         {{ option.label }}
-                    </option>
-                </NativeSelect>
+                    </SelectItem>
+                </AdminFilterSelect>
 
-                <NativeSelect
+                <AdminFilterSelect
                     v-model="form.state"
                     class="w-40"
-                    aria-label="State"
+                    label="State"
+                    all-label="Any state"
                 >
-                    <option value="">Any state</option>
-                    <option
+                    <SelectItem
                         v-for="option in stateOptions"
                         :key="option.value"
                         :value="option.value"
                     >
                         {{ option.label }}
-                    </option>
-                </NativeSelect>
+                    </SelectItem>
+                </AdminFilterSelect>
             </AdminFilterBar>
 
             <AdminEmptyState
@@ -167,7 +167,7 @@ function usageLabel(coupon: App.Data.AdminCouponRowData): string {
               never scrolls sideways on a narrow screen.
             -->
             <div v-else class="overflow-x-auto">
-                <Table>
+                <AdminTable>
                     <TableHeader>
                         <TableRow>
                             <AdminSortableHead
@@ -260,7 +260,7 @@ function usageLabel(coupon: App.Data.AdminCouponRowData): string {
                             </TableCell>
                         </TableRow>
                     </TableBody>
-                </Table>
+                </AdminTable>
             </div>
 
             <AdminPagination

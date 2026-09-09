@@ -78,6 +78,26 @@ class StorefrontCache
      */
     public const SEO_ORGANIZATION = 'storefront.seo-organization';
 
+    /**
+     * Whether the shop floor is closed, and what it says while it is.
+     *
+     * Cached for the same reason as the privacy config: EnsureStoreIsOpen runs
+     * on every storefront request, and resolving the settings group inline put
+     * a query on every one of them — which the standing query budgets on the
+     * catalog, category and product pages caught immediately. Nothing observes
+     * a settings save, so {@see forgetMaintenance()} is called by the admin
+     * screen that writes it, and by any test that writes it behind the
+     * controller's back.
+     *
+     * @var string
+     */
+    public const MAINTENANCE = 'storefront.maintenance';
+
+    public static function forgetMaintenance(): void
+    {
+        Cache::forget(self::MAINTENANCE);
+    }
+
     public function forgetNavigation(): void
     {
         Cache::forget(self::NAV_CATEGORIES);

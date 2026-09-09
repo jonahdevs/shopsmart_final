@@ -11,7 +11,13 @@ import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { NativeSelect } from '@/components/ui/native-select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as adminAttributes } from '@/routes/admin/attributes';
 
@@ -113,7 +119,6 @@ function reseedFromProps(): void {
             @success="reseedFromProps"
         >
             <AdminPageHeader
-                eyebrow="Catalog"
                 :title="isNew ? 'New attribute' : attribute.name"
                 description="An attribute and its values are saved together."
             >
@@ -159,19 +164,23 @@ function reseedFromProps(): void {
 
                             <div class="space-y-1.5 sm:col-span-2">
                                 <Label for="type">Renders as</Label>
-                                <NativeSelect
-                                    id="type"
+                                <Select
                                     name="type"
-                                    :model-value="attribute.type"
+                                    :default-value="attribute.type"
                                 >
-                                    <option
-                                        v-for="option in typeOptions"
-                                        :key="option.value"
-                                        :value="option.value"
-                                    >
-                                        {{ option.label }}
-                                    </option>
-                                </NativeSelect>
+                                    <SelectTrigger id="type">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem
+                                            v-for="option in typeOptions"
+                                            :key="option.value"
+                                            :value="option.value"
+                                        >
+                                            {{ option.label }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
                                 <InputError :message="errors.type" />
                             </div>
                         </div>

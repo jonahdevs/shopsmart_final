@@ -54,7 +54,6 @@ const submitTarget = computed(() =>
             v-slot="{ errors, processing }"
         >
             <AdminPageHeader
-                eyebrow="Catalog"
                 :title="isNew ? 'New brand' : brand.name"
                 description="Leave the slug blank to have one made from the name."
             >

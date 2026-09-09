@@ -55,7 +55,7 @@ function isActive(slug: string): boolean {
 <template>
     <nav class="bg-tint border-rule border-b" aria-label="Product categories">
         <div
-            class="container flex scrollbar-none items-stretch gap-1 overflow-x-auto"
+            class="container mx-auto flex scrollbar-none items-stretch gap-1 overflow-x-auto px-4 sm:px-6 lg:px-8"
         >
             <button
                 ref="menuTrigger"

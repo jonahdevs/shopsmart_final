@@ -4,14 +4,15 @@ import { CreditCard } from '@lucide/vue';
 import AdminCard from '@/components/admin/AdminCard.vue';
 import AdminEmptyState from '@/components/admin/AdminEmptyState.vue';
 import AdminFilterBar from '@/components/admin/AdminFilterBar.vue';
+import AdminFilterSelect from '@/components/admin/AdminFilterSelect.vue';
 import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
 import AdminPagination from '@/components/admin/AdminPagination.vue';
 import AdminSortableHead from '@/components/admin/AdminSortableHead.vue';
 import AdminStatusBadge from '@/components/admin/AdminStatusBadge.vue';
+import AdminTable from '@/components/admin/AdminTable.vue';
 import { Button } from '@/components/ui/button';
-import { NativeSelect } from '@/components/ui/native-select';
+import { SelectItem } from '@/components/ui/select';
 import {
-    Table,
     TableBody,
     TableCell,
     TableHead,
@@ -76,7 +77,6 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
         <Head title="Payments" />
 
         <AdminPageHeader
-            eyebrow="Sales"
             title="Payments"
             description="Every attempt to collect, for reconciliation. Read-only."
         />
@@ -93,36 +93,36 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
                 :show-clear="isFiltered"
                 @clear="clear"
             >
-                <NativeSelect
+                <AdminFilterSelect
                     v-model="form.status"
                     class="w-40"
-                    aria-label="Status"
+                    label="Status"
+                    all-label="All statuses"
                 >
-                    <option value="">All statuses</option>
-                    <option
+                    <SelectItem
                         v-for="option in statusOptions"
                         :key="option.value"
                         :value="option.value"
                     >
                         {{ option.label }}
-                    </option>
-                </NativeSelect>
+                    </SelectItem>
+                </AdminFilterSelect>
 
                 <!-- Only gateways that have actually been used are offered. -->
-                <NativeSelect
+                <AdminFilterSelect
                     v-model="form.gateway"
                     class="w-40"
-                    aria-label="Gateway"
+                    label="Gateway"
+                    all-label="All gateways"
                 >
-                    <option value="">All gateways</option>
-                    <option
+                    <SelectItem
                         v-for="gateway in gateways"
                         :key="gateway"
                         :value="gateway"
                     >
                         {{ gateway }}
-                    </option>
-                </NativeSelect>
+                    </SelectItem>
+                </AdminFilterSelect>
             </AdminFilterBar>
 
             <AdminEmptyState
@@ -142,7 +142,7 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
               never scrolls sideways on a narrow screen.
             -->
             <div v-else class="overflow-x-auto">
-                <Table>
+                <AdminTable>
                     <TableHeader>
                         <TableRow>
                             <TableHead>Reference</TableHead>
@@ -155,8 +155,6 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
                             />
                             <AdminSortableHead
                                 label="Amount"
-                                align="end"
-                                class="text-right"
                                 :href="sortHref('amount_cents')"
                                 :sort="ariaSort('amount_cents')"
                             />
@@ -208,9 +206,7 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
                                     :variant="payment.statusVariant"
                                 />
                             </TableCell>
-                            <TableCell
-                                class="text-right font-medium tabular-nums"
-                            >
+                            <TableCell class="font-medium tabular-nums">
                                 {{ payment.amountFormatted }}
                             </TableCell>
                             <TableCell class="text-muted-foreground">
@@ -228,7 +224,7 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
                             </TableCell>
                         </TableRow>
                     </TableBody>
-                </Table>
+                </AdminTable>
             </div>
 
             <AdminPagination

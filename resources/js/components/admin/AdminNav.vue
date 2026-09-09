@@ -61,8 +61,15 @@ const visibleGroups = computed(() =>
 /**
  * The overview owns `/admin`, which every other admin page sits under, so
  * matching it on prefix would light it up everywhere.
+ *
+ * A row that declares `matches` stands for several screens rather than one, so
+ * any of them lighting it up is the point.
  */
 function isActive(item: AdminNavItem): boolean {
+    if (item.matches) {
+        return item.matches.some((href) => isCurrentOrParentUrl(href));
+    }
+
     return item.exact
         ? isCurrentUrl(item.href)
         : isCurrentOrParentUrl(item.href);

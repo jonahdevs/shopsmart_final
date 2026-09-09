@@ -10,10 +10,10 @@ import { show } from '@/routes/product';
  *
  * A white card on the white page, held apart from it by a hairline `--rule`
  * border and `shadow-card`, which deepens to `shadow-card-hover` when the card
- * is hovered or holds focus. The artwork sits on generous white padding so
- * photography shot on different backgrounds still reads as one shelf, and the
- * two things a shopper scans for — the discount and the price — are the only
- * coloured marks on the tile.
+ * is hovered or holds focus. The artwork runs edge to edge across the top of
+ * the card and is contained rather than cropped, so a tall or wide shot keeps
+ * its whole subject, and the two things a shopper scans for — the discount and
+ * the price — are the only coloured marks on the tile.
  */
 const {
     product,
@@ -41,7 +41,7 @@ const {
             class="focus-visible:outline-electric flex flex-1 flex-col rounded-lg outline-offset-2 focus-visible:outline-2"
         >
             <div
-                class="relative aspect-square overflow-hidden rounded-t-lg bg-white p-4 sm:p-5"
+                class="relative aspect-square overflow-hidden rounded-t-lg bg-white"
                 :style="
                     product.image?.placeholder
                         ? {
@@ -75,7 +75,7 @@ const {
                 </div>
             </div>
 
-            <div class="flex flex-1 flex-col gap-1.5 px-4 pt-1 pb-4">
+            <div class="flex flex-1 flex-col gap-1.5 px-4 pt-3 pb-4">
                 <p
                     v-if="product.brandName"
                     class="text-muted-foreground truncate text-xs"

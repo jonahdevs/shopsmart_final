@@ -40,8 +40,8 @@ function stop(): void {
 
 /**
  * Autoplay is driven here rather than by an embla plugin so the progress ticks
- * below stay in step with it, and so it can be switched off wholesale when the
- * viewer prefers reduced motion.
+ * overlaid on the slide stay in step with it, and so it can be switched off
+ * wholesale when the viewer prefers reduced motion.
  */
 watch([api, paused, reduceMotion], () => {
     stop();
@@ -98,6 +98,7 @@ function isInternal(url: string): boolean {
 <template>
     <section
         v-if="slides.length"
+        class="relative"
         @mouseenter="hovering = true"
         @mouseleave="hovering = false"
         @focusin="hovering = true"
@@ -200,51 +201,61 @@ function isInternal(url: string): boolean {
           Ticks double as autoplay progress: the active one fills over the
           advance interval, so the control tells you when the slide will change
           instead of just which one you are on.
+
+          It rides the foot of the artwork rather than taking a row beneath it,
+          on a translucent slab so the marks stay legible whatever the
+          photograph does underneath.
         -->
         <div
             v-if="slides.length > 1"
-            class="flex items-center gap-3 px-4 py-3 sm:px-6 lg:px-8"
+            class="absolute inset-x-0 bottom-3 z-10 flex justify-center px-4 sm:bottom-4"
         >
-            <div class="flex flex-1 gap-1.5">
+            <div
+                class="flex items-center gap-2.5 rounded-full bg-black/40 px-3 py-2 backdrop-blur-sm"
+            >
+                <div class="flex items-center gap-1.5">
+                    <button
+                        v-for="(slide, index) in slides"
+                        :key="slide.id"
+                        type="button"
+                        class="focus-visible:outline-electric h-1.5 w-6 overflow-hidden rounded-full bg-white/40 focus-visible:outline-2 focus-visible:outline-offset-4 sm:w-8"
+                        :aria-label="`Go to slide ${index + 1}`"
+                        :aria-current="index === current"
+                        @click="api?.scrollTo(index)"
+                    >
+                        <span
+                            class="block h-full rounded-full bg-white"
+                            :class="index === current ? 'hero-tick' : 'w-0'"
+                            :style="{
+                                animationDuration: `${ADVANCE_MS}ms`,
+                                animationPlayState: paused
+                                    ? 'paused'
+                                    : 'running',
+                            }"
+                        />
+                    </button>
+                </div>
+
+                <!--
+                  Hover and focus pause the rotation, but neither is reachable by
+                  touch, so the control has to exist for the timer to be stoppable
+                  at all (WCAG 2.2.2). Hidden when reduced motion already stopped it.
+                -->
                 <button
-                    v-for="(slide, index) in slides"
-                    :key="slide.id"
+                    v-if="!reduceMotion"
                     type="button"
-                    class="group bg-rule focus-visible:outline-electric h-1 flex-1 focus-visible:outline-2 focus-visible:outline-offset-4"
-                    :aria-label="`Go to slide ${index + 1}`"
-                    :aria-current="index === current"
-                    @click="api?.scrollTo(index)"
+                    class="focus-visible:outline-electric shrink-0 rounded-full text-white/70 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4"
+                    :aria-label="
+                        playing
+                            ? 'Pause automatic slide rotation'
+                            : 'Play automatic slide rotation'
+                    "
+                    @click="playing = !playing"
                 >
-                    <span
-                        class="bg-electric block h-full"
-                        :class="index === current ? 'hero-tick' : 'w-0'"
-                        :style="{
-                            animationDuration: `${ADVANCE_MS}ms`,
-                            animationPlayState: paused ? 'paused' : 'running',
-                        }"
-                    />
+                    <Pause v-if="playing" class="size-3.5" aria-hidden="true" />
+                    <Play v-else class="size-3.5" aria-hidden="true" />
                 </button>
             </div>
-
-            <!--
-              Hover and focus pause the rotation, but neither is reachable by
-              touch, so the control has to exist for the timer to be stoppable
-              at all (WCAG 2.2.2). Hidden when reduced motion already stopped it.
-            -->
-            <button
-                v-if="!reduceMotion"
-                type="button"
-                class="text-muted-foreground hover:text-foreground focus-visible:outline-electric shrink-0 rounded-xs p-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
-                :aria-label="
-                    playing
-                        ? 'Pause automatic slide rotation'
-                        : 'Play automatic slide rotation'
-                "
-                @click="playing = !playing"
-            >
-                <Pause v-if="playing" class="size-4" aria-hidden="true" />
-                <Play v-else class="size-4" aria-hidden="true" />
-            </button>
         </div>
     </section>
 </template>

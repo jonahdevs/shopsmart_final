@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Data\AdminActivityRowData;
+use App\Data\AdminDateRangeData;
 use App\Data\PaginationData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ActivityIndexRequest;
 use App\Models\User;
+use App\Support\DateRange;
 use Illuminate\Database\Eloquent\Builder;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -36,10 +38,11 @@ class ActivityController extends Controller
     {
         $sort = $request->validated('sort') ?? 'created_at';
         $direction = $request->validated('direction') ?? 'desc';
+        $range = $request->dateRange();
 
         $activities = Activity::query()
             ->with(['causer', 'subject'])
-            ->tap(fn (Builder $query) => $this->applyFilters($query, $request))
+            ->tap(fn (Builder $query) => $this->applyFilters($query, $request, $range))
             ->orderBy($sort, $direction)
             // The trail is written many times a second in a busy hour, so equal
             // timestamps are ordinary. Without a tiebreaker the same row can
@@ -48,7 +51,7 @@ class ActivityController extends Controller
             ->paginate(self::PER_PAGE)
             ->withQueryString();
 
-        $visibility = $this->subjectVisibility($request->user());
+        $visibility = AdminActivityRowData::visibilityFor($request->user());
 
         return Inertia::render('admin/activity/Index', [
             'entries' => array_values(array_map(
@@ -64,35 +67,24 @@ class ActivityController extends Controller
                 'event' => $request->validated('event'),
                 'subject_type' => $request->validated('subject_type'),
                 'causer_id' => $request->validated('causer_id'),
+                'range' => $request->validated('range'),
                 'from' => $request->validated('from'),
                 'to' => $request->validated('to'),
                 'sort' => $sort,
                 'direction' => $direction,
             ],
+            /*
+              The resolved window, sent beside the raw filters rather than
+              instead of them. The URL holds what the auditor asked for — a
+              preset key, usually — and this holds what that means today, which
+              is what the calendar highlights and the trigger prints.
+            */
+            'dateRange' => AdminDateRangeData::fromRange($range),
             'logNames' => $this->distinct('log_name'),
             'events' => $this->distinct('event'),
             'subjectTypes' => $this->subjectTypes(),
             'causers' => $this->causers(),
         ]);
-    }
-
-    /**
-     * Which subjects this viewer may see the values of.
-     *
-     * Keyed by the class name stored on the row, so the lookup in the loop above
-     * is a plain array read rather than a permission check per entry.
-     *
-     * @return array<string, bool>
-     */
-    private function subjectVisibility(?object $viewer): array
-    {
-        $visibility = [];
-
-        foreach (AdminActivityRowData::SUBJECT_PERMISSIONS as $subject => $permission) {
-            $visibility[$subject] = $viewer instanceof User && $viewer->can($permission);
-        }
-
-        return $visibility;
     }
 
     /**
@@ -164,7 +156,7 @@ class ActivityController extends Controller
     /**
      * @param  Builder<Activity>  $query
      */
-    private function applyFilters(Builder $query, ActivityIndexRequest $request): void
+    private function applyFilters(Builder $query, ActivityIndexRequest $request, ?DateRange $range): void
     {
         $query
             ->when($request->validated('log_name'), fn (Builder $q, string $log) => $q->where('log_name', $log))
@@ -175,7 +167,14 @@ class ActivityController extends Controller
             ->when($request->validated('causer_id'), fn (Builder $q, int|string $causer) => $q
                 ->where('causer_type', (new User)->getMorphClass())
                 ->where('causer_id', (int) $causer))
-            ->when($request->validated('from'), fn (Builder $q, string $from) => $q->whereDate('created_at', '>=', $from))
-            ->when($request->validated('to'), fn (Builder $q, string $to) => $q->whereDate('created_at', '<=', $to));
+            /*
+              One `whereBetween` over resolved instants rather than a pair of
+              `whereDate` comparisons: the window already runs from the first
+              instant of its first day to the last of its last, so the bounds
+              are inclusive without wrapping the column in a function the index
+              cannot be used through.
+            */
+            ->when($range, fn (Builder $q, DateRange $window) => $q
+                ->whereBetween('created_at', [$window->start(), $window->end()]));
     }
 }

@@ -72,7 +72,6 @@ const deleteBlockedReason = computed(() => {
             v-slot="{ errors, processing }"
         >
             <AdminPageHeader
-                eyebrow="Catalog"
                 :title="isNew ? 'New tax class' : taxClass.name"
                 description="Leave the slug blank to have one made from the name."
             >

@@ -38,6 +38,7 @@ class PrivacySettingsController extends Controller
                 'terms_url' => $this->legal->terms_url,
                 'recently_viewed_retention_days' => $this->legal->recently_viewed_retention_days,
                 'activity_log_retention_days' => $this->legal->activity_log_retention_days,
+                'visitor_retention_days' => $this->legal->visitor_retention_days,
             ],
             'analytics' => [
                 'ga4_id' => $this->analytics->ga4_id,

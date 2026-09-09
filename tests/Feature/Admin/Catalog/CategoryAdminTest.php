@@ -99,6 +99,23 @@ test('the table lists the tree depth-first with each row depth', function () {
             ->where('categories.3.depth', 0));
 });
 
+/**
+ * The row's Actions menu offers a storefront link, and `category.show` aborts
+ * on anything but Active — staff included. So the row has to carry the state
+ * itself rather than only the translated label the badge prints.
+ */
+test('a row carries the category state the storefront link is decided on', function () {
+    Category::factory()->create(['name' => 'Bakery', 'status' => CategoryStatus::Active]);
+    Category::factory()->create(['name' => 'Cold room', 'status' => CategoryStatus::Draft]);
+
+    $this->actingAs($this->manager)
+        ->get(route('admin.categories.index'))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('categories.0.status', CategoryStatus::Active->value)
+            ->where('categories.1.status', CategoryStatus::Draft->value));
+});
+
 test('the product count counts a product filed both ways only once', function () {
     $category = Category::factory()->create();
 

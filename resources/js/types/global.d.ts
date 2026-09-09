@@ -27,6 +27,22 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             sidebarOpen: boolean;
+            /**
+             * The admin header's notification bell.
+             *
+             * `unreadCount` is on every response so the badge is right the
+             * moment a page paints; it is 0 outside the admin panel, where
+             * there is no bell to feed and HandleInertiaRequests declines to
+             * run the count at all.
+             *
+             * `items` is an OPTIONAL prop — hence `undefined`, which is a
+             * genuinely different state from an empty array. Undefined means
+             * "the panel has not asked yet"; `[]` means "asked, nothing there".
+             */
+            notifications: {
+                unreadCount: number;
+                items?: App.Data.AdminNotificationData[];
+            };
             storefront: {
                 navCategories: NavCategory[];
                 /**

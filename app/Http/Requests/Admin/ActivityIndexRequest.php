@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Http\Requests\Concerns\FiltersByDateRange;
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -16,6 +17,9 @@ use Illuminate\Validation\Rule;
  */
 class ActivityIndexRequest extends FormRequest
 {
+    /** Shared with every other date-filtered admin screen. */
+    use FiltersByDateRange;
+
     /**
      * Columns the trail may be ordered by.
      *
@@ -33,8 +37,7 @@ class ActivityIndexRequest extends FormRequest
             'event' => ['nullable', 'string', 'max:60'],
             'subject_type' => ['nullable', 'string', 'max:255'],
             'causer_id' => ['nullable', 'integer', Rule::exists(User::class, 'id')],
-            'from' => ['nullable', 'date'],
-            'to' => ['nullable', 'date', 'after_or_equal:from'],
+            ...$this->dateRangeRules(),
             'sort' => ['nullable', Rule::in(self::SORTABLE)],
             'direction' => ['nullable', Rule::in(['asc', 'desc'])],
             'page' => ['nullable', 'integer', 'min:1'],

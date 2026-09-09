@@ -7,15 +7,15 @@
  * laying out their own row, which is what keeps the alignment identical across
  * thirty-four screens.
  *
- * The eyebrow is the section a screen belongs to — "Catalog" above Products —
- * and it is the same device the storefront opens every section with, set in the
- * same display face. It is what makes the back office read as the same product
- * as the shop rather than a bolted-on tool.
+ * There is deliberately no eyebrow. It used to carry the section a screen
+ * belongs to — "Catalog" above Products — which is the group name the rail is
+ * already showing, highlighted, a few centimetres to the left. Two answers to
+ * the same question, and the breadcrumb above gives a third. The storefront
+ * keeps its own eyebrow because there is no rail out there to repeat.
  */
 defineProps<{
     title: string;
     description?: string;
-    eyebrow?: string;
 }>();
 </script>
 
@@ -24,13 +24,6 @@ defineProps<{
         class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
     >
         <div class="min-w-0 space-y-1">
-            <p
-                v-if="eyebrow"
-                class="text-primary font-display text-[0.625rem] font-bold tracking-[0.18em] uppercase"
-            >
-                {{ eyebrow }}
-            </p>
-
             <h1 class="font-display text-2xl font-extrabold tracking-[-0.02em]">
                 {{ title }}
             </h1>

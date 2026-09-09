@@ -1,22 +1,47 @@
 <script setup lang="ts">
 import { FileText } from '@lucide/vue';
-import AdminCard from '@/components/admin/AdminCard.vue';
-import AdminCardHeader from '@/components/admin/AdminCardHeader.vue';
+import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import ProductSectionCard from './ProductSectionCard.vue';
 
 /** The prose the product page is built from. */
-defineProps<{
+const { product, errors } = defineProps<{
     product: App.Data.AdminProductFormData;
     errors: Record<string, string>;
 }>();
+
+/**
+ * Folded away until there is prose to show, which on a new product is never.
+ * Three tall textareas are most of the height of this screen, and a staff
+ * member adding a product to the catalog in a hurry is not writing copy in the
+ * same sitting — they come back for it, and then this card is the one already
+ * open.
+ */
+const hasContent = computed(
+    () =>
+        Boolean(product.shortDescription) ||
+        Boolean(product.description) ||
+        Boolean(product.technicalSpecification),
+);
+
+const hasErrors = computed(() =>
+    Boolean(
+        errors.short_description ||
+        errors.description ||
+        errors.technical_specification,
+    ),
+);
 </script>
 
 <template>
-    <AdminCard>
-        <AdminCardHeader title="Description" :icon="FileText" />
-
+    <ProductSectionCard
+        title="Description"
+        :icon="FileText"
+        :open="hasContent"
+        :alerted="hasErrors"
+    >
         <div class="grid gap-4 p-5">
             <div class="space-y-1.5">
                 <Label for="short_description">Short description</Label>
@@ -53,5 +78,5 @@ defineProps<{
                 <InputError :message="errors.technical_specification" />
             </div>
         </div>
-    </AdminCard>
+    </ProductSectionCard>
 </template>

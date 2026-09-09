@@ -9,12 +9,12 @@ import AdminEmptyState from '@/components/admin/AdminEmptyState.vue';
 import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
 import AdminStatCard from '@/components/admin/AdminStatCard.vue';
 import AdminStatusBadge from '@/components/admin/AdminStatusBadge.vue';
+import AdminTable from '@/components/admin/AdminTable.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-    Table,
     TableBody,
     TableCell,
     TableHead,
@@ -91,7 +91,6 @@ const stats = computed(() => [
         <Head :title="customer.name" />
 
         <AdminPageHeader
-            eyebrow="Customers"
             :title="customer.name"
             :description="`Registered ${formatIsoDate(customer.registeredAt)}.`"
         >
@@ -137,16 +136,14 @@ const stats = computed(() => [
                     />
 
                     <div v-else class="overflow-x-auto">
-                        <Table>
+                        <AdminTable>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Order</TableHead>
                                     <TableHead>Items</TableHead>
                                     <TableHead>Status</TableHead>
                                     <TableHead>Payment</TableHead>
-                                    <TableHead class="text-right">
-                                        Total
-                                    </TableHead>
+                                    <TableHead>Total</TableHead>
                                     <TableHead>Placed</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -191,9 +188,7 @@ const stats = computed(() => [
                                             "
                                         />
                                     </TableCell>
-                                    <TableCell
-                                        class="text-right font-medium tabular-nums"
-                                    >
+                                    <TableCell class="font-medium tabular-nums">
                                         {{ order.totalFormatted }}
                                     </TableCell>
                                     <TableCell class="text-muted-foreground">
@@ -201,7 +196,7 @@ const stats = computed(() => [
                                     </TableCell>
                                 </TableRow>
                             </TableBody>
-                        </Table>
+                        </AdminTable>
                     </div>
                 </AdminCard>
 

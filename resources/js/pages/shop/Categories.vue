@@ -20,7 +20,7 @@ const { categories: roots } = defineProps<{
 <template>
     <Head title="All categories" />
 
-    <div class="container py-8">
+    <div class="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <!--
           The page title carries the same rhythm SectionHeading owns for the
           <h2>s below it: blue eyebrow, heavy display line, muted subtitle.

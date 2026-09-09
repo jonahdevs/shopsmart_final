@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Shop;
 use App\Data\BreadcrumbData;
 use App\Data\ProductCardData;
 use App\Data\ProductDetailData;
+use App\Data\ProductPreviewData;
 use App\Data\ReviewData;
-use App\Enums\ProductVisibility;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Shop\Concerns\BuildsCategoryBreadcrumbs;
 use App\Http\Controllers\Shop\Concerns\FiltersCatalogProducts;
@@ -51,12 +51,22 @@ class ProductController extends Controller
      * The recommendation pools are randomised, so their ids are picked once and
      * cached: without that they would reshuffle on every partial reload and the
      * rails would visibly rearrange under the shopper.
+     *
+     * The page has two readers. A shopper only ever reaches a product that is
+     * genuinely live. A staff member holding a products permission may also
+     * open one that is not — a draft, a scheduled product before its date, an
+     * archived or hidden one — because "how will this look on the shop floor"
+     * has no honest answer other than the shop floor itself. That second
+     * reading is a PREVIEW and says so: see {@see previewFor()}.
      */
     public function show(Request $request, Product $product): Response
     {
         // A catalog-only or search-only product is still a real page; only a
-        // fully hidden one — or one that is not live yet — 404s.
-        abort_unless($product->isPublished() && $product->visibility !== ProductVisibility::Hidden, 404);
+        // fully hidden one — or one that is not live yet — 404s, and then only
+        // for a reader who may not preview it.
+        $preview = $this->previewFor($request, $product);
+
+        abort_unless($product->isViewableOnStore() || $preview !== null, 404);
 
         $product->load([
             'brand',
@@ -81,23 +91,41 @@ class ProductController extends Controller
 
         $pools = $this->recommendationPools($product);
 
-        $this->recordView($request, $product);
+        // A preview is not a visit. Counting it would put the manager's own
+        // proofreading into "customers also viewed" and into their personal
+        // recently-viewed list, and the analytics log is the input to a rail
+        // shoppers see.
+        if ($preview === null) {
+            $this->recordView($request, $product);
+        }
 
         $crumbs = $this->breadcrumbs($product);
 
         return Inertia::render('shop/Product', [
             'product' => ProductDetailData::fromModel($product, $crumbs),
+            // Null on the live page, and that is what makes the preview
+            // treatment impossible to leak: the banner, the suppressed buy
+            // controls and the noindex head all hang off this one prop, which
+            // a shopper never receives.
+            'preview' => $preview,
             // Overrides the default shared by HandleInertiaRequests. The
             // canonical prefers the product's own column so two URLs for the
             // same item — a variant link, a campaign parameter — concede to one.
+            //
+            // A preview answers `noindex, nofollow` whatever the store's own
+            // setting says, and offers no structured data at all. It is behind
+            // a login and a permission so no crawler should reach it, but a
+            // page that is not for sale must not describe itself to one as an
+            // Offer if something ever does.
             'documentHead' => $this->seo->page(
                 title: $product->meta_title ?? $product->name,
                 description: $product->meta_description ?? $product->short_description,
                 canonicalUrl: $product->canonical_url ?: route('product.show', $product->slug),
-                jsonLd: [
+                jsonLd: $preview !== null ? [] : [
                     $this->seo->product($product),
                     $this->seo->breadcrumbs($crumbs),
                 ],
+                robots: $preview !== null ? Seo::NOINDEX : null,
             ),
             'accessories' => $this->accessories($product),
             'related' => $this->rail($pools['related']),
@@ -105,6 +133,40 @@ class ProductController extends Controller
             'alsoViewed' => $this->rail($pools['alsoViewed']),
             'reviews' => Inertia::defer(fn (): array => $this->reviews($product)),
         ]);
+    }
+
+    /**
+     * The preview badge for this reader, or null.
+     *
+     * Null for a product that is genuinely live — the storefront page is then
+     * the real page and must read identically to staff and shoppers, or staff
+     * are proofreading something nobody else will see.
+     *
+     * Null too for anyone who does not hold a products permission, which is
+     * what keeps the URL a 404 for the whole world. There is deliberately no
+     * token and no signed URL here: the reader is already authenticated, and
+     * `products.view` is already the permission that says "this person is
+     * trusted with products that are not on sale yet" — the admin table it
+     * guards lists every draft in the catalog by name. A second mechanism
+     * would be a second thing to leak and a second thing to revoke.
+     *
+     * A product in the bin is not previewable at all. Route model binding
+     * resolves against the default scope, so it 404s before this is asked —
+     * and rightly: a binned product is not "not public yet", it is withdrawn.
+     */
+    private function previewFor(Request $request, Product $product): ?ProductPreviewData
+    {
+        if ($product->isViewableOnStore()) {
+            return null;
+        }
+
+        $user = $request->user();
+
+        if ($user === null || ! $user->canAny(['products.view', 'products.manage'])) {
+            return null;
+        }
+
+        return ProductPreviewData::fromModel($product);
     }
 
     /**

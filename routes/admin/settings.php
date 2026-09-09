@@ -1,10 +1,14 @@
 <?php
 
+use App\Http\Controllers\Admin\Settings\BackupSettingsController;
 use App\Http\Controllers\Admin\Settings\BrandingSettingsController;
 use App\Http\Controllers\Admin\Settings\BusinessSettingsController;
+use App\Http\Controllers\Admin\Settings\CacheSettingsController;
 use App\Http\Controllers\Admin\Settings\CatalogSettingsController;
 use App\Http\Controllers\Admin\Settings\CheckoutSettingsController;
+use App\Http\Controllers\Admin\Settings\MaintenanceSettingsController;
 use App\Http\Controllers\Admin\Settings\PrivacySettingsController;
+use App\Http\Controllers\Admin\Settings\SecuritySettingsController;
 use App\Http\Controllers\Admin\Settings\SeoSettingsController;
 use App\Http\Controllers\Admin\Settings\ShippingSettingsController;
 use Illuminate\Support\Facades\Route;
@@ -73,6 +77,45 @@ Route::get('settings/seo', [SeoSettingsController::class, 'edit'])
 Route::put('settings/seo', [SeoSettingsController::class, 'update'])
     ->middleware('can:settings.manage')
     ->name('settings.seo.update');
+
+Route::get('settings/maintenance', [MaintenanceSettingsController::class, 'edit'])
+    ->middleware('can:settings.manage')
+    ->name('settings.maintenance');
+Route::put('settings/maintenance', [MaintenanceSettingsController::class, 'update'])
+    ->middleware('can:settings.manage')
+    ->name('settings.maintenance.update');
+
+/*
+| The Other tab. These two are pages of actions rather than forms — nothing on
+| them is saved — so they use POST and DELETE against the thing they act on
+| rather than the PUT-a-settings-group shape above.
+*/
+Route::get('settings/backup', [BackupSettingsController::class, 'edit'])
+    ->middleware('can:settings.manage')
+    ->name('settings.backup');
+Route::post('settings/backup', [BackupSettingsController::class, 'store'])
+    ->middleware('can:settings.manage')
+    ->name('settings.backup.store');
+Route::get('settings/backup/download', [BackupSettingsController::class, 'download'])
+    ->middleware('can:settings.manage')
+    ->name('settings.backup.download');
+Route::delete('settings/backup', [BackupSettingsController::class, 'destroy'])
+    ->middleware('can:settings.manage')
+    ->name('settings.backup.destroy');
+
+Route::get('settings/cache', [CacheSettingsController::class, 'edit'])
+    ->middleware('can:settings.manage')
+    ->name('settings.cache');
+Route::post('settings/cache', [CacheSettingsController::class, 'update'])
+    ->middleware('can:settings.manage')
+    ->name('settings.cache.update');
+
+Route::get('settings/security', [SecuritySettingsController::class, 'edit'])
+    ->middleware('can:settings.manage')
+    ->name('settings.security');
+Route::put('settings/security', [SecuritySettingsController::class, 'update'])
+    ->middleware('can:settings.manage')
+    ->name('settings.security.update');
 
 Route::get('settings/privacy', [PrivacySettingsController::class, 'edit'])
     ->middleware('can:settings.manage')

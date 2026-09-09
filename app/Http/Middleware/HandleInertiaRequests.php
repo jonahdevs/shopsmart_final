@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Data\AdminNotificationData;
 use App\Data\SeoData;
 use App\Enums\CategorySection;
 use App\Models\CategoryPlacement;
@@ -11,11 +12,15 @@ use App\Support\StorefrontCache;
 use App\Support\StorefrontSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Inertia\Inertia;
 use Inertia\Middleware;
 use Spatie\Permission\Models\Permission;
 
 class HandleInertiaRequests extends Middleware
 {
+    /** How many rows the notification bell holds. */
+    private const BELL_LIMIT = 15;
+
     public function __construct(private StorefrontSession $storefront) {}
 
     /**
@@ -65,6 +70,24 @@ class HandleInertiaRequests extends Middleware
                 'permissions' => fn (): array => $this->permissions($request),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            // The header's notification bell. Two props with very different
+            // costs, which is why they are separate keys rather than one group:
+            //
+            // `unreadCount` is a COUNT on `notifications` and it is the price of
+            // the badge being right on arrival at any admin screen. It is kept
+            // affordable by charging it only where a bell is rendered — see
+            // `unreadNotificationCount()` — not by caching it. A cache would
+            // have to be invalidated by the queue worker that writes the row and
+            // by every mark-read, and the badge would still be a TTL behind the
+            // poll that exists to refresh it.
+            //
+            // `items` is the fifteen rows behind the bell, and it is optional:
+            // Inertia resolves it only when the panel asks for it by name, so
+            // the ordinary page load never runs the query at all.
+            'notifications' => [
+                'unreadCount' => fn (): int => $this->unreadNotificationCount($request),
+                'items' => Inertia::optional(fn (): array => $this->recentNotifications($request)),
+            ],
             // The document head, resolved server-side because Inertia's <Head>
             // needs SSR to reach the initial HTML and SSR is off — see
             // resources/views/components/seo-tags.blade.php. A closure like the
@@ -118,6 +141,73 @@ class HandleInertiaRequests extends Middleware
             static fn (Permission $permission): string => $permission->name,
             $user->getAllPermissions()->all(),
         ));
+    }
+
+    /**
+     * How many unread notifications the bell should be showing.
+     *
+     * Charged only on admin page responses. The storefront has no bell, the
+     * account area has no bell, and `share()` runs on both — counting there
+     * would put a query on every product page for a number nothing renders.
+     * `routeIs()` is a string comparison against the already-matched route, so
+     * the check itself costs nothing.
+     *
+     * One indexed COUNT for a staff member on an admin page, then. It is not
+     * cached: the row that changes this number is written by a queue worker or
+     * a webhook, and the only honest invalidation for that is "read it".
+     */
+    private function unreadNotificationCount(Request $request): int
+    {
+        $user = $request->user();
+
+        if ($user === null || ! $request->routeIs('admin.*')) {
+            return 0;
+        }
+
+        $types = AdminNotificationData::visibleTypesFor($user);
+
+        if ($types === []) {
+            return 0;
+        }
+
+        return $user->unreadNotifications()->whereIn('type', $types)->count();
+    }
+
+    /**
+     * The rows behind the bell — the latest fifteen this viewer may see.
+     *
+     * Fifteen because that is what the reference build settled on and it is
+     * about a screen's worth: a bell is a "what did I miss" glance, and
+     * anything older belongs to the screen the notification points at.
+     *
+     * The permission filter is in the query rather than applied to the results,
+     * so fifteen means fifteen. Filtering after the fetch would quietly hand a
+     * Support member four rows because eleven of the latest fifteen were
+     * payments they may not read.
+     *
+     * @return list<AdminNotificationData>
+     */
+    private function recentNotifications(Request $request): array
+    {
+        $user = $request->user();
+
+        if ($user === null) {
+            return [];
+        }
+
+        $types = AdminNotificationData::visibleTypesFor($user);
+
+        if ($types === []) {
+            return [];
+        }
+
+        return array_values($user->notifications()
+            ->whereIn('type', $types)
+            ->latest()
+            ->limit(self::BELL_LIMIT)
+            ->get()
+            ->map(AdminNotificationData::fromNotification(...))
+            ->all());
     }
 
     /**

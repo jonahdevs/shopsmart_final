@@ -22,7 +22,7 @@ const { products } = defineProps<{
 <template>
     <Head title="Your wishlist" />
 
-    <div class="container py-10">
+    <div class="container mx-auto px-4 py-10 sm:px-6 lg:px-8">
         <div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
             <div>
                 <p

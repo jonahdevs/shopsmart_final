@@ -22,14 +22,17 @@ import AdminCardHeader from '@/components/admin/AdminCardHeader.vue';
 import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
 import AdminStatCard from '@/components/admin/AdminStatCard.vue';
 import AdminStatusBadge from '@/components/admin/AdminStatusBadge.vue';
+import AdminTable from '@/components/admin/AdminTable.vue';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
-    NativeSelect,
-    NativeSelectOption,
-} from '@/components/ui/native-select';
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import {
-    Table,
     TableBody,
     TableCell,
     TableHead,
@@ -67,7 +70,6 @@ const address = order.shippingAddress;
         <Head :title="`Order ${order.orderNumber}`" />
 
         <AdminPageHeader
-            eyebrow="Sales"
             :title="order.orderNumber"
             :description="`Placed ${formatIsoDate(order.placedAt)} by ${order.customerName}.`"
         >
@@ -158,19 +160,13 @@ const address = order.shippingAddress;
                       body never scrolls sideways on a narrow screen.
                     -->
                     <div class="overflow-x-auto">
-                        <Table>
+                        <AdminTable>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Product</TableHead>
-                                    <TableHead class="text-right">
-                                        Unit
-                                    </TableHead>
-                                    <TableHead class="text-right">
-                                        Qty
-                                    </TableHead>
-                                    <TableHead class="text-right">
-                                        Total
-                                    </TableHead>
+                                    <TableHead>Unit</TableHead>
+                                    <TableHead>Qty</TableHead>
+                                    <TableHead>Total</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -195,20 +191,18 @@ const address = order.shippingAddress;
                                             {{ line.sku }}
                                         </span>
                                     </TableCell>
-                                    <TableCell class="text-right tabular-nums">
+                                    <TableCell class="tabular-nums">
                                         {{ line.unitPriceFormatted }}
                                     </TableCell>
-                                    <TableCell class="text-right tabular-nums">
+                                    <TableCell class="tabular-nums">
                                         {{ line.quantity }}
                                     </TableCell>
-                                    <TableCell
-                                        class="text-right font-medium tabular-nums"
-                                    >
+                                    <TableCell class="font-medium tabular-nums">
                                         {{ line.totalFormatted }}
                                     </TableCell>
                                 </TableRow>
                             </TableBody>
-                        </Table>
+                        </AdminTable>
                     </div>
 
                     <div class="flex justify-end border-t px-5 py-4">
@@ -270,15 +264,13 @@ const address = order.shippingAddress;
                     </p>
 
                     <div v-else class="overflow-x-auto">
-                        <Table>
+                        <AdminTable>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Reference</TableHead>
                                     <TableHead>Gateway</TableHead>
                                     <TableHead>Status</TableHead>
-                                    <TableHead class="text-right">
-                                        Amount
-                                    </TableHead>
+                                    <TableHead>Amount</TableHead>
                                     <TableHead>Attempted</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -313,7 +305,7 @@ const address = order.shippingAddress;
                                             {{ payment.failureReason }}
                                         </span>
                                     </TableCell>
-                                    <TableCell class="text-right tabular-nums">
+                                    <TableCell class="tabular-nums">
                                         {{ payment.amountFormatted }}
                                     </TableCell>
                                     <TableCell class="text-muted-foreground">
@@ -321,7 +313,7 @@ const address = order.shippingAddress;
                                     </TableCell>
                                 </TableRow>
                             </TableBody>
-                        </Table>
+                        </AdminTable>
                     </div>
                 </AdminCard>
             </div>
@@ -415,22 +407,26 @@ const address = order.shippingAddress;
                                   is `detail.availableStatuses`, decided by the
                                   server — the lifecycle is not restated here.
                                 -->
-                                <NativeSelect
-                                    id="order-status"
+                                <Select
                                     name="status"
-                                    :model-value="order.status"
+                                    :default-value="order.status"
                                 >
-                                    <NativeSelectOption :value="order.status">
-                                        {{ order.statusLabel }} (current)
-                                    </NativeSelectOption>
-                                    <NativeSelectOption
-                                        v-for="option in detail.availableStatuses"
-                                        :key="option.value"
-                                        :value="option.value"
-                                    >
-                                        {{ option.label }}
-                                    </NativeSelectOption>
-                                </NativeSelect>
+                                    <SelectTrigger id="order-status">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem :value="order.status">
+                                            {{ order.statusLabel }} (current)
+                                        </SelectItem>
+                                        <SelectItem
+                                            v-for="option in detail.availableStatuses"
+                                            :key="option.value"
+                                            :value="option.value"
+                                        >
+                                            {{ option.label }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
                                 <p
                                     v-if="errors.status"
                                     class="text-destructive text-sm"

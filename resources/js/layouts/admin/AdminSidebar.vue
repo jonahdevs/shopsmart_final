@@ -5,33 +5,30 @@ import {
     Boxes,
     CreditCard,
     FolderTree,
+    KeyRound,
     LayoutGrid,
     Package,
     Percent,
     ScrollText,
     Settings,
-    ShieldCheck,
     SlidersHorizontal,
     Star,
-    Store,
     Tag,
+    Tags,
     UserRound,
     Users,
 } from '@lucide/vue';
 import AdminNav from '@/components/admin/AdminNav.vue';
-import NavFooter from '@/components/NavFooter.vue';
-import NavUser from '@/components/NavUser.vue';
+import { populatedSettingsGroups } from '@/components/admin/settings/settingsNav';
 import {
     Sidebar,
     SidebarContent,
-    SidebarFooter,
     SidebarHeader,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import AdminBrand from '@/layouts/admin/AdminBrand.vue';
-import { home } from '@/routes';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as adminActivity } from '@/routes/admin/activity';
 import { index as adminAttributes } from '@/routes/admin/attributes';
@@ -40,22 +37,14 @@ import { index as adminCategories } from '@/routes/admin/categories';
 import { index as adminCoupons } from '@/routes/admin/coupons';
 import { index as adminCustomers } from '@/routes/admin/customers';
 import { index as adminOrders } from '@/routes/admin/orders';
+import { index as adminPermissions } from '@/routes/admin/permissions';
 import { index as adminPayments } from '@/routes/admin/payments';
 import { index as adminProducts } from '@/routes/admin/products';
 import { index as adminReviews } from '@/routes/admin/reviews';
 import { index as adminRoles } from '@/routes/admin/roles';
-import {
-    branding as settingsBranding,
-    business as settingsBusiness,
-    catalog as settingsCatalog,
-    checkout as settingsCheckout,
-    privacy as settingsPrivacy,
-    seo as settingsSeo,
-    shipping as settingsShipping,
-} from '@/routes/admin/settings';
-import { index as adminStaff } from '@/routes/admin/staff';
+import { index as adminTags } from '@/routes/admin/tags';
 import { index as adminTaxClasses } from '@/routes/admin/tax-classes';
-import type { AdminNavGroup, NavItem } from '@/types';
+import type { AdminNavGroup } from '@/types';
 
 /**
  * The staff shell's navigation.
@@ -129,6 +118,17 @@ const navGroups: AdminNavGroup[] = [
                 permissions: ['catalog.manage'],
             },
             {
+                // Between the structure and the rates, which is where the
+                // reference build keeps it. A tag is filing, like a category or
+                // a brand — but unlike them it is what the home page rails are
+                // actually built from, so it belongs in this group rather than
+                // under Marketing beside the coupons.
+                title: 'Tags',
+                href: adminTags(),
+                icon: Tags,
+                permissions: ['catalog.manage'],
+            },
+            {
                 title: 'Tax classes',
                 href: adminTaxClasses(),
                 icon: Percent,
@@ -153,69 +153,31 @@ const navGroups: AdminNavGroup[] = [
             },
         ],
     },
+    /*
+      Who works here, what they may do, and what they did — the same three
+      questions routes/admin/access.php is split along, and the group the
+      new-ecommerce build keeps them in. They are deliberately not under System
+      with the settings: a settings screen changes how the shop behaves, and
+      these change who is allowed to change it.
+    */
     {
-        label: 'System',
+        label: 'Access',
         items: [
             {
-                /*
-                  A disclosure, not a link. `/admin/settings` only redirects to
-                  the first screen, so listing it as a single destination left
-                  the other six reachable by typing the URL and no other way.
-                */
-                title: 'Settings',
-                href: settingsBusiness(),
-                icon: Settings,
-                permissions: ['settings.manage'],
-                children: [
-                    {
-                        title: 'Business',
-                        href: settingsBusiness(),
-                        permissions: ['settings.manage'],
-                    },
-                    {
-                        title: 'Branding',
-                        href: settingsBranding(),
-                        permissions: ['settings.manage'],
-                    },
-                    {
-                        title: 'Catalog',
-                        href: settingsCatalog(),
-                        permissions: ['settings.manage'],
-                    },
-                    {
-                        title: 'Checkout',
-                        href: settingsCheckout(),
-                        permissions: ['settings.manage'],
-                    },
-                    {
-                        title: 'Shipping & tax',
-                        href: settingsShipping(),
-                        permissions: ['settings.manage'],
-                    },
-                    {
-                        title: 'SEO',
-                        href: settingsSeo(),
-                        permissions: ['settings.manage'],
-                    },
-                    {
-                        title: 'Privacy',
-                        href: settingsPrivacy(),
-                        permissions: ['settings.manage'],
-                    },
-                ],
-            },
-            {
-                title: 'Staff',
-                href: adminStaff(),
+                // One screen. A role is a definition and a staff member is an
+                // instance of it, and separating them meant the question every
+                // reader arrives with — who would this affect? — needed two
+                // pages. Guarded by `staff.manage`; the role cards on it are
+                // hidden from anyone without `roles.manage`.
+                title: 'Staff and roles',
+                href: adminRoles(),
                 icon: Users,
                 permissions: ['staff.manage'],
             },
             {
-                // Super Admin only — every other seeded role is refused
-                // `roles.manage`, so this is the one item most staff never see.
-                title: 'Roles',
-                href: adminRoles(),
-                icon: ShieldCheck,
+                title: 'Permissions',
+                href: adminPermissions(),
+                icon: KeyRound,
                 permissions: ['roles.manage'],
             },
             {
@@ -226,17 +188,37 @@ const navGroups: AdminNavGroup[] = [
             },
         ],
     },
-];
-
-/**
- * A way back to the shop floor. Staff cannot buy — EnsureUserIsCustomer sees to
- * that — but they do need to look at what a customer sees.
- */
-const footerNavItems: NavItem[] = [
     {
-        title: 'View storefront',
-        href: home(),
-        icon: Store,
+        label: 'System',
+        items: [
+            {
+                /*
+                  A disclosure, not a link. `/admin/settings` only redirects to
+                  the first screen, so listing it as a single destination left
+                  the other six reachable by typing the URL and no other way.
+
+                  The children are the groups, not the screens: a group opens
+                  onto its first screen and AdminSettingsTabs offers the rest
+                  across the top of the page, which keeps the rail one section
+                  deep instead of listing more settings than there are trading
+                  destinations above them.
+
+                  The parent carries no permission of its own because General is
+                  the staff member's own account, which everyone with a login
+                  may reach. Each child carries the group's, so a role without
+                  `settings.manage` opens Settings onto General alone.
+                */
+                title: 'Settings',
+                href: populatedSettingsGroups[0].screens[0].href,
+                icon: Settings,
+                children: populatedSettingsGroups.map((group) => ({
+                    title: group.label,
+                    href: group.screens[0].href,
+                    matches: group.screens.map((screen) => screen.href),
+                    permissions: group.permissions,
+                })),
+            },
+        ],
     },
 ];
 </script>
@@ -263,10 +245,5 @@ const footerNavItems: NavItem[] = [
         <SidebarContent class="gap-4 py-2">
             <AdminNav :groups="navGroups" />
         </SidebarContent>
-
-        <SidebarFooter class="border-sidebar-border border-t">
-            <NavFooter :items="footerNavItems" />
-            <NavUser />
-        </SidebarFooter>
     </Sidebar>
 </template>

@@ -59,11 +59,11 @@ test('the table lists staff and leaves customers out of it', function () {
     $shopper = User::factory()->create(['name' => 'Wanjiru Kamau']);
 
     $this->actingAs($this->admin)
-        ->get(route('admin.staff.index'))
+        ->get(route('admin.roles.index'))
         ->assertOk()
         ->assertInertia(
             fn ($page) => $page
-                ->component('admin/staff/Index')
+                ->component('admin/roles/Index')
                 ->has('staff', 2)
                 ->whereNot('staff.0.email', $shopper->email)
                 ->whereNot('staff.1.email', $shopper->email)
@@ -80,7 +80,7 @@ test('a staff row carries no credential material at all', function () {
     $colleague->assignRole('Support');
 
     $this->actingAs($this->admin)
-        ->get(route('admin.staff.index', ['search' => $colleague->email]))
+        ->get(route('admin.roles.index', ['search' => $colleague->email]))
         ->assertInertia(
             fn ($page) => $page
                 ->has('staff', 1)
@@ -102,7 +102,7 @@ test('the search matches a name and an email', function () {
 
     foreach (['Achieng', 'achieng@example.test'] as $term) {
         $this->actingAs($this->admin)
-            ->get(route('admin.staff.index', ['search' => $term]))
+            ->get(route('admin.roles.index', ['search' => $term]))
             ->assertInertia(fn ($page) => $page->has('staff', 1)->where('staff.0.email', $wanted->email));
     }
 });
@@ -112,13 +112,13 @@ test('the role filter narrows the table', function () {
     $manager = staffHolding('Manager');
 
     $this->actingAs($this->admin)
-        ->get(route('admin.staff.index', ['role' => 'Manager']))
+        ->get(route('admin.roles.index', ['role' => 'Manager']))
         ->assertInertia(fn ($page) => $page->has('staff', 1)->where('staff.0.email', $manager->email));
 });
 
 test('a sort column outside the whitelist is rejected', function () {
     $this->actingAs($this->admin)
-        ->get(route('admin.staff.index', ['sort' => 'password']))
+        ->get(route('admin.roles.index', ['sort' => 'password']))
         ->assertSessionHasErrors('sort');
 });
 
@@ -131,7 +131,7 @@ test('inviting a colleague creates the account and emails them a password reset 
             'email' => 'njeri@example.test',
             'roles' => ['Support'],
         ])
-        ->assertRedirect(route('admin.staff.index'));
+        ->assertRedirect(route('admin.roles.index'));
 
     $invited = User::where('email', 'njeri@example.test')->firstOrFail();
 
@@ -215,7 +215,7 @@ test('editing a colleague saves their name, email and roles', function () {
             'email' => 'renamed@example.test',
             'roles' => ['Manager'],
         ])
-        ->assertRedirect(route('admin.staff.index'));
+        ->assertRedirect(route('admin.roles.index'));
 
     $colleague->refresh();
 
@@ -262,7 +262,7 @@ test('revoking access takes every role off but keeps the account and its orders'
 
     $this->actingAs($this->admin)
         ->delete(route('admin.staff.destroy', $colleague))
-        ->assertRedirect(route('admin.staff.index'));
+        ->assertRedirect(route('admin.roles.index'));
 
     $colleague->refresh();
 
@@ -326,7 +326,7 @@ test('a Super Admin who is not the last one may be demoted', function () {
             'email' => $superAdmin->email,
             'roles' => ['Manager'],
         ])
-        ->assertRedirect(route('admin.staff.index'));
+        ->assertRedirect(route('admin.roles.index'));
 
     expect($superAdmin->refresh()->hasRole(PermissionSeeder::SUPER_ADMIN))->toBeFalse();
 });
@@ -352,7 +352,7 @@ test('an Admin cannot demote a Super Admin at all', function () {
 test('a staff member without staff.manage is refused the section', function () {
     $support = staffHolding('Support');
 
-    $this->actingAs($support)->get(route('admin.staff.index'))->assertForbidden();
+    $this->actingAs($support)->get(route('admin.roles.index'))->assertForbidden();
     $this->actingAs($support)->get(route('admin.staff.create'))->assertForbidden();
     $this->actingAs($support)
         ->post(route('admin.staff.store'), [
@@ -364,10 +364,10 @@ test('a staff member without staff.manage is refused the section', function () {
 });
 
 test('a customer is refused and a guest is sent to log in', function () {
-    $this->get(route('admin.staff.index'))->assertRedirect(route('login'));
+    $this->get(route('admin.roles.index'))->assertRedirect(route('login'));
 
     $this->actingAs(User::factory()->create())
-        ->get(route('admin.staff.index'))
+        ->get(route('admin.roles.index'))
         ->assertForbidden();
 });
 

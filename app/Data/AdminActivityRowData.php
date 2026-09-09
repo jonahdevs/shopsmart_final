@@ -4,6 +4,7 @@ namespace App\Data;
 
 use App\Models\Order;
 use App\Models\Payment;
+use Illuminate\Contracts\Auth\Access\Authorizable;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\LaravelData\Data;
@@ -61,6 +62,29 @@ class AdminActivityRowData extends Data
         public bool $valuesHidden,
         public string $createdAt,
     ) {}
+
+    /**
+     * Which subjects a viewer may see the *values* of, keyed by the class name
+     * stored on the row.
+     *
+     * Lives here rather than on the controller because two screens now render
+     * these rows — the audit trail and the dashboard's recent-activity panel —
+     * and a second copy of this map is exactly how one of them ends up laxer
+     * than the other. Building it once per page also keeps the lookup inside
+     * the row loop to an array read rather than a permission check per entry.
+     *
+     * @return array<string, bool>
+     */
+    public static function visibilityFor(?Authorizable $viewer): array
+    {
+        $visibility = [];
+
+        foreach (self::SUBJECT_PERMISSIONS as $subject => $permission) {
+            $visibility[$subject] = $viewer !== null && $viewer->can($permission);
+        }
+
+        return $visibility;
+    }
 
     public static function fromModel(Activity $activity, bool $maySeeValues): self
     {

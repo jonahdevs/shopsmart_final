@@ -41,7 +41,6 @@ defineOptions({
             v-slot="{ errors, processing }"
         >
             <AdminPageHeader
-                eyebrow="System"
                 :title="role.name"
                 :description="`${role.memberCount} ${role.memberCount === 1 ? 'person holds' : 'people hold'} this role. Saving changes what they can reach immediately.`"
             >

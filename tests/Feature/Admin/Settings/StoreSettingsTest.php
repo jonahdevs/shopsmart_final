@@ -309,6 +309,7 @@ test('privacy settings save consent categories, policy URLs and retention window
             'terms_url' => 'https://acme.test/terms',
             'recently_viewed_retention_days' => 30,
             'activity_log_retention_days' => 0,
+            'visitor_retention_days' => 90,
             'ga4_id' => 'g-abc123',
         ])
         ->assertSessionHasNoErrors();
@@ -319,7 +320,8 @@ test('privacy settings save consent categories, policy URLs and retention window
         ->and($legal->privacy_policy_url)->toBe('/privacy')
         ->and($legal->terms_url)->toBe('https://acme.test/terms')
         ->and($legal->recently_viewed_retention_days)->toBe(30)
-        ->and($legal->activity_log_retention_days)->toBe(0);
+        ->and($legal->activity_log_retention_days)->toBe(0)
+        ->and($legal->visitor_retention_days)->toBe(90);
 
     expect(reloaded(AnalyticsSettings::class)->ga4_id)->toBe('G-ABC123');
 });
@@ -329,6 +331,7 @@ test('unticking every consent category is allowed and switches the banner off', 
         ->put(route('admin.settings.privacy.update'), [
             'recently_viewed_retention_days' => 180,
             'activity_log_retention_days' => 365,
+            'visitor_retention_days' => 90,
         ])
         ->assertSessionHasNoErrors();
 

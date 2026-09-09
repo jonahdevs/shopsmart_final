@@ -206,7 +206,9 @@ async function pay(): Promise<void> {
 <template>
     <Head :title="`Pay for ${order.orderNumber}`" />
 
-    <div class="container flex flex-col gap-16 py-8">
+    <div
+        class="container mx-auto flex flex-col gap-16 px-4 py-8 sm:px-6 lg:px-8"
+    >
         <section aria-labelledby="payment-heading">
             <StoreBreadcrumbs :items="breadcrumbs" />
 

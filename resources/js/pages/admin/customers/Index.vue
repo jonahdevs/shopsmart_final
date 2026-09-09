@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { Users } from '@lucide/vue';
+import { Banknote, ShoppingBag, UserPlus, Users } from '@lucide/vue';
+import { computed } from 'vue';
 import AdminCard from '@/components/admin/AdminCard.vue';
 import AdminEmptyState from '@/components/admin/AdminEmptyState.vue';
 import AdminFilterBar from '@/components/admin/AdminFilterBar.vue';
 import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
 import AdminPagination from '@/components/admin/AdminPagination.vue';
 import AdminSortableHead from '@/components/admin/AdminSortableHead.vue';
+import AdminStatCard from '@/components/admin/AdminStatCard.vue';
 import AdminStatusBadge from '@/components/admin/AdminStatusBadge.vue';
+import AdminTable from '@/components/admin/AdminTable.vue';
 import { Button } from '@/components/ui/button';
 import {
-    Table,
     TableBody,
     TableCell,
     TableHead,
@@ -31,10 +33,11 @@ type CustomerFilters = {
     direction: string;
 };
 
-const { customers, pagination, filters } = defineProps<{
+const { customers, pagination, filters, stats } = defineProps<{
     customers: App.Data.AdminCustomerRowData[];
     pagination: App.Data.PaginationData;
     filters: CustomerFilters;
+    stats: App.Data.AdminCustomerStatsData;
 }>();
 
 defineOptions({
@@ -61,6 +64,53 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
             search: filters.search ?? '',
         },
     });
+
+/*
+  How many people there are, how many arrived lately, and how many of them have
+  ever actually bought anything — the last is the one figure that separates a
+  mailing list from a customer base.
+
+  None of these tiles links anywhere: the table filters on free text alone, so
+  a tile pretending to open "the 40 who have ordered" would land on a list that
+  is not that. A count without a link is honest; a link to the wrong list is not.
+*/
+const tiles = computed(() => [
+    {
+        label: 'Customers',
+        value: String(stats.customerCount),
+        icon: Users,
+        tone: 'brand' as const,
+        hint: 'Registered, all time',
+        change: null,
+    },
+    {
+        label: 'New customers',
+        value: String(stats.newCustomerCount),
+        icon: UserPlus,
+        tone: 'info' as const,
+        hint: stats.periodLabel,
+        change: stats.newCustomerChangePercent,
+    },
+    {
+        label: 'Have ordered',
+        value: String(stats.payingCustomerCount),
+        icon: ShoppingBag,
+        tone: 'success' as const,
+        hint:
+            stats.payingCustomerSharePercent === null
+                ? undefined
+                : `${stats.payingCustomerSharePercent}% of customers`,
+        change: null,
+    },
+    {
+        label: 'Average spend',
+        value: stats.averageSpendFormatted,
+        icon: Banknote,
+        tone: 'accent' as const,
+        hint: 'Per paying customer',
+        change: null,
+    },
+]);
 </script>
 
 <template>
@@ -68,10 +118,27 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
         <Head title="Customers" />
 
         <AdminPageHeader
-            eyebrow="Customers"
             title="Customers"
             :description="`${pagination.total} registered customer${pagination.total === 1 ? '' : 's'}.`"
         />
+
+        <!--
+          The whole customer base, not the searched page below. These figures
+          are the context a staff member searches against, so they hold still
+          while the table moves.
+        -->
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <AdminStatCard
+                v-for="tile in tiles"
+                :key="tile.label"
+                :label="tile.label"
+                :value="tile.value"
+                :icon="tile.icon"
+                :tone="tile.tone"
+                :hint="tile.hint"
+                :change="tile.change"
+            />
+        </div>
 
         <!--
           One card, three strips: filters, table, pagination. Not three cards —
@@ -105,7 +172,7 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
               never scrolls sideways on a narrow screen.
             -->
             <div v-else class="overflow-x-auto">
-                <Table>
+                <AdminTable>
                     <TableHeader>
                         <TableRow>
                             <AdminSortableHead
@@ -125,8 +192,6 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
                             />
                             <AdminSortableHead
                                 label="Lifetime spend"
-                                align="end"
-                                class="text-right"
                                 :href="sortHref('lifetime_spent_cents')"
                                 :sort="ariaSort('lifetime_spent_cents')"
                             />
@@ -170,9 +235,7 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
                             <TableCell class="tabular-nums">
                                 {{ customer.orderCount }}
                             </TableCell>
-                            <TableCell
-                                class="text-right font-medium tabular-nums"
-                            >
+                            <TableCell class="font-medium tabular-nums">
                                 {{ customer.lifetimeSpentFormatted }}
                             </TableCell>
                             <TableCell class="text-muted-foreground">
@@ -196,7 +259,7 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
                             </TableCell>
                         </TableRow>
                     </TableBody>
-                </Table>
+                </AdminTable>
             </div>
 
             <AdminPagination

@@ -6,6 +6,7 @@ use App\Models\Payment;
 use App\Models\Review;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
@@ -152,6 +153,93 @@ describe('index', function () {
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->where('customers.0.id', $large->id)
                 ->where('customers.1.id', $small->id));
+    });
+
+    test('it counts the customer base, the recent arrivals and the ones who have paid', function () {
+        $buyer = User::factory()->create();
+        $browser = User::factory()->create();
+        User::factory()->create(['created_at' => now()->subMonths(3)]);
+
+        Order::factory()->paid()->create(['user_id' => $buyer->id, 'total_cents' => 150_000]);
+        Order::factory()->paid()->create(['user_id' => $buyer->id, 'total_cents' => 50_000]);
+        // Placed but never collected: it does not make its customer a buyer.
+        Order::factory()->create(['user_id' => $browser->id, 'total_cents' => 900_000]);
+
+        $this->actingAs($this->manager)
+            ->get(route('admin.customers.index'))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('stats.customerCount', 3)
+                // The third registered three months ago, outside the window.
+                ->where('stats.newCustomerCount', 2)
+                ->where('stats.payingCustomerCount', 1)
+                ->where('stats.payingCustomerSharePercent', 33.3)
+                // The buyer's two paid orders, across the one buyer.
+                ->where('stats.averageSpendCents', 200_000)
+                ->where('stats.averageSpendFormatted', money(200_000)));
+    });
+
+    test('it leaves a colleague who shops here out of the tiles', function () {
+        $colleague = User::factory()->create();
+        $colleague->assignRole('Support');
+
+        Order::factory()->paid()->create(['user_id' => $colleague->id, 'total_cents' => 400_000]);
+
+        $this->actingAs($this->manager)
+            ->get(route('admin.customers.index'))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                // A customer is a user holding no role at all, and that boundary
+                // has to hold on the order side of the figures too — otherwise
+                // staff spending inflates what the shop's customers are worth.
+                ->where('stats.customerCount', 0)
+                ->where('stats.payingCustomerCount', 0)
+                ->where('stats.averageSpendCents', 0)
+                ->where('stats.payingCustomerSharePercent', null));
+    });
+
+    test('it shows no registration trend before there is a period to compare against', function () {
+        User::factory()->create();
+
+        $this->actingAs($this->manager)
+            ->get(route('admin.customers.index'))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('stats.newCustomerCount', 1)
+                // Not "+100%": the month before the store existed is not a
+                // baseline, so the tile shows no trend at all.
+                ->where('stats.newCustomerChangePercent', null));
+    });
+
+    test('the table and its tiles cost a fixed number of queries whatever the page holds', function () {
+        User::factory()->count(30)->create();
+
+        $queries = 0;
+        DB::listen(function () use (&$queries): void {
+            $queries++;
+        });
+
+        $this->actingAs($this->manager)
+            ->get(route('admin.customers.index'))
+            ->assertOk();
+
+        // The shared layout props, the permission cache the `can:` middleware
+        // warms, the paginator count and the page of customers itself, the
+        // settings groups behind money formatting and the document head — and
+        // TWO aggregates for the whole tile row, one over users and one over
+        // orders.
+        //
+        // Those two are why this test exists. Four tiles could just as easily
+        // have been four counts, and the cap is what stops a fifth tile
+        // arriving with a fifth query. It is a coarse tripwire, not an N+1
+        // guard: nothing here may grow with the thirty customers above, which
+        // is what makes a fixed number the right assertion.
+        //
+        // Raised by one for the header's notification bell: HandleInertiaRequests
+        // counts the viewer's unread, permission-filtered notifications on every
+        // admin response so the badge is right the moment the page paints. The
+        // fifteen rows behind the bell are an optional prop and cost nothing here.
+        expect($queries)->toBeLessThanOrEqual(21);
     });
 
     test('it rejects a sort column that is not on the allow list', function () {

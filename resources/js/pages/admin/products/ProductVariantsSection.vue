@@ -1,14 +1,19 @@
 <script setup lang="ts">
 import { Layers, Plus, Trash2 } from '@lucide/vue';
 import { computed } from 'vue';
-import AdminCard from '@/components/admin/AdminCard.vue';
-import AdminCardHeader from '@/components/admin/AdminCardHeader.vue';
 import AdminEmptyState from '@/components/admin/AdminEmptyState.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import VariantMatrixDialog from './VariantMatrixDialog.vue';
 
 type Option = { value: string; label: string };
@@ -123,9 +128,22 @@ function syncAttributeValueIds(index: number, value: unknown): void {
 </script>
 
 <template>
-    <AdminCard>
-        <AdminCardHeader title="Variants" :icon="Layers">
-            <template #actions>
+    <div>
+        <!--
+          The panel's own toolbar, the way the reference build's variations tab
+          carries one. The card header above belongs to all six facets, so an
+          action that only makes sense while this one is showing cannot live
+          there.
+        -->
+        <div
+            class="flex flex-wrap items-center justify-between gap-3 border-b p-5"
+        >
+            <p class="text-muted-foreground text-sm">
+                Each variant has its own SKU and stock. A blank price inherits
+                the product's.
+            </p>
+
+            <div class="flex shrink-0 items-center gap-2">
                 <!--
                   With no attributes set up there is nothing to combine, so the
                   action does not exist rather than opening an empty dialog.
@@ -146,14 +164,13 @@ function syncAttributeValueIds(index: number, value: unknown): void {
                     <Plus class="size-4" aria-hidden="true" />
                     Add variant
                 </Button>
-            </template>
-        </AdminCardHeader>
+            </div>
+        </div>
 
         <AdminEmptyState
             v-if="rows.length === 0"
             :icon="Layers"
             title="No variants yet"
-            description="Each variant has its own SKU and stock. A blank price inherits the product's."
         />
 
         <div v-else class="flex flex-col gap-4 p-5">
@@ -215,19 +232,23 @@ function syncAttributeValueIds(index: number, value: unknown): void {
                     <Label :for="`variant-${index}-stock-status`">
                         Stock status
                     </Label>
-                    <NativeSelect
-                        :id="`variant-${index}-stock-status`"
+                    <Select
                         :name="`variants[${index}][stock_status]`"
-                        :model-value="variant.stockStatus"
+                        :default-value="variant.stockStatus"
                     >
-                        <option
-                            v-for="option in stockStatusOptions"
-                            :key="option.value"
-                            :value="option.value"
-                        >
-                            {{ option.label }}
-                        </option>
-                    </NativeSelect>
+                        <SelectTrigger :id="`variant-${index}-stock-status`">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem
+                                v-for="option in stockStatusOptions"
+                                :key="option.value"
+                                :value="option.value"
+                            >
+                                {{ option.label }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
 
                 <div class="space-y-1.5">
@@ -245,6 +266,11 @@ function syncAttributeValueIds(index: number, value: unknown): void {
 
                 <div class="space-y-1.5">
                     <Label :for="`variant-${index}-options`">Options</Label>
+                    <!--
+                      Still a native multi-select. reka-ui's Select submits through a
+                      hidden single `<select>` whose value cannot carry an array, so a
+                      dropdown here would post nothing at all for `attribute_value_ids[]`.
+                    -->
                     <NativeSelect
                         :id="`variant-${index}-options`"
                         :name="`variants[${index}][attribute_value_ids][]`"
@@ -312,5 +338,5 @@ function syncAttributeValueIds(index: number, value: unknown): void {
                 </div>
             </div>
         </div>
-    </AdminCard>
+    </div>
 </template>

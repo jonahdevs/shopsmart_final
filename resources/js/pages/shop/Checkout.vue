@@ -120,7 +120,9 @@ const lineCountLabel = computed(
 <template>
     <Head title="Checkout" />
 
-    <div class="container flex flex-col gap-16 py-8">
+    <div
+        class="container mx-auto flex flex-col gap-16 px-4 py-8 sm:px-6 lg:px-8"
+    >
         <section aria-labelledby="checkout-heading">
             <StoreBreadcrumbs :items="breadcrumbs" />
 

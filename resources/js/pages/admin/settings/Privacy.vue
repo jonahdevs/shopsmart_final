@@ -32,6 +32,7 @@ const props = defineProps<{
         terms_url: string;
         recently_viewed_retention_days: number;
         activity_log_retention_days: number;
+        visitor_retention_days: number;
     };
     analytics: {
         ga4_id: string;
@@ -63,6 +64,24 @@ function toggleCategory(category: string, checked: boolean | 'indeterminate') {
 
     offered.value = next;
 }
+
+/*
+  The store's own measurement, declared on the same screen and against the same
+  gate as the third-party tags.
+
+  It is not a tag id, so it has no field of its own — there is nothing to paste
+  in. The control is the analytics checkbox above: visitor counting is written
+  by TrackVisitor through the same App\Support\Consent the Google and Meta tags
+  answer to, so unticking Analytics stops it for everybody, exactly as it stops
+  them. Saying so here is the point — a store that could not see this listed
+  would have no way of knowing the shop counted anything at all.
+*/
+const firstPartyMeasurement = {
+    label: 'On-site visitor counting',
+    category: 'analytics',
+    description:
+        'One row per browsing session — the page a shopper is on is never recorded, only that they came. Stores an IP address, the browser, the platform and whether the device is a phone, kept for the window set above.',
+};
 
 const tags = computed(() =>
     [
@@ -100,6 +119,11 @@ const tags = computed(() =>
 );
 
 const ungatedTags = computed(() => tags.value.filter((tag) => !tag.gated));
+
+/** Whether the store's own visitor counting can run at all. */
+const measurementGated = computed(() =>
+    offered.value.has(firstPartyMeasurement.category),
+);
 </script>
 
 <template>
@@ -197,9 +221,9 @@ const ungatedTags = computed(() => tags.value.filter((tag) => !tag.gated));
 
             <SettingsSection
                 title="Retention"
-                description="Two trails record what a person did rather than what they bought, and both are pruned nightly. Orders are not affected — they are the store's accounting record and keep their customer details."
+                description="Three trails record what a person did rather than what they bought, and all three are pruned nightly. Orders are not affected — they are the store's accounting record and keep their customer details."
             >
-                <div class="grid gap-6 sm:grid-cols-2">
+                <div class="grid gap-6 sm:grid-cols-3">
                     <SettingsField
                         name="recently_viewed_retention_days"
                         label="Browsing history"
@@ -237,13 +261,72 @@ const ungatedTags = computed(() => tags.value.filter((tag) => !tag.gated));
                             required
                         />
                     </SettingsField>
+
+                    <SettingsField
+                        name="visitor_retention_days"
+                        label="Visit log"
+                        hint="Days a visitor session is kept. Zero keeps it indefinitely."
+                        :error="errors.visitor_retention_days"
+                        v-slot="{ id }"
+                    >
+                        <Input
+                            :id="id"
+                            type="number"
+                            name="visitor_retention_days"
+                            :default-value="legal.visitor_retention_days"
+                            min="0"
+                            max="3650"
+                            required
+                        />
+                    </SettingsField>
                 </div>
             </SettingsSection>
 
             <SettingsSection
-                title="Measurement tags"
-                description="Each tag is loaded only for a visitor who has granted the category it belongs to. Filling one in does not on its own start tracking anybody."
+                title="Measurement"
+                description="Everything the store measures, and the consent each piece of it runs under. Nothing here loads or records for a visitor who has not granted the category it belongs to."
             >
+                <!--
+                  The store's own counting, declared alongside the vendors'.
+                  It has no id to paste, so it is a statement rather than a
+                  field — but it answers to the same checkbox above, and a store
+                  that could not see it listed here would have no way of knowing
+                  the shop counted anything at all.
+                -->
+                <div class="bg-muted/40 rounded-lg border p-4">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <p class="text-sm font-medium">
+                            {{ firstPartyMeasurement.label }}
+                        </p>
+                        <span
+                            class="rounded-full px-2 py-0.5 text-xs font-medium"
+                            :class="
+                                measurementGated
+                                    ? 'bg-primary/10 text-primary'
+                                    : 'bg-muted text-muted-foreground'
+                            "
+                        >
+                            {{ measurementGated ? 'On' : 'Off' }}
+                        </span>
+                    </div>
+
+                    <p class="text-muted-foreground mt-1 text-xs">
+                        {{ firstPartyMeasurement.description }}
+                    </p>
+
+                    <p class="text-muted-foreground mt-2 text-xs">
+                        <template v-if="measurementGated">
+                            Counted for shoppers who grant Analytics; nobody
+                            else is given a tracking cookie. Feeds the visitor
+                            panels on the dashboard.
+                        </template>
+                        <template v-else>
+                            The banner does not offer Analytics, so no visit is
+                            recorded and no tracking cookie is set for anyone.
+                        </template>
+                    </p>
+                </div>
+
                 <div
                     v-if="ungatedTags.length"
                     class="border-destructive/40 bg-destructive/5 text-destructive flex items-start gap-3 rounded-lg border p-4 text-sm"

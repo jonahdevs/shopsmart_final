@@ -12,6 +12,7 @@ import {
     UserRound,
 } from '@lucide/vue';
 import { computed } from 'vue';
+import NoOrders from '@/components/illustrations/NoOrders.vue';
 import AccountPanel from '@/components/storefront/AccountPanel.vue';
 import AccountStatTile from '@/components/storefront/AccountStatTile.vue';
 import OrderCard from '@/components/storefront/OrderCard.vue';
@@ -161,8 +162,13 @@ const settingsLinks = [
                 class="border-rule mt-6 rounded-lg border"
             >
                 <EmptyHeader>
-                    <EmptyMedia variant="icon">
-                        <Package aria-hidden="true" />
+                    <!--
+                      The same drawing as `account/Orders.vue`. A customer who
+                      has never ordered meets this twice, and one picture in
+                      both places says it is one absence rather than two.
+                    -->
+                    <EmptyMedia variant="default" class="w-[180px]">
+                        <NoOrders />
                     </EmptyMedia>
                     <EmptyTitle
                         class="font-display text-lg font-extrabold tracking-[-0.02em]"

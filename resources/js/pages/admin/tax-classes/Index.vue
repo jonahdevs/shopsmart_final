@@ -4,14 +4,15 @@ import { Plus, Receipt } from '@lucide/vue';
 import AdminCard from '@/components/admin/AdminCard.vue';
 import AdminEmptyState from '@/components/admin/AdminEmptyState.vue';
 import AdminFilterBar from '@/components/admin/AdminFilterBar.vue';
+import AdminFilterSelect from '@/components/admin/AdminFilterSelect.vue';
 import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
 import AdminPagination from '@/components/admin/AdminPagination.vue';
 import AdminSortableHead from '@/components/admin/AdminSortableHead.vue';
 import AdminStatusBadge from '@/components/admin/AdminStatusBadge.vue';
+import AdminTable from '@/components/admin/AdminTable.vue';
 import { Button } from '@/components/ui/button';
-import { NativeSelect } from '@/components/ui/native-select';
+import { SelectItem } from '@/components/ui/select';
 import {
-    Table,
     TableBody,
     TableCell,
     TableHead,
@@ -71,7 +72,6 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
         <Head title="Tax classes" />
 
         <AdminPageHeader
-            eyebrow="Catalog"
             title="Tax classes"
             :description="`${pagination.total} VAT band${pagination.total === 1 ? '' : 's'}.`"
         >
@@ -97,15 +97,15 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
                 :show-clear="isFiltered"
                 @clear="clear"
             >
-                <NativeSelect
+                <AdminFilterSelect
                     v-model="form.active"
                     class="w-44"
-                    aria-label="Availability"
+                    label="Availability"
+                    all-label="All tax classes"
                 >
-                    <option value="">All tax classes</option>
-                    <option value="1">Active</option>
-                    <option value="0">Inactive</option>
-                </NativeSelect>
+                    <SelectItem value="1">Active</SelectItem>
+                    <SelectItem value="0">Inactive</SelectItem>
+                </AdminFilterSelect>
             </AdminFilterBar>
 
             <AdminEmptyState
@@ -138,7 +138,7 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
               never scrolls sideways on a narrow screen.
             -->
             <div v-else class="overflow-x-auto">
-                <Table>
+                <AdminTable>
                     <TableHeader>
                         <TableRow>
                             <AdminSortableHead
@@ -231,7 +231,7 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
                             </TableCell>
                         </TableRow>
                     </TableBody>
-                </Table>
+                </AdminTable>
             </div>
 
             <AdminPagination

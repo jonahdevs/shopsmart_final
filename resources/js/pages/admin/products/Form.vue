@@ -7,18 +7,15 @@ import { Button } from '@/components/ui/button';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as adminProducts } from '@/routes/admin/products';
 import ProductDangerSection from './ProductDangerSection.vue';
+import ProductDataSection from './ProductDataSection.vue';
 import ProductDescriptionSection from './ProductDescriptionSection.vue';
 import ProductFilingSection from './ProductFilingSection.vue';
 import ProductIdentitySection from './ProductIdentitySection.vue';
-import ProductInventorySection from './ProductInventorySection.vue';
 import type { LinkRow } from './ProductLinksSection.vue';
-import ProductLinksSection from './ProductLinksSection.vue';
 import ProductMediaSection from './ProductMediaSection.vue';
-import ProductPricingSection from './ProductPricingSection.vue';
 import ProductPublishSection from './ProductPublishSection.vue';
 import ProductSeoSection from './ProductSeoSection.vue';
 import type { AttributeGroup, VariantRow } from './ProductVariantsSection.vue';
-import ProductVariantsSection from './ProductVariantsSection.vue';
 
 type Option = { value: string; label: string };
 type IdOption = { value: number; label: string };
@@ -72,7 +69,7 @@ const submitTarget = computed(() =>
  * reads out of the DOM at submit time. Variants and links cannot be, because
  * how many rows exist is itself something the staff member edits — so these
  * arrays decide what renders, and the inputs inside each row still carry the
- * values. They live here rather than in the two sections that render them
+ * values. They live here rather than in the two panels that render them
  * because only this component sees the server's answer to a save.
  */
 const variants = ref<VariantRow[]>(props.product.variants.map(toVariantRow));
@@ -137,7 +134,6 @@ function reseedFromProps(): void {
             @success="reseedFromProps"
         >
             <AdminPageHeader
-                eyebrow="Catalog"
                 :title="isNew ? 'New product' : product.name"
                 :description="
                     isNew
@@ -155,42 +151,36 @@ function reseedFromProps(): void {
                 </template>
             </AdminPageHeader>
 
+            <!--
+              Four cards down the main column and two beside them, following the
+              reference build: what the product IS, how it TRADES, then the two
+              long bodies of prose that only matter once both are settled.
+              Publication and filing sit in the aside because neither is about
+              the product — one is about the shop, the other about the shelf —
+              and both are answered in a glance rather than filled in.
+            -->
             <div class="grid gap-6 lg:grid-cols-3">
                 <div class="space-y-6 lg:col-span-2">
                     <ProductIdentitySection
                         :product="product"
+                        :errors="errors"
+                    />
+
+                    <ProductDataSection
+                        v-model:variants="variants"
+                        v-model:links="links"
+                        :product="product"
                         :type-options="typeOptions"
-                        :errors="errors"
-                    />
-
-                    <ProductPricingSection
-                        :product="product"
                         :tax-class-options="taxClassOptions"
-                        :errors="errors"
-                    />
-
-                    <ProductInventorySection
-                        :product="product"
                         :stock-status-options="stockStatusOptions"
+                        :link-type-options="linkTypeOptions"
+                        :linkable-products="linkableProducts"
+                        :attribute-groups="attributeGroups"
                         :errors="errors"
                     />
 
                     <ProductDescriptionSection
                         :product="product"
-                        :errors="errors"
-                    />
-
-                    <ProductVariantsSection
-                        v-model="variants"
-                        :stock-status-options="stockStatusOptions"
-                        :attribute-groups="attributeGroups"
-                        :errors="errors"
-                    />
-
-                    <ProductLinksSection
-                        v-model="links"
-                        :link-type-options="linkTypeOptions"
-                        :linkable-products="linkableProducts"
                         :errors="errors"
                     />
 
@@ -216,8 +206,12 @@ function reseedFromProps(): void {
         </Form>
 
         <!--
-          Both of these post on their own route, so they cannot live inside the
-          form above — forms do not nest. They only exist once the product does.
+          The reference build keeps images in its sidebar, next to the brand and
+          the category. Ours cannot: both of these panels post on their own
+          route, forms do not nest, and the aside above is inside the one that
+          saves the product. So they continue the same two-and-one grid below
+          it, and they only exist once the product does — an image has nothing
+          to attach to until then.
         -->
         <div v-if="!isNew" class="grid gap-6 lg:grid-cols-3">
             <div class="lg:col-span-2">

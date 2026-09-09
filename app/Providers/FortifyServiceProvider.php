@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Settings\SecuritySettings;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -102,10 +103,18 @@ class FortifyServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($request->session()->get('login.id'));
         });
 
+        /*
+          The only limiter the store gets to set, because it is the only one a
+          real person trips: a password manager filling the wrong entry twice.
+          Read inside the closure so a saved change takes effect on the next
+          attempt rather than the next deploy, and so the settings row is only
+          touched when somebody is actually signing in.
+        */
         RateLimiter::for('login', function (Request $request) {
             $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
 
-            return Limit::perMinute(5)->by($throttleKey);
+            return Limit::perMinute(app(SecuritySettings::class)->login_attempts_per_minute)
+                ->by($throttleKey);
         });
 
         RateLimiter::for('passkeys', function (Request $request) {

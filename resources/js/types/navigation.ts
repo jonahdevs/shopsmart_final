@@ -29,6 +29,13 @@ export type AdminNavItem = {
     /** Match the URL exactly rather than by prefix. */
     exact?: boolean;
     /**
+     * Extra destinations that should light this row up.
+     *
+     * A row whose `href` is only the first of several screens it stands for —
+     * a settings group, say — is otherwise dark on every screen but that one.
+     */
+    matches?: NonNullable<InertiaLinkProps['href']>[];
+    /**
      * Sub-destinations, rendered as a disclosure under the parent.
      *
      * A parent with children is a heading, not a link: clicking it opens the

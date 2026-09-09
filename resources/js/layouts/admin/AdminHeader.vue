@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import { Computer, ExternalLink, Moon, Sun } from '@lucide/vue';
+import { Monitor, Moon, Sun } from '@lucide/vue';
 import { computed } from 'vue';
-import Breadcrumbs from '@/components/Breadcrumbs.vue';
+import AdminNotificationBell from '@/components/admin/AdminNotificationBell.vue';
+import AdminUserMenu from '@/components/admin/AdminUserMenu.vue';
 import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import {
@@ -11,12 +11,7 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useAppearance } from '@/composables/useAppearance';
-import { home } from '@/routes';
-import type { Appearance, BreadcrumbItem } from '@/types';
-
-const { breadcrumbs = [] } = defineProps<{
-    breadcrumbs?: BreadcrumbItem[];
-}>();
+import type { Appearance } from '@/types';
 
 const { appearance, updateAppearance } = useAppearance();
 
@@ -31,22 +26,30 @@ const cycle: Record<Appearance, Appearance> = {
     system: 'light',
 };
 
+/*
+  Sun, Moon and Monitor, the same three the wryterscript build uses and the same
+  three AppearanceTabs already used on the appearance screen. The header used to
+  reach for `Computer` for the system state, which meant one control in the app
+  drew "follow the OS" differently from the other.
+*/
 const appearanceIcon = computed(() => {
     if (appearance.value === 'light') {
         return Sun;
     }
 
-    return appearance.value === 'dark' ? Moon : Computer;
+    return appearance.value === 'dark' ? Moon : Monitor;
 });
 
-const appearanceLabel = computed(
-    () =>
-        ({
-            light: 'Light',
-            dark: 'Dark',
-            system: 'System',
-        })[appearance.value],
-);
+const LABELS: Record<Appearance, string> = {
+    light: 'Light',
+    dark: 'Dark',
+    system: 'System',
+};
+
+const appearanceLabel = computed(() => LABELS[appearance.value]);
+
+/** Named in the accessible label, so the control says what it will do. */
+const nextAppearanceLabel = computed(() => LABELS[cycle[appearance.value]]);
 </script>
 
 <template>
@@ -55,27 +58,8 @@ const appearanceLabel = computed(
     >
         <SidebarTrigger class="-ml-1" />
 
-        <!--
-          The trail is the only wayfinding on a detail page, but it is also the
-          first thing worth losing on a narrow screen — the page's own H1 says
-          where you are, and the rail says how to leave.
-        -->
-        <div class="hidden min-w-0 md:block">
-            <Breadcrumbs v-if="breadcrumbs.length" :breadcrumbs="breadcrumbs" />
-        </div>
-
         <div class="ml-auto flex items-center gap-1">
-            <Tooltip>
-                <TooltipTrigger as-child>
-                    <Button variant="ghost" size="icon" as-child>
-                        <a :href="home().url" target="_blank" rel="noopener">
-                            <ExternalLink class="size-4" aria-hidden="true" />
-                            <span class="sr-only">View storefront</span>
-                        </a>
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>View storefront</TooltipContent>
-            </Tooltip>
+            <AdminNotificationBell />
 
             <Tooltip>
                 <TooltipTrigger as-child>
@@ -90,12 +74,15 @@ const appearanceLabel = computed(
                             aria-hidden="true"
                         />
                         <span class="sr-only">
-                            Change theme, currently {{ appearanceLabel }}
+                            Theme: {{ appearanceLabel }}. Switch to
+                            {{ nextAppearanceLabel }}.
                         </span>
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent>Theme: {{ appearanceLabel }}</TooltipContent>
             </Tooltip>
+
+            <AdminUserMenu class="ml-1" />
         </div>
     </header>
 </template>

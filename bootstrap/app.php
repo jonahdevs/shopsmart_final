@@ -5,6 +5,7 @@ use App\Http\Middleware\EnsureUserIsStaff;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\ThrottleFortifyMailEndpoints;
+use App\Http\Middleware\TrackVisitor;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -41,6 +43,10 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
+            // Last, and deliberately inside StartSession: it counts a session
+            // once by writing a flag into it, and it reads the consent cookie
+            // that decides whether it may count anything at all.
+            TrackVisitor::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -77,8 +83,19 @@ return Application::configure(basePath: dirname(__DIR__))
                 ]);
             }
 
+            /*
+              A 503 raised by EnsureStoreIsOpen carries the message staff wrote
+              on the Maintenance screen, which is more use to a shopper than the
+              generic sentence. No other handled status is given one: their
+              messages are internal and would leak how the failure happened.
+            */
+            $message = $response->getStatusCode() === 503 && $exception instanceof HttpExceptionInterface
+                ? $exception->getMessage()
+                : '';
+
             return Inertia::render('errors/Error', [
                 'status' => $response->getStatusCode(),
+                'detail' => $message === '' ? null : $message,
             ])
                 ->toResponse($request)
                 ->setStatusCode($response->getStatusCode());

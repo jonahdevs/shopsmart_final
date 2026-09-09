@@ -10,9 +10,11 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
+use App\Settings\InventorySettings;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia;
 
@@ -253,6 +255,113 @@ test('the table hides soft-deleted products unless asked for them', function () 
             ->has('products', 1)
             ->where('products.0.id', $binned->id)
             ->where('products.0.isDeleted', true));
+});
+
+// ==================================================
+// THE TILES
+// ==================================================
+
+test('the tiles count the live catalog, its drafts and both stock warnings', function () {
+    $threshold = app(InventorySettings::class)->low_stock_threshold;
+
+    Product::factory()->count(2)->published()->create(['stock_quantity' => $threshold + 100]);
+    Product::factory()->draft()->create(['stock_quantity' => $threshold + 100]);
+    Product::factory()->published()->create(['stock_quantity' => $threshold]);
+    // Zero stock, so this one is under the threshold as well — the two stock
+    // tiles are separate questions, not two slices of one total.
+    Product::factory()->published()->outOfStock()->create();
+    // Not stock-tracked at all, so it can never be low however the threshold
+    // moves.
+    Product::factory()->published()->create(['stock_quantity' => null]);
+
+    $binned = Product::factory()->published()->create(['stock_quantity' => 0]);
+    $binned->delete();
+
+    $this->actingAs($this->manager)
+        ->get(route('admin.products.index'))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            // The bin is outside every figure, exactly as it is outside the
+            // table the tiles sit above.
+            ->where('stats.publishedCount', 5)
+            ->where('stats.draftCount', 1)
+            ->where('stats.lowStockCount', 2)
+            ->where('stats.outOfStockCount', 1)
+            // Sent so the tile can name the number it counted against.
+            ->where('stats.lowStockThreshold', $threshold));
+});
+
+test('the low stock filter lists exactly the products its tile counted', function () {
+    $threshold = app(InventorySettings::class)->low_stock_threshold;
+
+    $low = Product::factory()->create(['stock_quantity' => $threshold]);
+    Product::factory()->create(['stock_quantity' => $threshold + 1]);
+    Product::factory()->create(['stock_quantity' => null]);
+
+    $this->actingAs($this->manager)
+        ->get(route('admin.products.index', ['stock_status' => 'low_stock']))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            // A tile that opens a list disagreeing with its own count is a bug
+            // staff would have to discover for themselves, so both are asserted
+            // off the one response.
+            ->has('products', 1)
+            ->where('products.0.id', $low->id)
+            ->where('stats.lowStockCount', 1));
+});
+
+test('the stock filter offers low stock, which the editor deliberately does not', function () {
+    $this->actingAs($this->manager)
+        ->get(route('admin.products.index'))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->has('stockStatusOptions', 4)
+            ->where('stockStatusOptions.3.value', 'low_stock'));
+
+    $this->actingAs($this->manager)
+        ->get(route('admin.products.create'))
+        ->assertOk()
+        // "Low stock" is a threshold comparison, not a state a product can be
+        // saved in, so the editor's picker keeps offering only the three the
+        // column accepts.
+        ->assertInertia(fn (AssertableInertia $page) => $page->has('stockStatusOptions', 3));
+});
+
+test('the table and its tiles cost a fixed number of queries whatever the page holds', function () {
+    Product::factory()->count(30)->create();
+
+    $queries = 0;
+    DB::listen(function () use (&$queries): void {
+        $queries++;
+    });
+
+    $this->actingAs($this->manager)
+        ->get(route('admin.products.index'))
+        ->assertOk();
+
+    // The shared layout props, the permission cache the `can:` middleware
+    // warms, the paginator count and the page of products itself, the brand
+    // and category pickers, the settings groups behind money formatting and
+    // the document head — and TWO for the whole tile row: one aggregate over
+    // `products`, plus the one-off read of the inventory settings group the
+    // low-stock threshold lives in, which the Stock filter then reuses.
+    //
+    // Those two are why this test exists. Four tiles could just as easily have
+    // been four counts, and the cap is what stops a fifth tile arriving with a
+    // fifth query. It is a coarse tripwire, not an N+1 guard: nothing here may
+    // grow with the thirty products above, which is what makes a fixed number
+    // the right assertion.
+    //
+    // Raised by one for the row thumbnails: `media` is eager loaded so the
+    // image column costs a single query for the page rather than a lookup per
+    // product. That is the whole point of the eager load, and this cap is what
+    // proves it stayed one.
+    //
+    // Raised by one for the header's notification bell: HandleInertiaRequests
+    // counts the viewer's unread, permission-filtered notifications on every
+    // admin response so the badge is right the moment the page paints. The
+    // fifteen rows behind the bell are an optional prop and cost nothing here.
+    expect($queries)->toBeLessThanOrEqual(24);
 });
 
 // ==================================================

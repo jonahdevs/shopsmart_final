@@ -123,6 +123,25 @@
     }
 }
 
+/*
+  Tailwind CSS v4's preflight resets `button` to `cursor: default`, which leaves
+  every control in the app showing an arrow. Restoring the pointer once here
+  covers the whole codebase: every clickable thing is either a real `<button>`
+  (including the `ui/` primitives and everything reka-ui renders) or an anchor,
+  which the browser already handles.
+
+  Because this is a base rule, any explicit `cursor-*` utility still wins — the
+  shadcn menu, select and calendar items keep the `cursor-default` that makes
+  them read as native menus, and `disabled:cursor-not-allowed` keeps its arrow.
+*/
+@layer base {
+    button:not(:disabled, [aria-disabled='true'], [data-disabled]),
+    [role='button']:not([aria-disabled='true'], [data-disabled]),
+    summary {
+        cursor: pointer;
+    }
+}
+
 @layer utilities {
     body,
     html {
@@ -130,6 +149,52 @@
             'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
             'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
             'Noto Color Emoji';
+    }
+}
+
+/*
+  One scrollbar for the whole app, taken from the wryterscript build: a 10px
+  gutter carrying a 4px thumb, the extra width spent on a transparent border so
+  the thumb floats clear of the content rather than sitting hard against it.
+  `background-clip: padding-box` is what keeps that border see-through on any
+  surface — wryterscript paints it the page background, which is wrong the
+  moment a panel scrolls inside a card.
+
+  Declared globally rather than as an opt-in utility, so a panel that starts
+  scrolling later inherits the treatment instead of needing to remember a class.
+
+  The `@supports` guard matters more than it looks. Chromium 121+ understands
+  `scrollbar-width`, and setting it makes Chromium ignore every
+  `::-webkit-scrollbar` rule below — the padded thumb would never be drawn.
+  Firefox is the only engine that needs the standard properties and the only one
+  that does not support the pseudo-element, so the query hands each engine the
+  mechanism it actually honours.
+
+  `CategoryStripe.vue` still opts out entirely with its own `.scrollbar-none`,
+  which outranks these on specificity.
+*/
+@layer base {
+    @supports not selector(::-webkit-scrollbar) {
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: var(--scrollbar-thumb) transparent;
+        }
+    }
+
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background-color: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        border: 3px solid transparent;
+        border-radius: var(--radius-lg);
+        background-color: var(--scrollbar-thumb);
+        background-clip: padding-box;
     }
 }
 
@@ -157,6 +222,12 @@
     --rule: #e6eaf0;
 
     /*
+      The scrollbar thumb. A plain token rather than a `dark:` utility, because
+      the variant cannot be expressed on a `::-webkit-scrollbar-thumb`.
+    */
+    --scrollbar-thumb: #d4d4d4;
+
+    /*
       Chrome, lightest at the top: the utility strip is darkest, the header sits
       just above it in value, and the footer closes the page between the two.
     */
@@ -180,32 +251,21 @@
 }
 
 /*
-  The one measure the storefront is written to.
+  The storefront's measure is Tailwind's own `container` plus
+  `mx-auto px-4 sm:px-6 lg:px-8`, restated at each call site.
 
-  Overrides Tailwind's built-in `container`, which centres nothing and pads
-  nothing by default. Content runs fluid with growing gutters up to 80rem and is
-  then centred, so a wide monitor gets margins instead of a line of product
-  cards stretched across a metre of glass.
+  There used to be an `@utility container` here that overrode the built-in one
+  to centre, pad, and run fluid to a single 80rem cap. It is gone: v4 dropped
+  the centre and padding options deliberately, and a project-local class that
+  shadows a framework one is a trap for anyone who reads the Tailwind docs and
+  expects the documented behaviour. The width now steps at each breakpoint and
+  tops out at 96rem, which is the framework default rather than a house rule.
 
   Full-bleed elements — the hero, and the coloured bands behind the utility bar,
-  newsletter and footer — stay outside this and put a `container` on their own
-  inner content instead. That is what gives a band edge-to-edge colour with its
-  text still aligned to everything above it.
+  newsletter and footer — stay outside the measure and put the container classes
+  on their own inner content instead. That is what gives a band edge-to-edge
+  colour with its text still aligned to everything above it.
 */
-@utility container {
-    margin-inline: auto;
-    width: 100%;
-    max-width: 80rem;
-    padding-inline: 1rem;
-
-    @media (width >= 40rem) {
-        padding-inline: 1.5rem;
-    }
-
-    @media (width >= 64rem) {
-        padding-inline: 2rem;
-    }
-}
 
 /*
   Applied by StorefrontLayout. Remaps the shadcn semantic tokens onto the brand
@@ -214,6 +274,9 @@
   always light.
 */
 .storefront {
+    /* The shop is always light, including inside a dark-preferring OS. */
+    --scrollbar-thumb: #d4d4d4;
+
     color-scheme: light;
 
     --background: var(--field);
@@ -367,6 +430,7 @@ html:has(.storefront) {
     --destructive-foreground: #1a0b0a;
 
     --border: #22303f;
+    --scrollbar-thumb: #404040;
     --input: #22303f;
     --ring: #4d8bff;
 

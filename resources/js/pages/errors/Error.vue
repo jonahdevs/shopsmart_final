@@ -5,8 +5,14 @@ import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import { catalog, home } from '@/routes';
 
-const { status } = defineProps<{
+const { status, detail = null } = defineProps<{
     status: number;
+    /**
+     * Sent only for a 503 raised by maintenance mode, where staff have written
+     * a sentence that says more than the generic one — usually when the shop
+     * expects to reopen. It replaces the body, never the title.
+     */
+    detail?: string | null;
 }>();
 
 /**
@@ -44,7 +50,11 @@ const fallback = {
     body: 'That request could not be completed. Try again, or head back to the shop.',
 };
 
-const message = computed(() => messages[status] ?? fallback);
+const copy = computed(() => {
+    const base = messages[status] ?? fallback;
+
+    return detail === null ? base : { ...base, body: detail };
+});
 
 /**
  * `history.length > 1` is the closest a page can get to asking whether there is
@@ -61,9 +71,9 @@ function goBack(): void {
 
 <template>
     <div
-        class="container flex min-h-[60vh] flex-col items-center justify-center py-16 text-center"
+        class="container mx-auto flex min-h-[60vh] flex-col items-center justify-center px-4 py-16 text-center sm:px-6 lg:px-8"
     >
-        <Head :title="message.title" />
+        <Head :title="copy.title" />
 
         <p
             class="text-electric font-display text-6xl font-extrabold tracking-[-0.04em] sm:text-7xl"
@@ -75,11 +85,11 @@ function goBack(): void {
         <h1
             class="font-display text-ink mt-4 text-2xl font-extrabold tracking-[-0.03em] sm:text-3xl"
         >
-            {{ message.title }}
+            {{ copy.title }}
         </h1>
 
         <p class="text-muted-foreground mt-3 max-w-prose text-sm sm:text-base">
-            {{ message.body }}
+            {{ copy.body }}
         </p>
 
         <div class="mt-8 flex flex-wrap items-center justify-center gap-3">

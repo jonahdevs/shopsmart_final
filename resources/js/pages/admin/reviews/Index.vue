@@ -6,6 +6,7 @@ import ReviewController from '@/actions/App/Http/Controllers/Admin/ReviewControl
 import AdminCard from '@/components/admin/AdminCard.vue';
 import AdminEmptyState from '@/components/admin/AdminEmptyState.vue';
 import AdminFilterBar from '@/components/admin/AdminFilterBar.vue';
+import AdminFilterSelect from '@/components/admin/AdminFilterSelect.vue';
 import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
 import AdminPagination from '@/components/admin/AdminPagination.vue';
 import AdminStatusBadge from '@/components/admin/AdminStatusBadge.vue';
@@ -19,7 +20,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { NativeSelect } from '@/components/ui/native-select';
+import { SelectItem } from '@/components/ui/select';
 import { usePermissions } from '@/composables/usePermissions';
 import { useIndexTable } from '@/composables/useIndexTable';
 import { formatIsoDate } from '@/lib/utils';
@@ -111,7 +112,6 @@ function sortArrow(column: string): string {
         <Head title="Reviews" />
 
         <AdminPageHeader
-            eyebrow="Marketing"
             title="Reviews"
             :description="`${pendingCount} review${pendingCount === 1 ? '' : 's'} waiting for a decision.`"
         />
@@ -148,35 +148,35 @@ function sortArrow(column: string): string {
                 :show-clear="isFiltered"
                 @clear="clear"
             >
-                <NativeSelect
+                <AdminFilterSelect
                     v-model="form.status"
                     class="w-40"
-                    aria-label="Status"
+                    label="Status"
+                    all-label="All statuses"
                 >
-                    <option value="">All statuses</option>
-                    <option
+                    <SelectItem
                         v-for="option in statusOptions"
                         :key="option.value"
                         :value="option.value"
                     >
                         {{ option.label }}
-                    </option>
-                </NativeSelect>
+                    </SelectItem>
+                </AdminFilterSelect>
 
-                <NativeSelect
+                <AdminFilterSelect
                     v-model="form.rating"
                     class="w-36"
-                    aria-label="Rating"
+                    label="Rating"
+                    all-label="Any rating"
                 >
-                    <option value="">Any rating</option>
-                    <option
+                    <SelectItem
                         v-for="rating in [5, 4, 3, 2, 1]"
                         :key="rating"
                         :value="String(rating)"
                     >
                         {{ rating }} star{{ rating === 1 ? '' : 's' }}
-                    </option>
-                </NativeSelect>
+                    </SelectItem>
+                </AdminFilterSelect>
             </AdminFilterBar>
 
             <AdminEmptyState

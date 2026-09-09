@@ -44,7 +44,6 @@ defineOptions({
             v-slot="{ errors, processing }"
         >
             <AdminPageHeader
-                eyebrow="System"
                 title="Invite a colleague"
                 description="They set their own password from the email we send. Nobody here ever types it."
             >

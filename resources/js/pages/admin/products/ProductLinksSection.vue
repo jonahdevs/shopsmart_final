@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { Link2, Plus, Trash2 } from '@lucide/vue';
-import AdminCard from '@/components/admin/AdminCard.vue';
-import AdminCardHeader from '@/components/admin/AdminCardHeader.vue';
 import AdminEmptyState from '@/components/admin/AdminEmptyState.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { NativeSelect } from '@/components/ui/native-select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 type Option = { value: string; label: string };
 type IdOption = { value: number; label: string };
@@ -42,26 +46,37 @@ function addLink(): void {
 </script>
 
 <template>
-    <AdminCard>
-        <AdminCardHeader title="Related products" :icon="Link2">
-            <template #actions>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    @click="addLink"
-                >
-                    <Plus class="size-4" aria-hidden="true" />
-                    Add link
-                </Button>
-            </template>
-        </AdminCardHeader>
+    <div>
+        <!--
+          The panel's own toolbar, the way the reference build's linked-products
+          tab carries one. The card header above belongs to all six facets, so
+          an action that only makes sense while this one is showing cannot live
+          there.
+        -->
+        <div
+            class="flex flex-wrap items-center justify-between gap-3 border-b p-5"
+        >
+            <p class="text-muted-foreground text-sm">
+                Upsells, cross-sells, accessories and spare parts. Required
+                accessories come pre-ticked on the storefront's prompt.
+            </p>
+
+            <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                class="shrink-0"
+                @click="addLink"
+            >
+                <Plus class="size-4" aria-hidden="true" />
+                Add link
+            </Button>
+        </div>
 
         <AdminEmptyState
             v-if="rows.length === 0"
             :icon="Link2"
             title="Nothing is linked to this product yet"
-            description="Upsells, cross-sells, accessories and spare parts. Required accessories come pre-ticked on the storefront's prompt."
         />
 
         <div v-else class="flex flex-col gap-4 p-5">
@@ -72,41 +87,58 @@ function addLink(): void {
             >
                 <div class="space-y-1.5">
                     <Label :for="`link-${index}-type`">Type</Label>
-                    <NativeSelect
-                        :id="`link-${index}-type`"
+                    <Select
                         :name="`links[${index}][type]`"
-                        :model-value="link.type"
+                        :default-value="link.type"
                     >
-                        <option
-                            v-for="option in linkTypeOptions"
-                            :key="option.value"
-                            :value="option.value"
-                        >
-                            {{ option.label }}
-                        </option>
-                    </NativeSelect>
+                        <SelectTrigger :id="`link-${index}-type`">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem
+                                v-for="option in linkTypeOptions"
+                                :key="option.value"
+                                :value="option.value"
+                            >
+                                {{ option.label }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
 
                 <div class="space-y-1.5 sm:col-span-2">
                     <Label :for="`link-${index}-product`">Product</Label>
-                    <NativeSelect
-                        :id="`link-${index}-product`"
+                    <!--
+                      `null`, not `''`: reka-ui reserves the empty string for a
+                      cleared selection and refuses it as an item value. A null
+                      selection makes the hidden `<select>` the primitive posts fall
+                      back to its empty option, so the server still reads a blank
+                      field.
+                    -->
+                    <Select
                         :name="`links[${index}][linked_product_id]`"
-                        :model-value="
+                        :default-value="
                             link.linkedProductId === null
-                                ? ''
+                                ? undefined
                                 : String(link.linkedProductId)
                         "
                     >
-                        <option value="">Choose a product</option>
-                        <option
-                            v-for="option in linkableProducts"
-                            :key="option.value"
-                            :value="String(option.value)"
-                        >
-                            {{ option.label }}
-                        </option>
-                    </NativeSelect>
+                        <SelectTrigger :id="`link-${index}-product`">
+                            <SelectValue placeholder="Choose a product" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem :value="null">
+                                Choose a product
+                            </SelectItem>
+                            <SelectItem
+                                v-for="option in linkableProducts"
+                                :key="option.value"
+                                :value="String(option.value)"
+                            >
+                                {{ option.label }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
                     <InputError
                         :message="errors[`links.${index}.linked_product_id`]"
                     />
@@ -153,5 +185,5 @@ function addLink(): void {
                 </div>
             </div>
         </div>
-    </AdminCard>
+    </div>
 </template>

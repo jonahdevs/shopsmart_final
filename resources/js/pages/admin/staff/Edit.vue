@@ -57,7 +57,6 @@ defineOptions({
             v-slot="{ errors, processing }"
         >
             <AdminPageHeader
-                eyebrow="System"
                 :title="member.name"
                 description="Changing somebody's roles changes what they can reach the moment they save."
             >

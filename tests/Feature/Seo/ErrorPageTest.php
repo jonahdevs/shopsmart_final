@@ -31,12 +31,32 @@ test('a dead link renders the branded page and still answers 404', function () {
         );
 });
 
-test('a withdrawn product is a 404 rather than a blank page', function () {
+test('a withdrawn product is a 404 rather than a blank page for a guest', function () {
     $draft = Product::factory()->draft()->create();
 
     $this->get(route('product.show', $draft->slug))
         ->assertNotFound()
         ->assertInertia(fn ($page) => $page->component('errors/Error'));
+});
+
+test('the same URL is the storefront page, not the error page, for staff previewing it', function () {
+    // Staff may open a product that is not public, so this URL now answers two
+    // different things to two different readers. The branded 404 is still the
+    // right answer to the public, and this pins which reader gets which — a
+    // preview that leaked to a shopper would pass the test above only because
+    // the shopper never asked.
+    $this->seed(PermissionSeeder::class);
+
+    $draft = Product::factory()->draft()->create();
+    $staff = User::factory()->create();
+    $staff->assignRole('Support');
+
+    $this->actingAs($staff)
+        ->get(route('product.show', $draft->slug))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('shop/Product')
+            ->has('preview'));
 });
 
 test('a customer refused the admin panel gets the branded 403', function () {

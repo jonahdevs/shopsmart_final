@@ -3,12 +3,13 @@
 namespace App\Settings;
 
 use App\Enums\ConsentCategory;
+use App\Http\Middleware\TrackVisitor;
 use Spatie\LaravelSettings\Settings;
 
 /**
  * Privacy and compliance. Policy *copy* lives in CMS pages; this group holds
  * the machinery: which consent categories the banner offers, where the policies
- * that explain them live, and how long the two personal-data trails the store
+ * that explain them live, and how long the three personal-data trails the store
  * keeps are allowed to survive.
  *
  * `consent_categories` is the gate on every third-party tag. A category that is
@@ -41,6 +42,15 @@ class LegalSettings extends Settings
      * Days an activity-log entry is kept. Zero keeps them indefinitely.
      */
     public int $activity_log_retention_days;
+
+    /**
+     * Days a visitor session row is kept. Zero keeps them indefinitely.
+     *
+     * This trail is only written for a visitor who granted analytics consent
+     * ({@see TrackVisitor}), but it holds an IP address, so it gets a window
+     * like the other two rather than accumulating forever.
+     */
+    public int $visitor_retention_days;
 
     public static function group(): string
     {

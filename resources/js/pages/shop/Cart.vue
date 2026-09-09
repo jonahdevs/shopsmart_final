@@ -31,7 +31,9 @@ defineProps<{
 <template>
     <Head title="Your cart" />
 
-    <div class="container flex flex-col gap-14 py-10">
+    <div
+        class="container mx-auto flex flex-col gap-14 px-4 py-10 sm:px-6 lg:px-8"
+    >
         <section aria-labelledby="cart-heading">
             <div
                 class="flex flex-wrap items-end justify-between gap-x-6 gap-y-4"

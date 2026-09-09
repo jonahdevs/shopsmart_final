@@ -8,14 +8,15 @@ import { show } from '@/routes/category';
  * Category entry points.
  *
  * Each tile is the storefront's card — hairline border, `shadow-card`, lifting
- * on hover — with the artwork inset inside it at a landscape crop and the name
- * left-aligned underneath. Six across at the widest, halving down to two on a
- * phone, so a tile never gets so small the photography stops being readable.
+ * on hover — with the artwork bleeding to the card edge at a landscape crop and
+ * the name left-aligned underneath. Six across at the widest, halving down to
+ * two on a phone, so a tile never gets so small the photography stops being
+ * readable.
  */
 defineProps<{ categories: App.Data.CategoryData[] }>();
 
 const TILE_CLASS =
-    'group border-rule shadow-card hover:shadow-card-hover focus-visible:outline-electric flex h-full flex-col rounded-lg border bg-white p-2 transition-shadow duration-200 focus-visible:outline-2 focus-visible:outline-offset-2';
+    'group border-rule shadow-card hover:shadow-card-hover focus-visible:outline-electric flex h-full flex-col overflow-hidden rounded-lg border bg-white transition-shadow duration-200 focus-visible:outline-2 focus-visible:outline-offset-2';
 </script>
 
 <template>
@@ -25,7 +26,7 @@ const TILE_CLASS =
     >
         <li v-for="category in categories" :key="category.id">
             <Link :href="show(category.slug)" :class="TILE_CLASS">
-                <div class="bg-tint aspect-[4/3] overflow-hidden rounded-md">
+                <div class="bg-tint aspect-[4/3] overflow-hidden">
                     <img
                         v-if="category.image"
                         :src="category.image.thumbUrl ?? category.image.url"
@@ -42,7 +43,7 @@ const TILE_CLASS =
                     />
                 </div>
                 <p
-                    class="text-ink line-clamp-2 px-1 pt-2.5 pb-1 text-sm leading-5 font-medium"
+                    class="text-ink line-clamp-2 px-3 pt-2.5 pb-3 text-sm leading-5 font-medium"
                 >
                     {{ category.name }}
                 </p>
@@ -52,7 +53,7 @@ const TILE_CLASS =
         <li>
             <Link :href="index()" :class="TILE_CLASS">
                 <div
-                    class="border-rule group-hover:border-electric group-hover:bg-tint flex aspect-[4/3] items-center justify-center rounded-md border border-dashed transition-colors"
+                    class="bg-tint group-hover:bg-tint-strong flex aspect-[4/3] items-center justify-center transition-colors"
                 >
                     <ArrowRight
                         class="text-muted-foreground group-hover:text-electric size-5 transition-colors"
@@ -60,7 +61,7 @@ const TILE_CLASS =
                     />
                 </div>
                 <p
-                    class="text-muted-foreground px-1 pt-2.5 pb-1 text-sm leading-5 font-medium"
+                    class="text-muted-foreground px-3 pt-2.5 pb-3 text-sm leading-5 font-medium"
                 >
                     All categories
                 </p>

@@ -7,9 +7,12 @@ import SettingsSection from '@/components/admin/settings/SettingsSection.vue';
 import SettingsToggle from '@/components/admin/settings/SettingsToggle.vue';
 import { Input } from '@/components/ui/input';
 import {
-    NativeSelect,
-    NativeSelectOption,
-} from '@/components/ui/native-select';
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import {
     catalog as catalogRoute,
@@ -96,22 +99,25 @@ defineProps<{
                         :error="errors.out_of_stock_behavior"
                         v-slot="{ id }"
                     >
-                        <NativeSelect
-                            :id="id"
+                        <Select
                             name="out_of_stock_behavior"
-                            :model-value="inventory.out_of_stock_behavior"
-                            class="w-full"
+                            :default-value="inventory.out_of_stock_behavior"
                         >
-                            <NativeSelectOption value="show">
-                                Keep it listed
-                            </NativeSelectOption>
-                            <NativeSelectOption value="show_unavailable">
-                                List it, marked unavailable
-                            </NativeSelectOption>
-                            <NativeSelectOption value="hide">
-                                Hide it from the catalog
-                            </NativeSelectOption>
-                        </NativeSelect>
+                            <SelectTrigger :id="id" class="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="show">
+                                    Keep it listed
+                                </SelectItem>
+                                <SelectItem value="show_unavailable">
+                                    List it, marked unavailable
+                                </SelectItem>
+                                <SelectItem value="hide">
+                                    Hide it from the catalog
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
                     </SettingsField>
                 </div>
             </SettingsSection>
@@ -150,20 +156,23 @@ defineProps<{
                     :error="errors.author_display_format"
                     v-slot="{ id }"
                 >
-                    <NativeSelect
-                        :id="id"
+                    <Select
                         name="author_display_format"
-                        :model-value="reviews.author_display_format"
-                        class="w-full sm:w-96"
+                        :default-value="reviews.author_display_format"
                     >
-                        <NativeSelectOption
-                            v-for="format in authorFormats"
-                            :key="format.value"
-                            :value="format.value"
-                        >
-                            {{ format.label }}
-                        </NativeSelectOption>
-                    </NativeSelect>
+                        <SelectTrigger :id="id" class="w-full sm:w-96">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem
+                                v-for="format in authorFormats"
+                                :key="format.value"
+                                :value="format.value"
+                            >
+                                {{ format.label }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
                 </SettingsField>
             </SettingsSection>
         </SettingsForm>

@@ -97,7 +97,7 @@ function handleSuccess() {
             v-bind="store.form()"
             :options="{ preserveScroll: true, preserveState: true }"
             @success="handleSuccess"
-            class="container flex flex-col gap-5 py-6"
+            class="container mx-auto flex flex-col gap-5 px-4 py-6 sm:px-6 lg:px-8"
         >
             <div class="flex flex-col gap-2">
                 <h2

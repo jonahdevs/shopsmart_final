@@ -6,9 +6,12 @@ import SettingsForm from '@/components/admin/settings/SettingsForm.vue';
 import SettingsSection from '@/components/admin/settings/SettingsSection.vue';
 import { Input } from '@/components/ui/input';
 import {
-    NativeSelect,
-    NativeSelectOption,
-} from '@/components/ui/native-select';
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import {
@@ -200,20 +203,23 @@ const dimensionUnits = ['mm', 'cm', 'm', 'in'];
                         :error="errors.timezone"
                         v-slot="{ id }"
                     >
-                        <NativeSelect
-                            :id="id"
+                        <Select
                             name="timezone"
-                            :model-value="localization.timezone"
-                            class="w-full"
+                            :default-value="localization.timezone"
                         >
-                            <NativeSelectOption
-                                v-for="zone in timezones"
-                                :key="zone"
-                                :value="zone"
-                            >
-                                {{ zone }}
-                            </NativeSelectOption>
-                        </NativeSelect>
+                            <SelectTrigger :id="id" class="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="zone in timezones"
+                                    :key="zone"
+                                    :value="zone"
+                                >
+                                    {{ zone }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
                     </SettingsField>
                 </div>
 
@@ -224,20 +230,23 @@ const dimensionUnits = ['mm', 'cm', 'm', 'in'];
                         :error="errors.weight_unit"
                         v-slot="{ id }"
                     >
-                        <NativeSelect
-                            :id="id"
+                        <Select
                             name="weight_unit"
-                            :model-value="localization.weight_unit"
-                            class="w-full"
+                            :default-value="localization.weight_unit"
                         >
-                            <NativeSelectOption
-                                v-for="unit in weightUnits"
-                                :key="unit"
-                                :value="unit"
-                            >
-                                {{ unit }}
-                            </NativeSelectOption>
-                        </NativeSelect>
+                            <SelectTrigger :id="id" class="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="unit in weightUnits"
+                                    :key="unit"
+                                    :value="unit"
+                                >
+                                    {{ unit }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
                     </SettingsField>
 
                     <SettingsField
@@ -246,20 +255,23 @@ const dimensionUnits = ['mm', 'cm', 'm', 'in'];
                         :error="errors.dimension_unit"
                         v-slot="{ id }"
                     >
-                        <NativeSelect
-                            :id="id"
+                        <Select
                             name="dimension_unit"
-                            :model-value="localization.dimension_unit"
-                            class="w-full"
+                            :default-value="localization.dimension_unit"
                         >
-                            <NativeSelectOption
-                                v-for="unit in dimensionUnits"
-                                :key="unit"
-                                :value="unit"
-                            >
-                                {{ unit }}
-                            </NativeSelectOption>
-                        </NativeSelect>
+                            <SelectTrigger :id="id" class="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="unit in dimensionUnits"
+                                    :key="unit"
+                                    :value="unit"
+                                >
+                                    {{ unit }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
                     </SettingsField>
                 </div>
             </SettingsSection>
@@ -289,19 +301,22 @@ const dimensionUnits = ['mm', 'cm', 'm', 'in'];
                         :error="errors.symbol_position"
                         v-slot="{ id }"
                     >
-                        <NativeSelect
-                            :id="id"
+                        <Select
                             name="symbol_position"
-                            :model-value="currency.symbol_position"
-                            class="w-full"
+                            :default-value="currency.symbol_position"
                         >
-                            <NativeSelectOption value="before">
-                                Before the amount (KES 1,200)
-                            </NativeSelectOption>
-                            <NativeSelectOption value="after">
-                                After the amount (1,200 KES)
-                            </NativeSelectOption>
-                        </NativeSelect>
+                            <SelectTrigger :id="id" class="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="before">
+                                    Before the amount (KES 1,200)
+                                </SelectItem>
+                                <SelectItem value="after">
+                                    After the amount (1,200 KES)
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
                     </SettingsField>
                 </div>
 

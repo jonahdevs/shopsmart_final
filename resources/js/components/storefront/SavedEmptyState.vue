@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { Heart, Scale } from '@lucide/vue';
 import { computed } from 'vue';
+import NothingSaved from '@/components/illustrations/NothingSaved.vue';
+import NothingToCompare from '@/components/illustrations/NothingToCompare.vue';
 import {
     Empty,
     EmptyDescription,
@@ -17,20 +18,28 @@ import { index as categoriesIndex } from '@/routes/categories';
  * lists, so the copy explains what fills them rather than apologising for being
  * empty.
  *
- * Same card as `CartEmptyState`: solid hairline, `shadow-card`, blue icon tile.
+ * Same card as `CartEmptyState`: solid hairline, `shadow-card`, and a drawing
+ * in place of the blue icon tile.
+ *
+ * The two illustrations have opposite aspect ratios, so the width travels with
+ * the choice. Sizing them both to one width would make the panel jump by a
+ * hundred pixels when a shopper crosses between the two tabs; matching their
+ * heights instead keeps the card still.
  */
 const { list } = defineProps<{ list: 'wishlist' | 'compare' }>();
 
 const copy = computed(() =>
     list === 'wishlist'
         ? {
-              icon: Heart,
+              illustration: NothingSaved,
+              mediaClass: 'w-[104px]',
               title: 'Nothing saved yet',
               description:
                   'Save anything you are still thinking about and it will wait for you here, signed in or not.',
           }
         : {
-              icon: Scale,
+              illustration: NothingToCompare,
+              mediaClass: 'w-[200px]',
               title: 'Nothing to compare yet',
               description:
                   'Add products from the catalogue and their specifications line up side by side here.',
@@ -43,11 +52,8 @@ const copy = computed(() =>
         class="border-rule shadow-card rounded-lg border border-solid bg-white"
     >
         <EmptyHeader>
-            <EmptyMedia
-                variant="icon"
-                class="bg-tint text-electric size-12 rounded-lg"
-            >
-                <component :is="copy.icon" aria-hidden="true" />
+            <EmptyMedia variant="default" :class="copy.mediaClass">
+                <component :is="copy.illustration" />
             </EmptyMedia>
             <EmptyTitle
                 class="font-display text-ink text-xl font-extrabold tracking-[-0.02em]"

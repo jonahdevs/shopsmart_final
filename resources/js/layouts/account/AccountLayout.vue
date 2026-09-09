@@ -127,7 +127,9 @@ function forgetCachedPages(): void {
 </script>
 
 <template>
-    <div class="container flex flex-col gap-8 py-8">
+    <div
+        class="container mx-auto flex flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8"
+    >
         <div>
             <StoreBreadcrumbs :items="breadcrumbs" />
 

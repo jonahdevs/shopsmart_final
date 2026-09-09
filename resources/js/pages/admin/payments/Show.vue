@@ -46,11 +46,7 @@ const rows = [
     <div class="flex flex-col gap-6">
         <Head :title="`Payment ${payment.reference}`" />
 
-        <AdminPageHeader
-            eyebrow="Sales"
-            title="Payment"
-            :description="payment.reference"
-        >
+        <AdminPageHeader title="Payment" :description="payment.reference">
             <template #actions>
                 <Button variant="outline" size="sm" as-child>
                     <Link :href="adminPayments()">

@@ -3,7 +3,7 @@ import { usePortalTheme } from '@/composables/usePortalTheme';
 import { Form } from '@inertiajs/vue3';
 import { useTemplateRef } from 'vue';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
-import Heading from '@/components/Heading.vue';
+import SettingsSection from '@/components/admin/settings/SettingsSection.vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import { Button } from '@/components/ui/button';
@@ -27,12 +27,10 @@ const passwordInput = useTemplateRef('passwordInput');
 </script>
 
 <template>
-    <div class="space-y-6">
-        <Heading
-            variant="small"
-            title="Delete account"
-            description="Delete your account and all of its resources"
-        />
+    <SettingsSection
+        title="Delete account"
+        description="Delete your account and all of its resources"
+    >
         <div
             class="border-destructive/25 bg-destructive/5 space-y-4 rounded-lg border p-4"
         >
@@ -114,5 +112,5 @@ const passwordInput = useTemplateRef('passwordInput');
                 </DialogContent>
             </Dialog>
         </div>
-    </div>
+    </SettingsSection>
 </template>

@@ -14,8 +14,10 @@ use App\Models\ProductView;
 use App\Models\RecentlyViewed;
 use App\Models\Review;
 use App\Models\User;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
+use Spatie\Permission\Models\Role;
 
 /**
  * Curate a typed link from one product to another, the way the admin side does.
@@ -132,10 +134,19 @@ test('a product page renders visible specification rows with human labels', func
             ->where('product.specifications.0.values.0', 'Stainless Steel'));
 });
 
-test('a product that is not live is not reachable', function () {
+test('a product that is not live is not reachable by a guest', function () {
     $this->get(route('product.show', Product::factory()->draft()->create()))->assertNotFound();
     $this->get(route('product.show', Product::factory()->archived()->create()))->assertNotFound();
     $this->get(route('product.show', Product::factory()->scheduled(now()->addDay())->create()))->assertNotFound();
+});
+
+test('a product that is not live is not reachable by a signed in customer either', function () {
+    // Staff may now preview these, so the rule has to be pinned to the reader
+    // rather than to the product: an ordinary shopper with an account is still
+    // the public, and the public gets nothing.
+    $this->actingAs(User::factory()->create())
+        ->get(route('product.show', Product::factory()->draft()->create()))
+        ->assertNotFound();
 });
 
 test('a hidden product is not reachable but a catalog only product is', function () {
@@ -144,6 +155,128 @@ test('a hidden product is not reachable but a catalog only product is', function
     $catalogOnly = Product::factory()->published()->create(['visibility' => ProductVisibility::Catalog]);
 
     $this->get(route('product.show', $catalogOnly))->assertOk();
+});
+
+// ==================================================
+// THE STAFF PREVIEW
+// ==================================================
+
+/*
+  A catalog manager has to be able to see how a product will look on the shop
+  floor before it is public, and the only page that can answer that honestly is
+  the storefront page itself. So `product.show` renders one for a product that
+  is not live — for a signed-in staff member holding a products permission, and
+  for nobody else.
+
+  The tests below are about that "and for nobody else". The preview prop is the
+  single switch: it turns the banner on, strips the buy controls and forces
+  `noindex`, so proving who receives it proves all three at once.
+*/
+
+/** A staff member holding `products.view` and no more. */
+function productViewingStaff(): User
+{
+    test()->seed(PermissionSeeder::class);
+
+    $user = User::factory()->create();
+    $user->assignRole('Support');
+
+    return $user;
+}
+
+test('staff holding products.view may preview a product the public cannot open', function () {
+    $draft = Product::factory()->draft()->create();
+
+    $this->actingAs(productViewingStaff())
+        ->get(route('product.show', $draft))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('shop/Product')
+            // The status is named, and the reason says which field to change:
+            // a draft is published, a hidden product is unhidden, and sending
+            // somebody to the wrong one wastes the trip.
+            ->where('preview.statusLabel', 'Draft')
+            ->where('preview.reason', 'Shoppers cannot open this page — the product is draft.')
+            ->where('preview.editUrl', route('admin.products.edit', $draft)));
+});
+
+test('a published product hidden from the storefront previews with its own reason', function () {
+    $hidden = Product::factory()->published()->hidden()->create();
+
+    $this->actingAs(productViewingStaff())
+        ->get(route('product.show', $hidden))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('preview.statusLabel', 'Published')
+            ->where('preview.visibilityLabel', 'Hidden')
+            ->where('preview.reason', 'Shoppers cannot open this page — the product is hidden from the storefront.'));
+});
+
+test('a live product is never a preview, for staff or for anyone else', function () {
+    $live = Product::factory()->published()->create();
+
+    // The same page, byte for byte. Staff proofreading a live listing must be
+    // looking at what the shopper is looking at, or the proofread is worthless.
+    $this->actingAs(productViewingStaff())
+        ->get(route('product.show', $live))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page->where('preview', null));
+
+    $this->get(route('product.show', $live))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page->where('preview', null));
+});
+
+test('a staff member with no product permission gets the same 404 as the public', function () {
+    $this->seed(PermissionSeeder::class);
+
+    // A real staff member — they hold a role and can sign in to the back office
+    // — but not one trusted with the catalog. Being staff is not the permission.
+    $role = Role::firstOrCreate(['name' => 'Warehouse', 'guard_name' => 'web']);
+    $user = User::factory()->create();
+    $user->assignRole($role);
+
+    $this->actingAs($user)
+        ->get(route('product.show', Product::factory()->draft()->create()))
+        ->assertNotFound();
+});
+
+test('a product in the bin is not previewable by anyone', function () {
+    // Withdrawn is not "not public yet". Route model binding reads the default
+    // scope, so the row is gone before the preview check is even asked.
+    $binned = Product::factory()->published()->create();
+    $binned->delete();
+
+    $this->actingAs(productViewingStaff())
+        ->get(route('product.show', $binned->slug))
+        ->assertNotFound();
+});
+
+test('a preview is never indexable and publishes no structured data', function () {
+    $draft = Product::factory()->draft()->create();
+
+    $this->actingAs(productViewingStaff())
+        ->get(route('product.show', $draft))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            // Whatever SeoSettings says about the site as a whole. Nothing
+            // should reach this URL without a session and a permission, but a
+            // page that is not for sale must not describe itself as an Offer
+            // to anything that does.
+            ->where('documentHead.robots', 'noindex, nofollow')
+            ->has('documentHead.jsonLd', 0));
+});
+
+test('a preview is not counted as a view', function () {
+    $draft = Product::factory()->draft()->create();
+    $staff = productViewingStaff();
+
+    $this->actingAs($staff)->get(route('product.show', $draft))->assertOk();
+
+    // Proofreading is not shopping. Counting it would feed the manager's own
+    // clicks into "customers also viewed", which shoppers see.
+    expect(ProductView::where('product_id', $draft->id)->exists())->toBeFalse()
+        ->and(RecentlyViewed::where('product_id', $draft->id)->where('user_id', $staff->id)->exists())->toBeFalse();
 });
 
 test('viewing a product records it for analytics and for the signed in shopper', function () {
@@ -291,7 +424,12 @@ test('a product page issues a bounded number of queries however much hangs off i
     // together under StorefrontCache::SEO. The Product and BreadcrumbList
     // structured data this page also publishes costs nothing extra — both are
     // built from the model and the crumbs already loaded.
-    expect($queries)->toBeLessThanOrEqual(31);
+    //
+    // Raised by one for maintenance mode: EnsureStoreIsOpen wraps every
+    // storefront route and reads whether the shop is closed. Cached under
+    // StorefrontCache::MAINTENANCE on the same terms as every other settings
+    // group here, so this is the cold-cache read, not a per-request cost.
+    expect($queries)->toBeLessThanOrEqual(32);
 });
 
 test('a product page defers its reviews', function () {

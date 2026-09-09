@@ -32,7 +32,7 @@ const categoriesHeadingId = useId();
     <div class="space-y-14 py-12">
         <section
             v-if="featuredCategories.length"
-            class="container"
+            class="container mx-auto px-4 sm:px-6 lg:px-8"
             :aria-labelledby="categoriesHeadingId"
         >
             <SectionHeading
@@ -54,11 +54,13 @@ const categoriesHeadingId = useId();
         -->
         <Deferred data="newArrivals">
             <template #fallback>
-                <ProductRailSkeleton class="container" />
+                <ProductRailSkeleton
+                    class="container mx-auto px-4 sm:px-6 lg:px-8"
+                />
             </template>
 
             <ProductRail
-                class="container"
+                class="container mx-auto px-4 sm:px-6 lg:px-8"
                 eyebrow="Just in"
                 title="New arrivals"
                 subtitle="Fresh products, just added to ShopSmart."
@@ -69,11 +71,13 @@ const categoriesHeadingId = useId();
 
         <Deferred data="featuredProducts">
             <template #fallback>
-                <ProductRailSkeleton class="container" />
+                <ProductRailSkeleton
+                    class="container mx-auto px-4 sm:px-6 lg:px-8"
+                />
             </template>
 
             <ProductRail
-                class="container"
+                class="container mx-auto px-4 sm:px-6 lg:px-8"
                 eyebrow="Handpicked"
                 title="Featured"
                 subtitle="Quality products we think you'll love."

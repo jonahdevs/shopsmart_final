@@ -13,9 +13,12 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\User;
 use App\Notifications\OrderPlaced;
+use App\Notifications\Staff\NewOrderPlaced;
 use App\Settings\CheckoutSettings;
 use App\Settings\TaxSettings;
+use App\Support\StaffRecipients;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -111,6 +114,15 @@ class PlaceOrder
         // one a caller may have opened around this: a queue worker that picks
         // the job up before the commit would find no order to describe.
         $user->notify((new OrderPlaced($order))->afterCommit());
+
+        // And the shop is told there is work to do. A separate notification to
+        // a separate audience, not a second channel on the customer's: the two
+        // say different things, and one class serving both would put a
+        // shopper's row in the table the admin bell reads.
+        Notification::send(
+            StaffRecipients::withPermission('orders.view'),
+            new NewOrderPlaced($order),
+        );
 
         return $order;
     }

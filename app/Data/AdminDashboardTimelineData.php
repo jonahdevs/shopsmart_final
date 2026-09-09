@@ -21,6 +21,12 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
  * Buckets are always contiguous and zero-filled. A day with no orders has to
  * appear as a zero, because a line that simply skips it draws a slope between
  * two distant days and invents trading that did not happen.
+ *
+ * `averageOrder` exists so the fourth headline tile has a silhouette like the
+ * other three. A tile row where one card carries a sparkline floor and its
+ * neighbour does not renders at two different heights under a stretching grid,
+ * and the odd one out reads as broken rather than as "this metric has no
+ * shape". A quiet day averages 0, for the same reason its revenue does.
  */
 #[TypeScript]
 class AdminDashboardTimelineData extends Data
@@ -30,6 +36,7 @@ class AdminDashboardTimelineData extends Data
      * @param  list<float>  $revenue  Revenue per bucket, in major currency units.
      * @param  list<int>  $orders  Paid orders per bucket.
      * @param  list<int>  $customers  Customers who registered in each bucket.
+     * @param  list<float>  $averageOrder  Mean paid order value per bucket, in major units.
      * @param  string  $currencySymbol  Prefix for a money axis, e.g. "KES" — never assembled client-side.
      */
     public function __construct(
@@ -37,6 +44,7 @@ class AdminDashboardTimelineData extends Data
         public array $revenue,
         public array $orders,
         public array $customers,
+        public array $averageOrder,
         public string $currencySymbol,
     ) {}
 }

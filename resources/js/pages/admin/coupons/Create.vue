@@ -33,7 +33,6 @@ defineOptions({
         <Head title="New coupon" />
 
         <AdminPageHeader
-            eyebrow="Marketing"
             title="New coupon"
             description="Amounts are typed in whole KES; the store converts them."
         >

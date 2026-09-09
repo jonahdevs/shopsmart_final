@@ -27,6 +27,9 @@ class Seo
      */
     private const CURRENCY = 'KES';
 
+    /** The directive for a page no crawler should ever have been able to reach. */
+    public const NOINDEX = 'noindex, nofollow';
+
     /**
      * The settings-derived read model, resolved once per request.
      *
@@ -71,18 +74,23 @@ class Seo
      * Assemble the head for one page.
      *
      * @param  list<array<string, mixed>>  $jsonLd
+     * @param  string|null  $robots  Overrides the site-wide directive. Only ever tightens
+     *                               it in practice: a page that is reachable to one signed-in
+     *                               staff member — a product preview — must say `noindex`
+     *                               whatever the store's own setting says.
      */
     public function page(
         ?string $title = null,
         ?string $description = null,
         ?string $canonicalUrl = null,
         array $jsonLd = [],
+        ?string $robots = null,
     ): SeoData {
         return new SeoData(
             title: $this->title($title),
             description: $this->description($description),
             canonicalUrl: $canonicalUrl ?? url()->current(),
-            robots: $this->robots(),
+            robots: $robots ?? $this->robots(),
             jsonLd: $jsonLd,
         );
     }

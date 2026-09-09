@@ -50,7 +50,7 @@ const promptIsTooShort = computed(() => !searched && filters.q !== '');
 <template>
     <Head :title="heading" />
 
-    <div class="container py-8">
+    <div class="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <header>
             <p
                 class="text-electric font-display text-[0.625rem] font-bold tracking-[0.18em] uppercase"

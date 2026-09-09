@@ -105,7 +105,7 @@ const { openConsentPreferences } = useConsentPreferences();
 <template>
     <footer class="bg-footer text-white">
         <div
-            class="container grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]"
+            class="container mx-auto grid gap-10 px-4 py-14 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.4fr_1fr_1fr_1fr] lg:px-8"
         >
             <div>
                 <StoreWordmark />
@@ -225,7 +225,7 @@ const { openConsentPreferences } = useConsentPreferences();
         -->
         <div class="border-t border-white/10">
             <div
-                class="container flex flex-col gap-2 py-6 text-xs text-white/45 sm:flex-row sm:items-center sm:justify-between"
+                class="container mx-auto flex flex-col gap-2 px-4 py-6 text-xs text-white/45 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8"
             >
                 <p>&copy; {{ year }} ShopSmart. All rights reserved.</p>
                 <p class="flex items-center gap-1.5">

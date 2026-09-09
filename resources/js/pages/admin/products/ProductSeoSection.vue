@@ -1,23 +1,42 @@
 <script setup lang="ts">
 import { Search } from '@lucide/vue';
-import AdminCard from '@/components/admin/AdminCard.vue';
-import AdminCardHeader from '@/components/admin/AdminCardHeader.vue';
+import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import ProductSectionCard from './ProductSectionCard.vue';
 
 /** How the product introduces itself to a search engine. */
-defineProps<{
+const { product, errors } = defineProps<{
     product: App.Data.AdminProductFormData;
     errors: Record<string, string>;
 }>();
+
+/**
+ * Folded until something has been overridden. Every field in here has a
+ * sensible default — the name is the title, the short description is the
+ * summary — so an open, empty SEO card mostly says "you have not done this
+ * yet" about work that does not need doing.
+ */
+const hasOverrides = computed(
+    () => Boolean(product.metaTitle) || Boolean(product.metaDescription),
+);
+
+const hasErrors = computed(() =>
+    Boolean(
+        errors.meta_title || errors.meta_description || errors.canonical_url,
+    ),
+);
 </script>
 
 <template>
-    <AdminCard>
-        <AdminCardHeader title="Search listing" :icon="Search" />
-
+    <ProductSectionCard
+        title="Search listing"
+        :icon="Search"
+        :open="hasOverrides"
+        :alerted="hasErrors"
+    >
         <div class="grid gap-4 p-5 sm:grid-cols-2">
             <div class="space-y-1.5">
                 <Label for="meta_title">Meta title</Label>
@@ -52,5 +71,5 @@ defineProps<{
                 <InputError :message="errors.meta_description" />
             </div>
         </div>
-    </AdminCard>
+    </ProductSectionCard>
 </template>

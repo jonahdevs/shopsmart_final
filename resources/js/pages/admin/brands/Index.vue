@@ -1,17 +1,31 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { Plus, Tags } from '@lucide/vue';
+import {
+    Boxes,
+    ExternalLink,
+    MoreHorizontal,
+    Plus,
+    SquarePen,
+    Tags,
+} from '@lucide/vue';
 import AdminCard from '@/components/admin/AdminCard.vue';
 import AdminEmptyState from '@/components/admin/AdminEmptyState.vue';
 import AdminFilterBar from '@/components/admin/AdminFilterBar.vue';
+import AdminFilterSelect from '@/components/admin/AdminFilterSelect.vue';
 import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
 import AdminPagination from '@/components/admin/AdminPagination.vue';
 import AdminSortableHead from '@/components/admin/AdminSortableHead.vue';
 import AdminStatusBadge from '@/components/admin/AdminStatusBadge.vue';
+import AdminTable from '@/components/admin/AdminTable.vue';
 import { Button } from '@/components/ui/button';
-import { NativeSelect } from '@/components/ui/native-select';
 import {
-    Table,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { SelectItem } from '@/components/ui/select';
+import {
     TableBody,
     TableCell,
     TableHead,
@@ -25,6 +39,7 @@ import {
     edit as adminBrandEdit,
     index as adminBrands,
 } from '@/routes/admin/brands';
+import { index as adminProducts } from '@/routes/admin/products';
 
 type BrandFilters = {
     search: string | null;
@@ -64,6 +79,27 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
             active: filters.active ?? '',
         },
     });
+
+/**
+ * The host, so the column reads "rondo.co.ke" rather than wrapping a hundred
+ * characters of tracking parameters.
+ *
+ * The stored value passed a `url` rule on the way in, so the parse should not
+ * throw — but a row saved before that rule existed would take the whole table
+ * down with it, and the full URL is a perfectly good label to fall back on.
+ */
+function hostOf(url: string): string {
+    try {
+        return new URL(url).host;
+    } catch {
+        return url;
+    }
+}
+
+/** The products table, narrowed to one brand — the id is what it filters on. */
+function productsHref(brandId: number): string {
+    return adminProducts.url({ query: { brand: String(brandId) } });
+}
 </script>
 
 <template>
@@ -71,7 +107,6 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
         <Head title="Brands" />
 
         <AdminPageHeader
-            eyebrow="Catalog"
             title="Brands"
             :description="`${pagination.total} brand${pagination.total === 1 ? '' : 's'}.`"
         >
@@ -97,15 +132,15 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
                 :show-clear="isFiltered"
                 @clear="clear"
             >
-                <NativeSelect
+                <AdminFilterSelect
                     v-model="form.active"
                     class="w-40"
-                    aria-label="Availability"
+                    label="Availability"
+                    all-label="All brands"
                 >
-                    <option value="">All brands</option>
-                    <option value="1">Active</option>
-                    <option value="0">Inactive</option>
-                </NativeSelect>
+                    <SelectItem value="1">Active</SelectItem>
+                    <SelectItem value="0">Inactive</SelectItem>
+                </AdminFilterSelect>
             </AdminFilterBar>
 
             <AdminEmptyState
@@ -134,7 +169,7 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
               never scrolls sideways on a narrow screen.
             -->
             <div v-else class="overflow-x-auto">
-                <Table>
+                <AdminTable>
                     <TableHeader>
                         <TableRow>
                             <AdminSortableHead
@@ -167,10 +202,35 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
                                     {{ brand.slug }}
                                 </span>
                             </TableCell>
-                            <TableCell
-                                class="text-muted-foreground max-w-64 truncate"
-                            >
-                                {{ brand.websiteUrl ?? '—' }}
+                            <!--
+                              A link rather than printed text, which is what the
+                              reference build does and what the column is for:
+                              the one reason to look at a brand's website from
+                              here is to open it. Only the host is shown — the
+                              rest of a URL is noise in a table.
+                            -->
+                            <TableCell class="max-w-64">
+                                <a
+                                    v-if="brand.websiteUrl"
+                                    :href="brand.websiteUrl"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="text-muted-foreground hover:text-foreground inline-flex max-w-full items-center gap-1 transition-colors"
+                                >
+                                    <span class="truncate">
+                                        {{ hostOf(brand.websiteUrl) }}
+                                    </span>
+                                    <ExternalLink
+                                        class="size-3 shrink-0"
+                                        aria-hidden="true"
+                                    />
+                                    <span class="sr-only">
+                                        (opens in a new tab)
+                                    </span>
+                                </a>
+                                <span v-else class="text-muted-foreground">
+                                    —
+                                </span>
                             </TableCell>
                             <TableCell>
                                 <AdminStatusBadge
@@ -188,19 +248,77 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
                             <TableCell class="text-right tabular-nums">
                                 {{ brand.sortOrder }}
                             </TableCell>
+                            <!--
+                              A three-dots menu rather than a lone Edit button,
+                              the same shape the products table uses. The
+                              product count beside it is the number staff read
+                              before deleting a brand, and until this menu there
+                              was no way to see the products it counts.
+
+                              There is no "View on store": brands have no
+                              storefront page here, so the products table
+                              filtered to the brand is the closest true thing.
+                              Delete stays on the editor, where the sentence
+                              about its products becoming unbranded sits beside
+                              the button.
+                            -->
                             <TableCell>
-                                <Button variant="ghost" size="sm" as-child>
-                                    <Link :href="adminBrandEdit(brand.slug)">
-                                        Edit
-                                        <span class="sr-only">
-                                            {{ brand.name }}
-                                        </span>
-                                    </Link>
-                                </Button>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger as-child>
+                                        <Button
+                                            variant="outline"
+                                            size="icon-sm"
+                                            :aria-label="`Actions for ${brand.name}`"
+                                        >
+                                            <MoreHorizontal
+                                                class="size-4"
+                                                aria-hidden="true"
+                                            />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+
+                                    <DropdownMenuContent
+                                        align="end"
+                                        class="w-52"
+                                    >
+                                        <DropdownMenuItem as-child>
+                                            <Link
+                                                class="block w-full"
+                                                :href="
+                                                    adminBrandEdit(brand.slug)
+                                                "
+                                            >
+                                                <SquarePen
+                                                    class="size-4"
+                                                    aria-hidden="true"
+                                                />
+                                                Edit
+                                            </Link>
+                                        </DropdownMenuItem>
+
+                                        <DropdownMenuItem as-child>
+                                            <Link
+                                                class="block w-full"
+                                                :href="productsHref(brand.id)"
+                                            >
+                                                <Boxes
+                                                    class="size-4"
+                                                    aria-hidden="true"
+                                                />
+                                                View products
+                                                <span
+                                                    class="text-muted-foreground ml-auto text-xs tabular-nums"
+                                                >
+                                                    {{ brand.productCount }}
+                                                </span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </TableCell>
                         </TableRow>
                     </TableBody>
-                </Table>
+                </AdminTable>
             </div>
 
             <AdminPagination

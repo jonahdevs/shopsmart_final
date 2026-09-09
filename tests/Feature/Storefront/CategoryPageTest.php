@@ -227,5 +227,10 @@ test('a category page issues a bounded number of queries for a page of products'
     // since the SEO head joined it too, reading SeoSettings and
     // BrandingSettings for the title pattern, description fallback and robots
     // directive — cached together under StorefrontCache::SEO.
-    expect($queries)->toBeLessThanOrEqual(20);
+    //
+    // Raised by one for maintenance mode: EnsureStoreIsOpen wraps every
+    // storefront route and reads whether the shop is closed. Cached under
+    // StorefrontCache::MAINTENANCE on the same terms as every other settings
+    // group here, so this is the cold-cache read, not a per-request cost.
+    expect($queries)->toBeLessThanOrEqual(21);
 });

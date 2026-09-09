@@ -129,6 +129,7 @@ name: string,
 slug: string,
 parentId: number | null,
 depth: number,
+status: App.Enums.CategoryStatus,
 statusLabel: string,
 statusVariant: string,
 sortOrder: number,
@@ -201,15 +202,40 @@ lifetimeSpentFormatted: string,
 lastOrderAt: string | null,
 registeredAt: string,
 };
+export type AdminCustomerStatsData = {
+customerCount: number,
+newCustomerCount: number,
+newCustomerChangePercent: number | null,
+payingCustomerCount: number,
+payingCustomerSharePercent: number | null,
+averageSpendCents: number,
+averageSpendFormatted: string,
+periodLabel: string,
+};
 export type AdminDashboardChartsData = {
 timeline: App.Data.AdminDashboardTimelineData,
-ordersByStatus: App.Data.AdminChartSliceData[],
-revenueByMethod: App.Data.AdminChartSliceData[],
+ordersByStatus: App.Data.AdminDashboardShareSliceData[],
+revenueByMethod: App.Data.AdminDashboardShareSliceData[],
+revenueByMethodTotalFormatted: string,
 topProducts: App.Data.AdminChartSliceData[],
 topCategories: App.Data.AdminChartSliceData[],
-ratings: App.Data.AdminChartSliceData[],
+ratings: App.Data.AdminDashboardShareSliceData[],
 averageRating: number | null,
 reviewCount: number,
+};
+export type AdminDashboardCountrySliceData = {
+code: string,
+label: string,
+count: number,
+formatted: string,
+share: number,
+};
+export type AdminDashboardShareSliceData = {
+label: string,
+value: number,
+formatted: string,
+share: number,
+variant: string | null,
 };
 export type AdminDashboardStatsData = {
 revenueCents: number,
@@ -232,7 +258,36 @@ labels: string[],
 revenue: number[],
 orders: number[],
 customers: number[],
+averageOrder: number[],
 currencySymbol: string,
+};
+export type AdminDashboardVisitorsData = {
+sessionCount: number,
+newCount: number,
+returningCount: number,
+platforms: App.Data.AdminDashboardShareSliceData[],
+countries: App.Data.AdminDashboardCountrySliceData[],
+};
+export type AdminDateRangeData = {
+preset: string,
+start: string | null,
+end: string | null,
+label: string,
+presets: App.Data.AdminDateRangeOptionData[],
+};
+export type AdminDateRangeOptionData = {
+value: string,
+label: string,
+};
+export type AdminNotificationData = {
+id: string,
+title: string,
+body: string,
+icon: string,
+tone: string,
+isUnread: boolean,
+createdAt: string,
+createdAtForHumans: string,
 };
 export type AdminOrderDetailData = {
 order: App.Data.OrderData,
@@ -263,6 +318,17 @@ totalFormatted: string,
 itemCount: number,
 placedAt: string,
 };
+export type AdminOrderStatsData = {
+awaitingPaymentCount: number,
+awaitingFulfilmentCount: number,
+revenueCents: number,
+revenueFormatted: string,
+revenueChangePercent: number | null,
+averageOrderValueCents: number,
+averageOrderValueFormatted: string,
+averageOrderValueChangePercent: number | null,
+periodLabel: string,
+};
 export type AdminPaymentRowData = {
 id: number,
 reference: string,
@@ -290,6 +356,15 @@ name: string,
 label: string,
 granted: boolean,
 holdable: boolean,
+};
+export type AdminPermissionRowData = {
+id: number,
+name: string,
+label: string,
+group: string,
+groupLabel: string,
+roles: string[],
+roleCount: number,
 };
 export type AdminProductFormData = {
 id: number | null,
@@ -348,6 +423,8 @@ id: number,
 name: string,
 slug: string,
 sku: string | null,
+thumbUrl: string | null,
+status: App.Enums.ProductStatus,
 statusLabel: string,
 statusVariant: string,
 visibilityLabel: string,
@@ -362,7 +439,15 @@ stockStatusVariant: string,
 stockQuantity: number | null,
 variantCount: number,
 isDeleted: boolean,
+isViewableOnStore: boolean,
 updatedAt: string,
+};
+export type AdminProductStatsData = {
+publishedCount: number,
+draftCount: number,
+lowStockCount: number,
+outOfStockCount: number,
+lowStockThreshold: number,
 };
 export type AdminProductVariantData = {
 id: number,
@@ -407,6 +492,7 @@ name: string,
 permissions: string[],
 permissionCount: number,
 memberCount: number,
+firstMemberName: string | null,
 isProtected: boolean,
 editable: boolean,
 deletable: boolean,
@@ -421,6 +507,22 @@ invitationPending: boolean,
 createdAt: string,
 isSelf: boolean,
 manageable: boolean,
+};
+export type AdminTagFormData = {
+id: number | null,
+name: string,
+slug: string | null,
+};
+export type AdminTagProductOptionData = {
+id: number,
+name: string,
+sku: string | null,
+};
+export type AdminTagRowData = {
+id: number,
+name: string,
+slug: string,
+productCount: number,
 };
 export type AdminTaxClassFormData = {
 id: number | null,
@@ -460,6 +562,18 @@ description: string | null,
 export type BreadcrumbData = {
 name: string,
 slug: string | null,
+};
+export type BulkActionOutcomeData = {
+id: number,
+label: string,
+reason: string,
+};
+export type BulkActionResultData = {
+appliedCount: number,
+skipped: App.Data.BulkActionOutcomeData[],
+refused: App.Data.BulkActionOutcomeData[],
+summary: string,
+isClean: boolean,
 };
 export type CartData = {
 items: App.Data.CartItemData[],
@@ -700,6 +814,12 @@ perPage: number,
 total: number,
 hasMorePages: boolean,
 };
+export type ProductPreviewData = {
+statusLabel: string,
+visibilityLabel: string,
+reason: string,
+editUrl: string,
+};
 export type ProductVariantData = {
 id: number,
 sku: string,
@@ -761,6 +881,7 @@ export type CategorySection = 'navbar' | 'homepage_featured' | 'footer';
 export type CategoryStatus = 'draft' | 'active' | 'inactive' | 'archived';
 export type ConsentCategory = 'necessary' | 'analytics' | 'marketing';
 export type CouponType = 'fixed' | 'percent';
+export type DateRangePreset = 'today' | 'yesterday' | 'this_week' | 'last_7_days' | 'this_month' | 'last_month' | 'this_year' | 'last_year' | 'custom';
 export type DeliveryMethod = 'delivery' | 'pickup';
 export type OrderStatus = 'pending' | 'processing' | 'out_for_delivery' | 'completed' | 'cancelled' | 'refunded';
 export type PaymentStatus = 'pending' | 'success' | 'failed' | 'cancelled' | 'refunded';

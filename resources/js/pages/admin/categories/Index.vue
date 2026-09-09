@@ -1,15 +1,30 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { ChevronRight, FolderTree, Plus } from '@lucide/vue';
+import {
+    Boxes,
+    ChevronRight,
+    ExternalLink,
+    FolderTree,
+    MoreHorizontal,
+    Plus,
+    SquarePen,
+} from '@lucide/vue';
 import AdminCard from '@/components/admin/AdminCard.vue';
 import AdminEmptyState from '@/components/admin/AdminEmptyState.vue';
 import AdminFilterBar from '@/components/admin/AdminFilterBar.vue';
+import AdminFilterSelect from '@/components/admin/AdminFilterSelect.vue';
 import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
 import AdminStatusBadge from '@/components/admin/AdminStatusBadge.vue';
+import AdminTable from '@/components/admin/AdminTable.vue';
 import { Button } from '@/components/ui/button';
-import { NativeSelect } from '@/components/ui/native-select';
 import {
-    Table,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { SelectItem } from '@/components/ui/select';
+import {
     TableBody,
     TableCell,
     TableHead,
@@ -17,12 +32,15 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { useIndexTable } from '@/composables/useIndexTable';
+import { toUrl } from '@/lib/utils';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import {
     create as adminCategoryCreate,
     edit as adminCategoryEdit,
     index as adminCategories,
 } from '@/routes/admin/categories';
+import { index as adminProducts } from '@/routes/admin/products';
+import { show as storefrontCategory } from '@/routes/category';
 
 type CategoryFilters = {
     search: string | null;
@@ -73,6 +91,22 @@ const { form, isFiltered, clear } = useIndexTable({
 function indentStyle(depth: number): Record<string, string> {
     return { paddingLeft: `${depth * 1.5}rem` };
 }
+
+/*
+  Typed against the generated enum, so a status renamed on the server fails the
+  build here rather than silently offering a link to a 404.
+*/
+const LIVE: App.Enums.CategoryStatus = 'active';
+
+/** Whether `category.show` would render this row rather than abort. */
+function isLive(category: App.Data.AdminCategoryRowData): boolean {
+    return category.status === LIVE;
+}
+
+/** The products table, narrowed to one category — the id is what it filters on. */
+function productsHref(categoryId: number): string {
+    return adminProducts.url({ query: { category: String(categoryId) } });
+}
 </script>
 
 <template>
@@ -80,7 +114,6 @@ function indentStyle(depth: number): Record<string, string> {
         <Head title="Categories" />
 
         <AdminPageHeader
-            eyebrow="Catalog"
             title="Categories"
             :description="`${categories.length} categor${categories.length === 1 ? 'y' : 'ies'} in the tree.`"
         >
@@ -106,20 +139,20 @@ function indentStyle(depth: number): Record<string, string> {
                 :show-clear="isFiltered"
                 @clear="clear"
             >
-                <NativeSelect
+                <AdminFilterSelect
                     v-model="form.status"
                     class="w-40"
-                    aria-label="Status"
+                    label="Status"
+                    all-label="All statuses"
                 >
-                    <option value="">All statuses</option>
-                    <option
+                    <SelectItem
                         v-for="option in statusOptions"
                         :key="option.value"
                         :value="option.value"
                     >
                         {{ option.label }}
-                    </option>
-                </NativeSelect>
+                    </SelectItem>
+                </AdminFilterSelect>
             </AdminFilterBar>
 
             <AdminEmptyState
@@ -150,7 +183,7 @@ function indentStyle(depth: number): Record<string, string> {
               never scrolls sideways on a narrow screen.
             -->
             <div v-else class="overflow-x-auto">
-                <Table>
+                <AdminTable>
                     <TableHeader>
                         <TableRow>
                             <TableHead>Category</TableHead>
@@ -202,21 +235,134 @@ function indentStyle(depth: number): Record<string, string> {
                             <TableCell class="text-right tabular-nums">
                                 {{ category.sortOrder }}
                             </TableCell>
+                            <!--
+                              A three-dots menu rather than a lone Edit button,
+                              the same shape the products table uses. The
+                              product count two columns left was a number with
+                              nothing behind it until this menu: the same
+                              complaint the products index tiles answer, that a
+                              figure a manager cannot click through to has told
+                              them something and denied them the work.
+
+                              Delete is deliberately not here. It is a hard
+                              delete, it is refused when the category still has
+                              children, and the editor's delete card says both
+                              of those things next to the button — a menu item
+                              can say neither.
+
+                              No `usePortalTheme()`. The content teleports to
+                              `document.body`, but the staff tokens are the bare
+                              `:root` block rather than a scoped class, so a
+                              portalled menu is already in the right palette.
+                            -->
                             <TableCell>
-                                <Button variant="ghost" size="sm" as-child>
-                                    <Link
-                                        :href="adminCategoryEdit(category.slug)"
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger as-child>
+                                        <Button
+                                            variant="outline"
+                                            size="icon-sm"
+                                            :aria-label="`Actions for ${category.name}`"
+                                        >
+                                            <MoreHorizontal
+                                                class="size-4"
+                                                aria-hidden="true"
+                                            />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+
+                                    <DropdownMenuContent
+                                        align="end"
+                                        class="w-52"
                                     >
-                                        Edit
-                                        <span class="sr-only">
-                                            {{ category.name }}
-                                        </span>
-                                    </Link>
-                                </Button>
+                                        <DropdownMenuItem as-child>
+                                            <Link
+                                                class="block w-full"
+                                                :href="
+                                                    adminCategoryEdit(
+                                                        category.slug,
+                                                    )
+                                                "
+                                            >
+                                                <SquarePen
+                                                    class="size-4"
+                                                    aria-hidden="true"
+                                                />
+                                                Edit
+                                            </Link>
+                                        </DropdownMenuItem>
+
+                                        <DropdownMenuItem as-child>
+                                            <Link
+                                                class="block w-full"
+                                                :href="
+                                                    productsHref(category.id)
+                                                "
+                                            >
+                                                <Boxes
+                                                    class="size-4"
+                                                    aria-hidden="true"
+                                                />
+                                                View products
+                                                <span
+                                                    class="text-muted-foreground ml-auto text-xs tabular-nums"
+                                                >
+                                                    {{ category.productCount }}
+                                                </span>
+                                            </Link>
+                                        </DropdownMenuItem>
+
+                                        <!--
+                                          Offered only on an active category.
+                                          `category.show` aborts on every other
+                                          state, staff included — there is no
+                                          preview here the way there is for a
+                                          draft product — so the item states the
+                                          reason rather than leading to a 404.
+                                        -->
+                                        <DropdownMenuItem
+                                            v-if="isLive(category)"
+                                            as-child
+                                        >
+                                            <a
+                                                class="block w-full"
+                                                :href="
+                                                    toUrl(
+                                                        storefrontCategory(
+                                                            category.slug,
+                                                        ),
+                                                    )
+                                                "
+                                                target="_blank"
+                                                rel="noopener"
+                                            >
+                                                <ExternalLink
+                                                    class="size-4"
+                                                    aria-hidden="true"
+                                                />
+                                                View on store
+                                                <span class="sr-only">
+                                                    (opens in a new tab)
+                                                </span>
+                                            </a>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem v-else disabled>
+                                            <ExternalLink
+                                                class="size-4"
+                                                aria-hidden="true"
+                                            />
+                                            View on store
+                                            <span
+                                                class="text-muted-foreground ml-auto text-xs"
+                                            >
+                                                {{ category.statusLabel }}
+                                            </span>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </TableCell>
                         </TableRow>
                     </TableBody>
-                </Table>
+                </AdminTable>
             </div>
         </AdminCard>
     </div>

@@ -16,6 +16,7 @@ import AdminEmptyState from '@/components/admin/AdminEmptyState.vue';
 import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
 import AdminStatCard from '@/components/admin/AdminStatCard.vue';
 import AdminStatusBadge from '@/components/admin/AdminStatusBadge.vue';
+import AdminTable from '@/components/admin/AdminTable.vue';
 import { adminTones } from '@/components/admin/tones';
 import { Button } from '@/components/ui/button';
 import {
@@ -29,7 +30,6 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-    Table,
     TableBody,
     TableCell,
     TableHead,
@@ -136,7 +136,6 @@ const terms = computed(() => [
         <Head :title="coupon.code" />
 
         <AdminPageHeader
-            eyebrow="Marketing"
             :title="coupon.code"
             :description="coupon.description ?? 'No internal note.'"
         >
@@ -221,14 +220,12 @@ const terms = computed(() => [
                   never scrolls sideways on a narrow screen.
                 -->
                 <div v-else class="overflow-x-auto">
-                    <Table>
+                    <AdminTable>
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Order</TableHead>
                                 <TableHead>Customer</TableHead>
-                                <TableHead class="text-right">
-                                    Discount
-                                </TableHead>
+                                <TableHead>Discount</TableHead>
                                 <TableHead>Redeemed</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -269,9 +266,7 @@ const terms = computed(() => [
                                     </Link>
                                     <span v-else>{{ use.customerName }}</span>
                                 </TableCell>
-                                <TableCell
-                                    class="text-right font-medium tabular-nums"
-                                >
+                                <TableCell class="font-medium tabular-nums">
                                     {{ use.discountFormatted }}
                                 </TableCell>
                                 <TableCell class="text-muted-foreground">
@@ -279,7 +274,7 @@ const terms = computed(() => [
                                 </TableCell>
                             </TableRow>
                         </TableBody>
-                    </Table>
+                    </AdminTable>
                 </div>
             </AdminCard>
 

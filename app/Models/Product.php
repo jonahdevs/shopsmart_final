@@ -475,6 +475,23 @@ class Product extends Model implements HasMedia
                 && $this->published_at->isPast());
     }
 
+    /**
+     * Whether `product.show` would render this product rather than 404.
+     *
+     * A catalog-only or search-only product is still a real page — it is merely
+     * kept out of one listing — so only a fully hidden product, an unpublished
+     * one, or one in the bin is unreachable. Stated here rather than at the two
+     * call sites because the storefront enforces it and the admin table has to
+     * predict it: two copies of this rule would drift into an Actions menu
+     * offering a link that 404s.
+     */
+    public function isViewableOnStore(): bool
+    {
+        return ! $this->trashed()
+            && $this->isPublished()
+            && $this->visibility !== ProductVisibility::Hidden;
+    }
+
     /** The price a customer actually pays, in cents. Null means price-on-application. */
     public function effectivePriceCents(): ?int
     {

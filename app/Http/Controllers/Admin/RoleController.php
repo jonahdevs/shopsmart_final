@@ -2,14 +2,20 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Concerns\BuildsLikeQueries;
 use App\Data\AdminPermissionGroupData;
+use App\Data\AdminRoleOptionData;
 use App\Data\AdminRoleRowData;
+use App\Data\AdminStaffRowData;
+use App\Data\PaginationData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\RoleFormRequest;
 use App\Http\Requests\Admin\RoleStoreRequest;
 use App\Http\Requests\Admin\RoleUpdateRequest;
+use App\Http\Requests\Admin\StaffIndexRequest;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -42,20 +48,104 @@ use Spatie\Permission\PermissionRegistrar;
  */
 class RoleController extends Controller
 {
-    public function index(): Response
+    use BuildsLikeQueries;
+
+    /** Rows per page in the staff table. */
+    private const PER_PAGE = 25;
+
+    /**
+     * Roles and the people holding them, on one screen.
+     *
+     * Consolidated on purpose. A role is a definition and a staff member is an
+     * instance of it, and keeping them on separate screens meant the question
+     * every reader actually arrives with — "who would this affect?" — needed
+     * two pages and a memory of what was on the other one.
+     *
+     * The guard is `staff.manage`, not `roles.manage`. An Admin may hire and
+     * demote but may not redefine what a role means, so they get the table and
+     * not the cards; `$canManageRoles` is what the page branches on, and the
+     * role routes still refuse them on their own.
+     */
+    public function index(StaffIndexRequest $request): Response
+    {
+        $viewer = $this->staffMember($request);
+        $canManageRoles = $viewer->can('roles.manage');
+
+        $sort = $request->validated('sort') ?? 'name';
+        $direction = $request->validated('direction') ?? 'asc';
+
+        $staff = User::query()
+            ->whereHas('roles')
+            ->with('roles:id,name')
+            ->tap(fn (Builder $query) => $this->applyStaffFilters($query, $request))
+            ->orderBy($sort, $direction)
+            ->paginate(self::PER_PAGE)
+            ->withQueryString();
+
+        $assignable = AdminRoleOptionData::assignableFor($viewer);
+
+        return Inertia::render('admin/roles/Index', [
+            'roles' => $canManageRoles ? $this->roleCards() : [],
+            'permissionCount' => $canManageRoles ? Permission::query()->count() : 0,
+            'canManageRoles' => $canManageRoles,
+            'staff' => array_values(array_map(
+                fn (User $user): AdminStaffRowData => AdminStaffRowData::fromModel($user, $viewer, $assignable),
+                $staff->items(),
+            )),
+            'pagination' => PaginationData::fromPaginator($staff),
+            'filters' => [
+                'search' => $request->validated('search'),
+                'role' => $request->validated('role'),
+                'sort' => $sort,
+                'direction' => $direction,
+            ],
+            'roleOptions' => AdminRoleOptionData::forActor($viewer),
+        ]);
+    }
+
+    /**
+     * @return list<AdminRoleRowData>
+     */
+    private function roleCards(): array
     {
         $roles = Role::query()
             ->with('permissions')
+            // One member each, for the avatar on the card. An eager-load limit
+            // rather than a whole relation, so a role with two hundred staff
+            // costs the same as a role with one.
+            ->with(['users' => fn ($query) => $query->orderBy('name')->limit(1)])
             ->withCount('users')
             ->orderBy('name')
             ->get();
 
-        return Inertia::render('admin/roles/Index', [
-            'roles' => array_values($roles
-                ->map(fn (Role $role): AdminRoleRowData => AdminRoleRowData::fromModel($role))
-                ->all()),
-            'permissionCount' => Permission::query()->count(),
-        ]);
+        return array_values($roles
+            ->map(fn (Role $role): AdminRoleRowData => AdminRoleRowData::fromModel($role))
+            ->all());
+    }
+
+    /**
+     * The staff table's filter bar. Lifted from the screen this one replaced.
+     *
+     * @param  Builder<User>  $query
+     */
+    private function applyStaffFilters(Builder $query, StaffIndexRequest $request): void
+    {
+        $search = $request->validated('search');
+
+        if (is_string($search) && trim($search) !== '') {
+            $pattern = $this->containsPattern(trim($search));
+
+            $query->where(function (Builder $match) use ($pattern): void {
+                $match
+                    ->whereRaw($this->likeExpression('name'), [$pattern])
+                    ->orWhereRaw($this->likeExpression('email'), [$pattern]);
+            });
+        }
+
+        $query->when(
+            $request->validated('role'),
+            fn (Builder $q, string $role) => $q->whereHas('roles', fn (Builder $roles) => $roles->where('name', $role)),
+        );
     }
 
     public function create(Request $request): Response

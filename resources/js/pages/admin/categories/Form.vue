@@ -10,7 +10,13 @@ import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { NativeSelect } from '@/components/ui/native-select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as adminCategories } from '@/routes/admin/categories';
@@ -70,7 +76,6 @@ function indent(depth: number): string {
             v-slot="{ errors, processing }"
         >
             <AdminPageHeader
-                eyebrow="Catalog"
                 :title="isNew ? 'New category' : category.name"
                 description="Leave the slug blank to have one made from the name."
             >
@@ -201,43 +206,61 @@ function indent(depth: number): string {
 
                             <div class="space-y-1.5">
                                 <Label for="parent_id">Parent</Label>
-                                <NativeSelect
-                                    id="parent_id"
+                                <!--
+                                  `null`, not `''`: reka-ui reserves the empty
+                                  string for a cleared selection and refuses it
+                                  as an item value. A null selection makes the
+                                  hidden `<select>` the primitive posts fall
+                                  back to its empty option, so the server still
+                                  reads a blank field.
+                                -->
+                                <Select
                                     name="parent_id"
-                                    :model-value="
+                                    :default-value="
                                         category.parentId === null
-                                            ? ''
+                                            ? undefined
                                             : String(category.parentId)
                                     "
                                 >
-                                    <option value="">Top level</option>
-                                    <option
-                                        v-for="option in parentOptions"
-                                        :key="option.id"
-                                        :value="String(option.id)"
-                                    >
-                                        {{ indent(option.depth)
-                                        }}{{ option.name }}
-                                    </option>
-                                </NativeSelect>
+                                    <SelectTrigger id="parent_id">
+                                        <SelectValue placeholder="Top level" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem :value="null">
+                                            Top level
+                                        </SelectItem>
+                                        <SelectItem
+                                            v-for="option in parentOptions"
+                                            :key="option.id"
+                                            :value="String(option.id)"
+                                        >
+                                            {{ indent(option.depth)
+                                            }}{{ option.name }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
                                 <InputError :message="errors.parent_id" />
                             </div>
 
                             <div class="space-y-1.5">
                                 <Label for="status">Status</Label>
-                                <NativeSelect
-                                    id="status"
+                                <Select
                                     name="status"
-                                    :model-value="category.status"
+                                    :default-value="category.status"
                                 >
-                                    <option
-                                        v-for="option in statusOptions"
-                                        :key="option.value"
-                                        :value="option.value"
-                                    >
-                                        {{ option.label }}
-                                    </option>
-                                </NativeSelect>
+                                    <SelectTrigger id="status">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem
+                                            v-for="option in statusOptions"
+                                            :key="option.value"
+                                            :value="option.value"
+                                        >
+                                            {{ option.label }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
                                 <InputError :message="errors.status" />
                             </div>
 

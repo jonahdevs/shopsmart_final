@@ -51,6 +51,7 @@ class UpdatePrivacySettingsRequest extends FormRequest
             // is the explicit "keep indefinitely" the prune command honours.
             'recently_viewed_retention_days' => ['required', 'integer', 'between:0,3650'],
             'activity_log_retention_days' => ['required', 'integer', 'between:0,3650'],
+            'visitor_retention_days' => ['required', 'integer', 'between:0,3650'],
 
             'ga4_id' => ['nullable', 'string', 'max:50', 'regex:/^G-[A-Z0-9]+$/'],
             'gtm_id' => ['nullable', 'string', 'max:50', 'regex:/^GTM-[A-Z0-9]+$/'],
@@ -81,6 +82,7 @@ class UpdatePrivacySettingsRequest extends FormRequest
             'terms_url' => $this->text('terms_url'),
             'recently_viewed_retention_days' => $this->integer('recently_viewed_retention_days'),
             'activity_log_retention_days' => $this->integer('activity_log_retention_days'),
+            'visitor_retention_days' => $this->integer('visitor_retention_days'),
         ];
     }
 

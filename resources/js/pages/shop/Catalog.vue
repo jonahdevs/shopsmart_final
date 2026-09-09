@@ -44,7 +44,7 @@ const heading = computed(() => {
 <template>
     <Head :title="heading" />
 
-    <div class="container py-8">
+    <div class="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <!--
           The page's own title carries the section rhythm SectionHeading owns
           for the <h2>s below it: blue eyebrow, heavy display line.

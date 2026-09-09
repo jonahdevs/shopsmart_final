@@ -2,6 +2,7 @@
 
 namespace App\Data;
 
+use App\Enums\CategoryStatus;
 use App\Models\Category;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
@@ -28,6 +29,16 @@ class AdminCategoryRowData extends Data
         public string $slug,
         public ?int $parentId,
         public int $depth,
+        /**
+         * The state itself, alongside the label the badge prints.
+         *
+         * The row's Actions menu offers a storefront link, and `category.show`
+         * aborts on anything but Active — there is no staff preview there the
+         * way there is for a draft product. A label is the wrong thing to test
+         * against, because it is translated; typed as the enum, a renamed case
+         * fails the TypeScript build rather than quietly offering a 404.
+         */
+        public CategoryStatus $status,
         public string $statusLabel,
         public string $statusVariant,
         public int $sortOrder,
@@ -43,6 +54,7 @@ class AdminCategoryRowData extends Data
             slug: $category->slug,
             parentId: $category->parent_id,
             depth: $depth,
+            status: $category->status,
             statusLabel: $category->status->label(),
             statusVariant: $category->status->badgeVariant(),
             sortOrder: $category->sort_order,

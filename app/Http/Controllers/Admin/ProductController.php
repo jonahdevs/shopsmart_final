@@ -6,6 +6,8 @@ use App\Concerns\BuildsLikeQueries;
 use App\Data\AdminCategoryOptionData;
 use App\Data\AdminProductFormData;
 use App\Data\AdminProductRowData;
+use App\Data\AdminProductStatsData;
+use App\Data\BulkActionResultData;
 use App\Data\PaginationData;
 use App\Enums\ProductLinkType;
 use App\Enums\ProductStatus;
@@ -13,6 +15,7 @@ use App\Enums\ProductType;
 use App\Enums\ProductVisibility;
 use App\Enums\StockStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\ProductBulkActionRequest;
 use App\Http\Requests\Admin\ProductIndexRequest;
 use App\Http\Requests\Admin\ProductMediaRequest;
 use App\Http\Requests\Admin\ProductRequest;
@@ -25,6 +28,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\TaxClass;
+use App\Settings\InventorySettings;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -63,7 +67,9 @@ class ProductController extends Controller
         $trashed = $request->validated('trashed');
 
         $products = Product::query()
-            ->with(['brand:id,name', 'primaryCategory:id,name'])
+            // `media` is eager loaded for the row thumbnail: without it,
+            // getFirstMedia() is a query per product.
+            ->with(['brand:id,name', 'primaryCategory:id,name', 'media'])
             // An aggregate rather than a loaded relation: this page shows 25
             // products, and hydrating every variant of each to print "6
             // variants" would be the one query here that grows with the
@@ -95,9 +101,12 @@ class ProductController extends Controller
             ],
             'statusOptions' => ProductStatus::options(),
             'visibilityOptions' => ProductVisibility::options(),
-            'stockStatusOptions' => StockStatus::options(),
+            'stockStatusOptions' => $this->stockStatusFilterOptions(),
             'categoryOptions' => $this->categoryOptions(),
             'brandOptions' => $this->brandOptions(),
+            'bulkStatusOptions' => $this->bulkStatusOptions(),
+            'bulkResult' => $this->flashedBulkResult(),
+            'stats' => $this->stats(),
         ]);
     }
 
@@ -205,6 +214,131 @@ class ProductController extends Controller
     }
 
     /**
+     * The four tiles above the table, in one pass over `products`.
+     *
+     * Four figures, one query. Asking for them separately would be four scans
+     * of the same table to draw one row of the same screen, so the whole set is
+     * expressed as conditional sums instead.
+     *
+     * Every count is lifetime and every one deliberately matches its tile's
+     * link exactly — the same set, counted here and listed there. `Product`
+     * soft-deletes, so the default scope leaves the bin out of all four, which
+     * is also what the table shows until somebody asks for it.
+     *
+     * The two stock figures overlap: a product sitting on zero is both out of
+     * stock and under the threshold. That is correct — each tile answers its
+     * own question and none of them is a share of a total.
+     */
+    private function stats(): AdminProductStatsData
+    {
+        $threshold = $this->lowStockThreshold();
+
+        $row = Product::query()
+            ->selectRaw(
+                <<<'SQL'
+                    SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as published,
+                    SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as drafts,
+                    SUM(CASE WHEN stock_quantity IS NOT NULL AND stock_quantity <= ? THEN 1 ELSE 0 END) as low_stock,
+                    SUM(CASE WHEN stock_status = ? THEN 1 ELSE 0 END) as out_of_stock
+                    SQL,
+                [
+                    ProductStatus::Published->value,
+                    ProductStatus::Draft->value,
+                    $threshold,
+                    StockStatus::OutOfStock->value,
+                ],
+            )
+            ->first();
+
+        return new AdminProductStatsData(
+            publishedCount: (int) ($row?->getAttribute('published') ?? 0),
+            draftCount: (int) ($row?->getAttribute('drafts') ?? 0),
+            lowStockCount: (int) ($row?->getAttribute('low_stock') ?? 0),
+            outOfStockCount: (int) ($row?->getAttribute('out_of_stock') ?? 0),
+            lowStockThreshold: $threshold,
+        );
+    }
+
+    /**
+     * The Stock filter's options: the three real states, plus the threshold
+     * comparison {@see ProductIndexRequest::LOW_STOCK} describes.
+     *
+     * Assembled here rather than on the enum because the editor's stock picker
+     * reads `StockStatus::options()` too, and "Low Stock" is not something a
+     * product can be saved as.
+     *
+     * @return list<array{value: string, label: string}>
+     */
+    private function stockStatusFilterOptions(): array
+    {
+        return array_values([
+            ...StockStatus::options(),
+            ['value' => ProductIndexRequest::LOW_STOCK, 'label' => __('Low Stock')],
+        ]);
+    }
+
+    /**
+     * The bulk bar's status buttons.
+     *
+     * Three of the four cases — {@see ProductBulkActionRequest::statuses()} is
+     * the closed set and the endpoint validates against the same list, so the
+     * bar cannot offer something the server would reject.
+     *
+     * The labels are imperatives, not the enum's state names. A button reading
+     * "Published" describes where a product would end up; a button reading
+     * "Publish" describes what the click does, which is what somebody about to
+     * change twenty-five rows at once needs to be sure of. That is why they are
+     * written here rather than taken from `ProductStatus::label()`, which is
+     * correct where it is used — as a badge on a row that already has that
+     * state.
+     *
+     * @return list<array{value: string, label: string}>
+     */
+    private function bulkStatusOptions(): array
+    {
+        $imperatives = [
+            ProductStatus::Published->value => __('Publish'),
+            ProductStatus::Draft->value => __('Move to draft'),
+            ProductStatus::Archived->value => __('Archive'),
+        ];
+
+        return array_values(array_map(
+            fn (string $status): array => ['value' => $status, 'label' => $imperatives[$status] ?? $status],
+            ProductBulkActionRequest::statuses(),
+        ));
+    }
+
+    /**
+     * The outcome of the bulk action that redirected here, if this request is
+     * that redirect.
+     *
+     * Flashed rather than sent as a prop of the POST, because a bulk action has
+     * no page of its own: it answers, redirects back to whatever filtered view
+     * the staff member was in, and the answer has to survive exactly that one
+     * hop. A prop would be recomputed and re-shown every time they then sorted
+     * the table, which would leave a stale "3 refused" on screen long after
+     * they had dealt with it.
+     */
+    private function flashedBulkResult(): ?BulkActionResultData
+    {
+        $result = session('bulkResult');
+
+        return $result instanceof BulkActionResultData ? $result : null;
+    }
+
+    /**
+     * The store-wide threshold, which is also the one the overview counts
+     * against. Two admin screens saying "low stock" and meaning two different
+     * numbers is the kind of disagreement staff never manage to reconcile, so
+     * the per-product `low_stock_threshold` override is deliberately not read
+     * here — if it is ever brought in, it has to be brought into both.
+     */
+    private function lowStockThreshold(): int
+    {
+        return app(InventorySettings::class)->low_stock_threshold;
+    }
+
+    /**
      * Narrow the table by the filter bar.
      *
      * @param  Builder<Product>  $query
@@ -227,7 +361,15 @@ class ProductController extends Controller
         $query
             ->when($request->validated('status'), fn (Builder $q, string $status) => $q->where('status', $status))
             ->when($request->validated('visibility'), fn (Builder $q, string $visibility) => $q->where('visibility', $visibility))
-            ->when($request->validated('stock_status'), fn (Builder $q, string $stock) => $q->where('stock_status', $stock))
+            // "Low stock" is the one value here that is not a column value: it
+            // is the same threshold comparison the tile above the table counts,
+            // so clicking that tile lands on exactly the rows it counted.
+            ->when(
+                $request->validated('stock_status'),
+                fn (Builder $q, string $stock) => $stock === ProductIndexRequest::LOW_STOCK
+                    ? $q->whereNotNull('stock_quantity')->where('stock_quantity', '<=', $this->lowStockThreshold())
+                    : $q->where('stock_status', $stock),
+            )
             ->when($request->validated('brand'), fn (Builder $q, mixed $brandId) => $q->where('brand_id', (int) $brandId));
 
         $categoryId = $request->validated('category');

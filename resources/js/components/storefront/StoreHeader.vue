@@ -24,9 +24,11 @@ const shopper = computed(() => page.props.storefront?.shopper ?? null);
 /**
  * The tray links, so the markup below stays one loop rather than three.
  *
- * Wishlist and Cart carry their label from `md` up, matching the approved
- * design; Compare has no label there but keeps its own destination and count —
- * dropping the link would take a real page out of the storefront's reach.
+ * All three are icon-only at every breakpoint: the glyphs are conventional
+ * enough to stand alone, and the words were crowding the search field. `label`
+ * survives for the accessible name, which also carries the count. Only the
+ * account link keeps a visible word, because "Sign in" is an instruction rather
+ * than a destination a shopper recognises by its glyph.
  */
 const trays = computed(() => [
     {
@@ -34,7 +36,6 @@ const trays = computed(() => [
         href: wishlistIndex(),
         icon: Heart,
         label: 'Wishlist',
-        labelled: true,
         count: shopper.value?.wishlistCount ?? 0,
     },
     {
@@ -42,7 +43,6 @@ const trays = computed(() => [
         href: compareIndex(),
         icon: Scale,
         label: 'Compare',
-        labelled: false,
         count: shopper.value?.compareCount ?? 0,
     },
     {
@@ -50,7 +50,6 @@ const trays = computed(() => [
         href: cartIndex(),
         icon: ShoppingCart,
         label: 'Cart',
-        labelled: false,
         count: shopper.value?.cartCount ?? 0,
     },
 ]);
@@ -65,7 +64,7 @@ const trays = computed(() => [
           field centred between them.
         -->
         <div
-            class="container flex flex-wrap items-center gap-x-4 gap-y-3 py-3 md:flex-nowrap md:py-4"
+            class="container mx-auto flex flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 sm:px-6 md:flex-nowrap md:py-4 lg:px-8"
         >
             <Link
                 :href="home()"
@@ -84,13 +83,13 @@ const trays = computed(() => [
                     v-for="tray in trays"
                     :key="tray.key"
                     :href="tray.href"
-                    class="focus-visible:outline-electric flex items-center gap-2 rounded-full p-3 text-sm font-semibold text-white transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2"
+                    class="focus-visible:outline-electric flex items-center rounded-full p-3 text-sm font-semibold text-white transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2"
                     :aria-label="`${tray.label}, ${tray.count} items`"
                 >
                     <!--
                       The count is pinned to the glyph rather than to the link,
-                      so it sits on the icon's shoulder whether or not the label
-                      beside it is showing at this breakpoint.
+                      so it sits on the icon's shoulder rather than drifting to
+                      the corner of the tap target.
                     -->
                     <span class="relative">
                         <component
@@ -105,13 +104,6 @@ const trays = computed(() => [
                         >
                             {{ tray.count > 99 ? '99+' : tray.count }}
                         </span>
-                    </span>
-                    <span
-                        v-if="tray.labelled"
-                        class="hidden md:inline"
-                        aria-hidden="true"
-                    >
-                        {{ tray.label }}
                     </span>
                 </Link>
 

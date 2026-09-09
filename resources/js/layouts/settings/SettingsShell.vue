@@ -66,10 +66,11 @@ const storeBreadcrumbs = computed<App.Data.BreadcrumbData[]>(() => [
     <StorefrontLayout v-else>
         <AccountLayout :breadcrumbs="storeBreadcrumbs">
             <!--
-              The same measure SettingsLayout gives the staff side: these forms
-              are single-column and a full-width text input is unreadable.
+              A measure the staff side no longer needs: there is no sub-nav
+              column out here to take the width, so a card left to fill the
+              account page would carry an unreadable full-width text input.
             -->
-            <div class="max-w-xl space-y-12">
+            <div class="flex max-w-xl flex-col gap-6">
                 <slot />
             </div>
         </AccountLayout>

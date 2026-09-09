@@ -32,10 +32,10 @@ defineProps<{ count?: number }>();
                 :key="n"
                 class="border-rule shadow-card rounded-lg border bg-white"
             >
-                <div class="aspect-square p-4 sm:p-5">
-                    <Skeleton class="size-full rounded-md" />
+                <div class="aspect-square overflow-hidden rounded-t-lg">
+                    <Skeleton class="size-full rounded-none" />
                 </div>
-                <div class="space-y-2 px-4 pt-1 pb-4">
+                <div class="space-y-2 px-4 pt-3 pb-4">
                     <Skeleton class="h-3 w-16" />
                     <Skeleton class="h-4 w-full" />
                     <Skeleton class="h-4 w-2/3" />

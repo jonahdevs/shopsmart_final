@@ -19,9 +19,9 @@ defineProps<{ categories: App.Data.CategoryData[] }>();
         <li v-for="category in categories" :key="category.id">
             <Link
                 :href="show(category.slug)"
-                class="group border-rule shadow-card hover:shadow-card-hover focus-visible:outline-electric flex h-full flex-col rounded-lg border bg-white p-2 transition-shadow duration-200 focus-visible:outline-2 focus-visible:outline-offset-2"
+                class="group border-rule shadow-card hover:shadow-card-hover focus-visible:outline-electric flex h-full flex-col overflow-hidden rounded-lg border bg-white transition-shadow duration-200 focus-visible:outline-2 focus-visible:outline-offset-2"
             >
-                <div class="bg-tint aspect-[4/3] overflow-hidden rounded-md">
+                <div class="bg-tint aspect-[4/3] overflow-hidden">
                     <img
                         v-if="category.image"
                         :src="category.image.thumbUrl ?? category.image.url"
@@ -38,7 +38,7 @@ defineProps<{ categories: App.Data.CategoryData[] }>();
                     />
                 </div>
 
-                <div class="px-1 pt-2.5 pb-1">
+                <div class="px-3 pt-2.5 pb-3">
                     <p
                         class="text-ink line-clamp-2 text-sm leading-5 font-medium"
                     >

@@ -423,7 +423,12 @@ test('the catalog issues a bounded number of queries for a page of products', fu
     // This cap is a coarse tripwire for a page that has grown a whole new
     // dependency; the N+1 guard proper is the test below, which is what you
     // should reach for first if this one fails.
-    expect($queries)->toBeLessThanOrEqual(17);
+    //
+    // Raised by one for maintenance mode: EnsureStoreIsOpen wraps every
+    // storefront route and reads whether the shop is closed. Cached under
+    // StorefrontCache::MAINTENANCE on the same terms as every other settings
+    // group here, so this is the cold-cache read, not a per-request cost.
+    expect($queries)->toBeLessThanOrEqual(18);
 });
 
 test('the catalog costs the same number of queries whatever the page holds', function () {

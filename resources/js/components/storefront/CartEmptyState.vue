@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { ShoppingCart } from '@lucide/vue';
+import EmptyCart from '@/components/illustrations/EmptyCart.vue';
 import {
     Empty,
     EmptyDescription,
@@ -18,6 +18,12 @@ import { index as categoriesIndex } from '@/routes/categories';
  * The panel is the storefront's card — solid `--rule` hairline, `shadow-card`,
  * `--radius` corners — rather than the dashed outline `Empty` ships with, so a
  * dead end still reads as part of the same shelf as everything else.
+ *
+ * The drawing replaces the blue icon tile because this is the one screen a
+ * shopper reaches and cannot act on; a 12px trolley glyph restates the heading,
+ * where the illustration gives the dead end something to look at while the two
+ * ways out are read. Sized to the ~150px height the other three empty-state
+ * drawings land on, so the set reads as one family.
  */
 </script>
 
@@ -26,11 +32,8 @@ import { index as categoriesIndex } from '@/routes/categories';
         class="border-rule shadow-card rounded-lg border border-solid bg-white"
     >
         <EmptyHeader>
-            <EmptyMedia
-                variant="icon"
-                class="bg-tint text-electric size-12 rounded-lg"
-            >
-                <ShoppingCart aria-hidden="true" />
+            <EmptyMedia variant="default" class="w-[180px]">
+                <EmptyCart />
             </EmptyMedia>
             <EmptyTitle
                 class="font-display text-ink text-xl font-extrabold tracking-[-0.02em]"

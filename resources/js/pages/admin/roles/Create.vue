@@ -44,7 +44,6 @@ defineOptions({
             v-slot="{ errors, processing }"
         >
             <AdminPageHeader
-                eyebrow="System"
                 title="New role"
                 description="A role is a named set of permissions. Anyone holding it can reach exactly these screens and no others."
             >

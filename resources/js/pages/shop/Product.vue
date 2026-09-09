@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Deferred, Form, Head } from '@inertiajs/vue3';
-import { ShoppingCart } from '@lucide/vue';
+import { Deferred, Form, Head, Link } from '@inertiajs/vue3';
+import { Eye, ShoppingCart, SquarePen } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import AccessoryUpsellDialog from '@/components/storefront/AccessoryUpsellDialog.vue';
 import Price from '@/components/storefront/Price.vue';
@@ -18,17 +18,30 @@ import StoreBreadcrumbs from '@/components/storefront/StoreBreadcrumbs.vue';
 import { Button } from '@/components/ui/button';
 import { store } from '@/routes/cart';
 
-const { product, accessories, related, brandProducts, alsoViewed, reviews } =
-    defineProps<{
-        product: App.Data.ProductDetailData;
-        /** Curated accessories, offered once something has been added. */
-        accessories: App.Data.ProductCardData[];
-        related: App.Data.ProductCardData[];
-        brandProducts: App.Data.ProductCardData[];
-        alsoViewed: App.Data.ProductCardData[];
-        /** Deferred by the controller — undefined until the follow-up lands. */
-        reviews?: App.Data.ReviewData[];
-    }>();
+const {
+    product,
+    preview,
+    accessories,
+    related,
+    brandProducts,
+    alsoViewed,
+    reviews,
+} = defineProps<{
+    product: App.Data.ProductDetailData;
+    /**
+     * Non-null only when a staff member is looking at a product the public
+     * cannot reach. The server decides that; a shopper is never sent this, so
+     * nothing gated on it can appear on a live listing.
+     */
+    preview: App.Data.ProductPreviewData | null;
+    /** Curated accessories, offered once something has been added. */
+    accessories: App.Data.ProductCardData[];
+    related: App.Data.ProductCardData[];
+    brandProducts: App.Data.ProductCardData[];
+    alsoViewed: App.Data.ProductCardData[];
+    /** Deferred by the controller — undefined until the follow-up lands. */
+    reviews?: App.Data.ReviewData[];
+}>();
 
 const selectedVariant = ref<App.Data.ProductVariantData | null>(null);
 const quantity = ref<number>(product.minOrderQuantity);
@@ -164,7 +177,18 @@ function openUpsell(): void {
 </script>
 
 <template>
-    <Head :title="product.metaTitle ?? product.name">
+    <!--
+      The tab says it too. A manager proofreading a catalog ends up with six of
+      these open, and the one thing they must not do is mistake one for the
+      live page.
+    -->
+    <Head
+        :title="
+            preview
+                ? `Preview: ${product.metaTitle ?? product.name}`
+                : (product.metaTitle ?? product.name)
+        "
+    >
         <meta
             v-if="product.metaDescription ?? product.shortDescription"
             head-key="description"
@@ -173,7 +197,7 @@ function openUpsell(): void {
         />
     </Head>
 
-    <div class="container py-6">
+    <div class="container mx-auto px-4 py-6 sm:px-6 lg:px-8">
         <StoreBreadcrumbs :items="product.breadcrumbs" />
 
         <div class="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-14">
@@ -280,7 +304,25 @@ function openUpsell(): void {
                       and the upsell dialog all survive the add instead of being
                       remounted out from under the shopper.
                     -->
+                    <!--
+                      Price, options and the stock badge stay: they are exactly
+                      what a manager opened this page to check. The add is the
+                      only control here that would TRADE the product, and a
+                      product that is not public is not for sale — the server
+                      already refuses the line (AddToCartRequest), so leaving
+                      the button up would only offer a click that errors.
+                    -->
+                    <p
+                        v-if="preview"
+                        class="border-rule text-muted-foreground rounded-lg border border-dashed px-4 py-3 text-xs leading-5"
+                    >
+                        Add to cart is switched off while this product is not
+                        public. Everything above is what a shopper will see once
+                        it is.
+                    </p>
+
                     <Form
+                        v-else
                         v-bind="store.form()"
                         :options="{
                             preserveScroll: true,
@@ -397,6 +439,63 @@ function openUpsell(): void {
             <ProductRail title="Related products" :products="related" />
             <ProductRail :title="brandRailTitle" :products="brandProducts" />
             <ProductRail title="Customers also viewed" :products="alsoViewed" />
+        </div>
+
+        <!--
+          Room for the fixed bar below, so it never covers the last rail.
+        -->
+        <div v-if="preview" class="h-24" aria-hidden="true"></div>
+
+        <!--
+          The preview bar.
+
+          Fixed to the bottom rather than pushed in at the top: it has to stay
+          on screen for the whole page, and the storefront's own header is
+          already sticky up there. Dark, full-bleed and permanently in view, so
+          it cannot be mistaken for part of the listing — which is the entire
+          requirement. `role="status"` because it describes the state of the
+          page rather than being something to interact with; the link inside it
+          is still a link.
+
+          It renders off `preview` alone, and the server only ever sends that to
+          a staff member holding a products permission. A shopper cannot see
+          this markup on any page, live or otherwise.
+        -->
+        <div
+            v-if="preview"
+            role="status"
+            class="bg-panel fixed inset-x-0 bottom-0 z-40 border-t border-white/10 text-white"
+        >
+            <div
+                class="container mx-auto flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6 lg:px-8"
+            >
+                <span
+                    class="font-display flex shrink-0 items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[0.625rem] font-bold tracking-[0.18em] uppercase"
+                >
+                    <Eye class="size-3.5" aria-hidden="true" />
+                    Staff preview
+                </span>
+
+                <p class="min-w-0 flex-1 text-sm leading-5">
+                    {{ preview.reason }}
+                    <span class="block text-xs text-white/70">
+                        Status: {{ preview.statusLabel }} · Visibility:
+                        {{ preview.visibilityLabel }}
+                    </span>
+                </p>
+
+                <!--
+                  A preview normally ends in a change, so the way out is the
+                  editor rather than the back button.
+                -->
+                <Link
+                    class="focus-visible:outline-electric inline-flex shrink-0 items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-bold text-black transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2"
+                    :href="preview.editUrl"
+                >
+                    <SquarePen class="size-4" aria-hidden="true" />
+                    Edit product
+                </Link>
+            </div>
         </div>
 
         <!--

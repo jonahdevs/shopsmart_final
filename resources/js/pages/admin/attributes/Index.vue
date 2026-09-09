@@ -4,14 +4,15 @@ import { Plus, SlidersHorizontal } from '@lucide/vue';
 import AdminCard from '@/components/admin/AdminCard.vue';
 import AdminEmptyState from '@/components/admin/AdminEmptyState.vue';
 import AdminFilterBar from '@/components/admin/AdminFilterBar.vue';
+import AdminFilterSelect from '@/components/admin/AdminFilterSelect.vue';
 import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
 import AdminPagination from '@/components/admin/AdminPagination.vue';
 import AdminSortableHead from '@/components/admin/AdminSortableHead.vue';
 import AdminStatusBadge from '@/components/admin/AdminStatusBadge.vue';
+import AdminTable from '@/components/admin/AdminTable.vue';
 import { Button } from '@/components/ui/button';
-import { NativeSelect } from '@/components/ui/native-select';
+import { SelectItem } from '@/components/ui/select';
 import {
-    Table,
     TableBody,
     TableCell,
     TableHead,
@@ -74,7 +75,6 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
         <Head title="Attributes" />
 
         <AdminPageHeader
-            eyebrow="Catalog"
             title="Attributes"
             :description="`${pagination.total} attribute${pagination.total === 1 ? '' : 's'} products can vary on.`"
         >
@@ -100,30 +100,30 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
                 :show-clear="isFiltered"
                 @clear="clear"
             >
-                <NativeSelect
+                <AdminFilterSelect
                     v-model="form.type"
                     class="w-40"
-                    aria-label="Renders as"
+                    label="Renders as"
+                    all-label="Any"
                 >
-                    <option value="">Any</option>
-                    <option
+                    <SelectItem
                         v-for="option in typeOptions"
                         :key="option.value"
                         :value="option.value"
                     >
                         {{ option.label }}
-                    </option>
-                </NativeSelect>
+                    </SelectItem>
+                </AdminFilterSelect>
 
-                <NativeSelect
+                <AdminFilterSelect
                     v-model="form.active"
                     class="w-40"
-                    aria-label="Availability"
+                    label="Availability"
+                    all-label="All attributes"
                 >
-                    <option value="">All attributes</option>
-                    <option value="1">Active</option>
-                    <option value="0">Inactive</option>
-                </NativeSelect>
+                    <SelectItem value="1">Active</SelectItem>
+                    <SelectItem value="0">Inactive</SelectItem>
+                </AdminFilterSelect>
             </AdminFilterBar>
 
             <AdminEmptyState
@@ -154,7 +154,7 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
               never scrolls sideways on a narrow screen.
             -->
             <div v-else class="overflow-x-auto">
-                <Table>
+                <AdminTable>
                     <TableHeader>
                         <TableRow>
                             <AdminSortableHead
@@ -231,7 +231,7 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
                             </TableCell>
                         </TableRow>
                     </TableBody>
-                </Table>
+                </AdminTable>
             </div>
 
             <AdminPagination

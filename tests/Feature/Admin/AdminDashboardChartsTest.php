@@ -50,17 +50,20 @@ test('the timeline zero-fills days with no trading', function () {
         'paid_at' => now()->subDays(3),
     ]);
 
+    // The window is named rather than left to the default: this test is about
+    // zero-filling, and it should not start failing the day somebody changes
+    // which preset the dashboard opens on.
     $this->actingAs($this->admin)
-        ->get(route('admin.dashboard'))
+        ->get(route('admin.dashboard', ['range' => 'last_7_days']))
         ->assertInertia(fn (AssertableInertia $page) => $page
             ->loadDeferredProps(fn (AssertableInertia $reload) => $reload
-                // A 30-day window is 31 contiguous buckets, inclusive of both
-                // ends. A GROUP BY alone would have returned exactly one row,
-                // and a line drawn through one row invents the other thirty.
-                ->has('charts.timeline.labels', 31)
-                ->has('charts.timeline.revenue', 31)
-                ->has('charts.timeline.orders', 31)
-                ->has('charts.timeline.customers', 31)
+                // "Last 7 days" is seven contiguous buckets, today included. A
+                // GROUP BY alone would have returned exactly one row, and a
+                // line drawn through one row invents the other six.
+                ->has('charts.timeline.labels', 7)
+                ->has('charts.timeline.revenue', 7)
+                ->has('charts.timeline.orders', 7)
+                ->has('charts.timeline.customers', 7)
                 // Every quiet day is a real zero, not a gap.
                 ->where(
                     'charts.timeline.revenue',
@@ -241,4 +244,151 @@ test('a store with no approved reviews reports no average rather than zero', fun
             ->loadDeferredProps(fn (AssertableInertia $reload) => $reload
                 ->where('charts.averageRating', null)
                 ->where('charts.reviewCount', 0)));
+});
+
+test('the timeline carries an average order value per day so the fourth tile has a sparkline', function () {
+    Order::factory()->paid()->create([
+        'total_cents' => 100_000,
+        'paid_at' => now()->subDay(),
+    ]);
+    Order::factory()->paid()->create([
+        'total_cents' => 300_000,
+        'paid_at' => now()->subDay(),
+    ]);
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.dashboard', ['range' => 'last_7_days']))
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->loadDeferredProps(fn (AssertableInertia $reload) => $reload
+                ->has('charts.timeline.averageOrder', 7)
+                // KES 2,000 on the one trading day and a real 0 on the other
+                // six — a quiet day has no average order, and smearing the
+                // window's mean across it would draw trading that never
+                // happened.
+                ->where(
+                    'charts.timeline.averageOrder',
+                    fn (Collection $averages) => (float) $averages->sum() === 2000.0
+                        && $averages->filter()->count() === 1
+                )));
+});
+
+test('each status carries its share of the window and the badge variant it is drawn with', function () {
+    Order::factory()->count(3)->create([
+        'status' => OrderStatus::Pending,
+        'placed_at' => now()->subDay(),
+    ]);
+    Order::factory()->cancelled()->create(['placed_at' => now()->subDay()]);
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.dashboard'))
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->loadDeferredProps(fn (AssertableInertia $reload) => $reload
+                ->where('charts.ordersByStatus', function (Collection $slices) {
+                    $pending = $slices->firstWhere('label', OrderStatus::Pending->label());
+                    $cancelled = $slices->firstWhere('label', OrderStatus::Cancelled->label());
+                    $completed = $slices->firstWhere('label', OrderStatus::Completed->label());
+
+                    // The ladder has no axis, so the share is a figure the
+                    // server owes it rather than a width the page divides out.
+                    return (float) $pending['share'] === 75.0
+                        && (float) $cancelled['share'] === 25.0
+                        && (float) $completed['share'] === 0.0
+                        // Tinted from the enum, so a status added in app/Enums
+                        // arrives with its colour already decided.
+                        && $pending['variant'] === OrderStatus::Pending->badgeVariant()
+                        && $cancelled['variant'] === OrderStatus::Cancelled->badgeVariant();
+                })));
+});
+
+test('revenue by method carries the total the donut prints in its hole', function () {
+    Order::factory()->paid()->create([
+        'total_cents' => 100_000,
+        'payment_method' => 'bank_transfer',
+        'paid_at' => now()->subDay(),
+    ]);
+    Order::factory()->paid()->create([
+        'total_cents' => 300_000,
+        'payment_method' => 'paystack',
+        'paid_at' => now()->subDay(),
+    ]);
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.dashboard'))
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->loadDeferredProps(fn (AssertableInertia $reload) => $reload
+                // The sum of the slices, formatted by the server. The hole and
+                // the rows around it have to be the same arithmetic, and the
+                // browser never turns cents into a currency string.
+                ->where('charts.revenueByMethodTotalFormatted', 'KES 4,000')));
+});
+
+test('a store with nothing captured still reports a total the panel can print', function () {
+    $this->actingAs($this->admin)
+        ->get(route('admin.dashboard'))
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->loadDeferredProps(fn (AssertableInertia $reload) => $reload
+                ->has('charts.revenueByMethod', 0)
+                // Zero money, not an empty string or a null the page would
+                // have to guard: the panel shows its empty state instead, but
+                // the prop is still a money string either way.
+                ->where('charts.revenueByMethodTotalFormatted', 'KES 0')));
+});
+
+test('revenue by method carries each share so the donut and its legend cannot disagree', function () {
+    Order::factory()->paid()->create([
+        'total_cents' => 100_000,
+        'payment_method' => 'bank_transfer',
+        'paid_at' => now()->subDay(),
+    ]);
+    Order::factory()->paid()->create([
+        'total_cents' => 300_000,
+        'payment_method' => 'paystack',
+        'paid_at' => now()->subDay(),
+    ]);
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.dashboard'))
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->loadDeferredProps(fn (AssertableInertia $reload) => $reload
+                // Ordered by revenue, so the biggest method leads both the
+                // donut and the list beneath it.
+                ->where('charts.revenueByMethod.0.label', 'Card / M-Pesa')
+                ->where('charts.revenueByMethod.0.share', 75)
+                ->where('charts.revenueByMethod.1.share', 25)));
+});
+
+test('the rating spread carries each star its share of approved reviews', function () {
+    $product = Product::factory()->create();
+
+    Review::factory()->count(3)->for($product)->create([
+        'rating' => 5,
+        'status' => ReviewStatus::Approved,
+    ]);
+    Review::factory()->for($product)->create([
+        'rating' => 3,
+        'status' => ReviewStatus::Approved,
+    ]);
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.dashboard'))
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->loadDeferredProps(fn (AssertableInertia $reload) => $reload
+                // Five down to one, every row measured against the same total
+                // rather than a running one.
+                ->where('charts.ratings.0.share', 75)
+                ->where('charts.ratings.2.share', 25)
+                ->where('charts.ratings.4.share', 0)));
+});
+
+test('a breakdown with nothing in it reports a zero share rather than dividing by zero', function () {
+    $this->actingAs($this->admin)
+        ->get(route('admin.dashboard'))
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->loadDeferredProps(fn (AssertableInertia $reload) => $reload
+                ->where(
+                    'charts.ordersByStatus',
+                    fn (Collection $slices) => $slices->every(
+                        fn (array $slice) => (float) $slice['share'] === 0.0
+                    )
+                )));
 });

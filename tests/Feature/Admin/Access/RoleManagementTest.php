@@ -201,14 +201,24 @@ test('a role change takes effect on the holder\'s very next request', function (
     $this->actingAs($holder)->get(route('admin.orders.index'))->assertForbidden();
 });
 
-test('an Admin holds staff.manage but is refused the roles section entirely', function () {
+test('an Admin sees the staff table but not the roles on the shared screen', function () {
     // The split that makes the whole section safe: adding colleagues and
-    // deciding what a colleague may do are different jobs.
+    // deciding what a colleague may do are different jobs. They share a screen
+    // now, so the screen has to keep them apart — an Admin gets the table and
+    // no role cards, and every route that changes a role still refuses them.
     $admin = User::factory()->create();
     $admin->assignRole('Admin');
     $role = Role::create(['name' => 'Warehouse', 'guard_name' => PermissionSeeder::GUARD]);
 
-    $this->actingAs($admin)->get(route('admin.roles.index'))->assertForbidden();
+    $this->actingAs($admin)
+        ->get(route('admin.roles.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('admin/roles/Index')
+            ->where('canManageRoles', false)
+            ->has('roles', 0)
+            ->has('staff'));
+
     $this->actingAs($admin)->get(route('admin.roles.create'))->assertForbidden();
     $this->actingAs($admin)->post(route('admin.roles.store'), ['name' => 'X'])->assertForbidden();
     $this->actingAs($admin)->get(route('admin.roles.edit', $role))->assertForbidden();
@@ -216,6 +226,17 @@ test('an Admin holds staff.manage but is refused the roles section entirely', fu
     $this->actingAs($admin)->delete(route('admin.roles.destroy', $role))->assertForbidden();
 
     expect(Role::query()->where('name', 'Warehouse')->exists())->toBeTrue();
+});
+
+test('a Super Admin sees the role cards alongside the staff table', function () {
+    $this->actingAs($this->superAdmin)
+        ->get(route('admin.roles.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('admin/roles/Index')
+            ->where('canManageRoles', true)
+            ->has('roles')
+            ->has('staff'));
 });
 
 test('a customer is refused and a guest is sent to log in', function () {

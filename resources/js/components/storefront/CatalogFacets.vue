@@ -139,7 +139,7 @@ function selectRating(rating: number): void {
             v-if="categoryFacets.length > 0"
             :title="categoryLabel ?? 'Category'"
         >
-            <ul class="flex max-h-72 flex-col gap-2.5 overflow-y-auto pr-1">
+            <ul class="flex max-h-72 flex-col gap-2.5 overflow-y-auto pr-2">
                 <li v-for="facet in categoryFacets" :key="facet.slug">
                     <FacetCheckbox
                         :label="facet.name"
@@ -154,7 +154,7 @@ function selectRating(rating: number): void {
         </FacetSection>
 
         <FacetSection v-if="brandFacets.length > 0" title="Brand">
-            <ul class="flex max-h-72 flex-col gap-2.5 overflow-y-auto pr-1">
+            <ul class="flex max-h-72 flex-col gap-2.5 overflow-y-auto pr-2">
                 <li v-for="facet in brandFacets" :key="facet.id">
                     <FacetCheckbox
                         :label="facet.name"

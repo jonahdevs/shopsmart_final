@@ -2,12 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Concerns\BuildsLikeQueries;
 use App\Data\AdminRoleOptionData;
-use App\Data\AdminStaffRowData;
-use App\Data\PaginationData;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\StaffIndexRequest;
 use App\Http\Requests\Admin\StaffStoreRequest;
 use App\Http\Requests\Admin\StaffUpdateRequest;
 use App\Models\User;
@@ -43,43 +39,6 @@ use Spatie\Permission\PermissionRegistrar;
  */
 class StaffController extends Controller
 {
-    use BuildsLikeQueries;
-
-    /** Rows per page in the staff table. */
-    private const PER_PAGE = 25;
-
-    public function index(StaffIndexRequest $request): Response
-    {
-        $viewer = $this->staffMember($request);
-        $sort = $request->validated('sort') ?? 'name';
-        $direction = $request->validated('direction') ?? 'asc';
-
-        $staff = User::query()
-            ->whereHas('roles')
-            ->with('roles:id,name')
-            ->tap(fn (Builder $query) => $this->applyFilters($query, $request))
-            ->orderBy($sort, $direction)
-            ->paginate(self::PER_PAGE)
-            ->withQueryString();
-
-        $assignable = AdminRoleOptionData::assignableFor($viewer);
-
-        return Inertia::render('admin/staff/Index', [
-            'staff' => array_values(array_map(
-                fn (User $user): AdminStaffRowData => AdminStaffRowData::fromModel($user, $viewer, $assignable),
-                $staff->items(),
-            )),
-            'pagination' => PaginationData::fromPaginator($staff),
-            'filters' => [
-                'search' => $request->validated('search'),
-                'role' => $request->validated('role'),
-                'sort' => $sort,
-                'direction' => $direction,
-            ],
-            'roleOptions' => AdminRoleOptionData::forActor($viewer),
-        ]);
-    }
-
     public function create(Request $request): Response
     {
         return Inertia::render('admin/staff/Create', [
@@ -117,7 +76,7 @@ class StaffController extends Controller
                 : __(':name was added, but the invitation email could not be sent. Send it again from their row.', ['name' => $user->name]),
         ]);
 
-        return to_route('admin.staff.index');
+        return to_route('admin.roles.index');
     }
 
     public function edit(Request $request, User $user): Response
@@ -149,7 +108,7 @@ class StaffController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Staff account updated.')]);
 
-        return to_route('admin.staff.index');
+        return to_route('admin.roles.index');
     }
 
     /**
@@ -208,7 +167,7 @@ class StaffController extends Controller
             'message' => __(':name no longer has staff access and is a customer again.', ['name' => $user->name]),
         ]);
 
-        return to_route('admin.staff.index');
+        return to_route('admin.roles.index');
     }
 
     /**
@@ -277,25 +236,6 @@ class StaffController extends Controller
     /**
      * @param  Builder<User>  $query
      */
-    private function applyFilters(Builder $query, StaffIndexRequest $request): void
-    {
-        $search = $request->validated('search');
-
-        if (is_string($search) && trim($search) !== '') {
-            $pattern = $this->containsPattern(trim($search));
-
-            $query->where(function (Builder $match) use ($pattern): void {
-                $match
-                    ->whereRaw($this->likeExpression('name'), [$pattern])
-                    ->orWhereRaw($this->likeExpression('email'), [$pattern]);
-            });
-        }
-
-        $query->when(
-            $request->validated('role'),
-            fn (Builder $q, string $role) => $q->whereHas('roles', fn (Builder $roles) => $roles->where('name', $role)),
-        );
-    }
 
     /**
      * The signed-in staff member. The route group guarantees one, so this

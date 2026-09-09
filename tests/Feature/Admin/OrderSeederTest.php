@@ -6,8 +6,8 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use Database\Seeders\OrderSeeder;
-use Database\Seeders\UserSeeder;
 use Database\Seeders\PermissionSeeder;
+use Database\Seeders\UserSeeder;
 
 /**
  * The demo store's books have to balance.

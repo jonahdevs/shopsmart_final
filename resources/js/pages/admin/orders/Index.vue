@@ -1,18 +1,27 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { Package } from '@lucide/vue';
+import {
+    Banknote,
+    CreditCard,
+    Package,
+    PackageCheck,
+    Receipt,
+} from '@lucide/vue';
+import { computed } from 'vue';
 import AdminCard from '@/components/admin/AdminCard.vue';
+import AdminDateRangePicker from '@/components/admin/AdminDateRangePicker.vue';
 import AdminEmptyState from '@/components/admin/AdminEmptyState.vue';
 import AdminFilterBar from '@/components/admin/AdminFilterBar.vue';
+import AdminFilterSelect from '@/components/admin/AdminFilterSelect.vue';
 import AdminPageHeader from '@/components/admin/AdminPageHeader.vue';
 import AdminPagination from '@/components/admin/AdminPagination.vue';
 import AdminSortableHead from '@/components/admin/AdminSortableHead.vue';
+import AdminStatCard from '@/components/admin/AdminStatCard.vue';
 import AdminStatusBadge from '@/components/admin/AdminStatusBadge.vue';
+import AdminTable from '@/components/admin/AdminTable.vue';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { NativeSelect } from '@/components/ui/native-select';
+import { SelectItem } from '@/components/ui/select';
 import {
-    Table,
     TableBody,
     TableCell,
     TableHead,
@@ -31,18 +40,22 @@ type OrderFilters = {
     search: string | null;
     status: string | null;
     payment_status: string | null;
+    range: string | null;
     from: string | null;
     to: string | null;
     sort: string;
     direction: string;
 };
 
-const { orders, pagination, filters } = defineProps<{
+const { orders, pagination, filters, dateRange, stats } = defineProps<{
     orders: App.Data.AdminOrderRowData[];
     pagination: App.Data.PaginationData;
     filters: OrderFilters;
+    /** The resolved window and the presets the picker offers. */
+    dateRange: App.Data.AdminDateRangeData;
     statusOptions: { value: string; label: string }[];
     paymentStatusOptions: { value: string; label: string }[];
+    stats: App.Data.AdminOrderStatsData;
 }>();
 
 defineOptions({
@@ -69,10 +82,97 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
             search: filters.search ?? '',
             status: filters.status ?? '',
             payment_status: filters.payment_status ?? '',
+            range: filters.range ?? '',
             from: filters.from ?? '',
             to: filters.to ?? '',
         },
     });
+
+/*
+  A preset writes only its key to the URL; a drawn window writes only its two
+  dates. Never both, or a shared "last 30 days" link would carry the dates it
+  resolved to on the day it was sent and stop moving.
+
+  All three land in one assignment, so `useIndexTable`'s deep watcher turns the
+  change into a single debounced visit rather than three.
+*/
+function setRange(preset: string, rangeFrom: string, rangeTo: string): void {
+    form.value = {
+        ...form.value,
+        range: preset,
+        from: preset === 'custom' ? rangeFrom : '',
+        to: preset === 'custom' ? rangeTo : '',
+    };
+}
+
+/*
+  What the calendar highlights. A drawn window is whatever is in the form; a
+  preset is whatever the server resolved it to, because only the server knows
+  where "this month" starts.
+*/
+const pickedFrom = computed(() =>
+    form.value.range === 'custom' ? form.value.from : (dateRange.start ?? ''),
+);
+
+const pickedTo = computed(() =>
+    form.value.range === 'custom' ? form.value.to : (dateRange.end ?? ''),
+);
+
+/*
+  The two queue tiles are filters of this very table, so each one is typed
+  against the generated enum: a status renamed on the server then fails the
+  build here rather than silently opening an empty list.
+*/
+const AWAITING_PAYMENT: App.Enums.PaymentStatus = 'pending';
+const AWAITING_FULFILMENT: App.Enums.OrderStatus = 'processing';
+
+/*
+  Two queues and two trading figures. The queues carry the filter that produces
+  them — a count staff cannot click through to is a number they have been told
+  and denied the work behind. The trading pair carries a delta instead, and
+  names its window every time, because nothing else on this page says which
+  thirty days the money belongs to.
+*/
+const tiles = computed(() => [
+    {
+        label: 'Awaiting payment',
+        value: String(stats.awaitingPaymentCount),
+        icon: CreditCard,
+        tone: 'warning' as const,
+        href: adminOrders.url({
+            query: { payment_status: AWAITING_PAYMENT },
+        }),
+        hint: 'View list',
+        change: null,
+    },
+    {
+        label: 'Being packed',
+        value: String(stats.awaitingFulfilmentCount),
+        icon: PackageCheck,
+        tone: 'info' as const,
+        href: adminOrders.url({ query: { status: AWAITING_FULFILMENT } }),
+        hint: 'View list',
+        change: null,
+    },
+    {
+        label: 'Revenue',
+        value: stats.revenueFormatted,
+        icon: Banknote,
+        tone: 'success' as const,
+        href: undefined,
+        hint: stats.periodLabel,
+        change: stats.revenueChangePercent,
+    },
+    {
+        label: 'Average order',
+        value: stats.averageOrderValueFormatted,
+        icon: Receipt,
+        tone: 'accent' as const,
+        href: undefined,
+        hint: stats.periodLabel,
+        change: stats.averageOrderValueChangePercent,
+    },
+]);
 </script>
 
 <template>
@@ -80,10 +180,28 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
         <Head title="Orders" />
 
         <AdminPageHeader
-            eyebrow="Sales"
             title="Orders"
             :description="`${pagination.total} order${pagination.total === 1 ? '' : 's'} placed.`"
         />
+
+        <!--
+          The store, not the filtered page below. These figures are the context
+          a staff member filters against, so they hold still while the table
+          moves.
+        -->
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <AdminStatCard
+                v-for="tile in tiles"
+                :key="tile.label"
+                :label="tile.label"
+                :value="tile.value"
+                :icon="tile.icon"
+                :tone="tile.tone"
+                :href="tile.href"
+                :hint="tile.hint"
+                :change="tile.change"
+            />
+        </div>
 
         <!--
           One card, four strips: filters, table, pagination. Not three cards —
@@ -97,47 +215,44 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
                 :show-clear="isFiltered"
                 @clear="clear"
             >
-                <NativeSelect
+                <AdminFilterSelect
                     v-model="form.status"
                     class="w-40"
-                    aria-label="Status"
+                    label="Status"
+                    all-label="All statuses"
                 >
-                    <option value="">All statuses</option>
-                    <option
+                    <SelectItem
                         v-for="option in statusOptions"
                         :key="option.value"
                         :value="option.value"
                     >
                         {{ option.label }}
-                    </option>
-                </NativeSelect>
+                    </SelectItem>
+                </AdminFilterSelect>
 
-                <NativeSelect
+                <AdminFilterSelect
                     v-model="form.payment_status"
                     class="w-40"
-                    aria-label="Payment status"
+                    label="Payment status"
+                    all-label="All payments"
                 >
-                    <option value="">All payments</option>
-                    <option
+                    <SelectItem
                         v-for="option in paymentStatusOptions"
                         :key="option.value"
                         :value="option.value"
                     >
                         {{ option.label }}
-                    </option>
-                </NativeSelect>
+                    </SelectItem>
+                </AdminFilterSelect>
 
-                <Input
-                    v-model="form.from"
-                    type="date"
-                    class="w-36"
-                    aria-label="Placed from"
-                />
-                <Input
-                    v-model="form.to"
-                    type="date"
-                    class="w-36"
-                    aria-label="Placed to"
+                <AdminDateRangePicker
+                    :presets="dateRange.presets"
+                    :preset="form.range"
+                    :from="pickedFrom"
+                    :to="pickedTo"
+                    clearable
+                    aria-label="Filter by when the order was placed"
+                    @change="setRange"
                 />
             </AdminFilterBar>
 
@@ -158,7 +273,7 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
               never scrolls sideways on a narrow screen.
             -->
             <div v-else class="overflow-x-auto">
-                <Table>
+                <AdminTable>
                     <TableHeader>
                         <TableRow>
                             <AdminSortableHead
@@ -176,8 +291,6 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
                             <TableHead>Payment</TableHead>
                             <AdminSortableHead
                                 label="Total"
-                                align="end"
-                                class="text-right"
                                 :href="sortHref('total_cents')"
                                 :sort="ariaSort('total_cents')"
                             />
@@ -226,9 +339,7 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
                                     :variant="order.paymentStatusVariant"
                                 />
                             </TableCell>
-                            <TableCell
-                                class="text-right font-medium tabular-nums"
-                            >
+                            <TableCell class="font-medium tabular-nums">
                                 {{ order.totalFormatted }}
                             </TableCell>
                             <TableCell class="text-muted-foreground">
@@ -246,7 +357,7 @@ const { form, isFiltered, hrefForPage, sortHref, ariaSort, clear } =
                             </TableCell>
                         </TableRow>
                     </TableBody>
-                </Table>
+                </AdminTable>
             </div>
 
             <AdminPagination

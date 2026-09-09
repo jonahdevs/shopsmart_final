@@ -3,7 +3,10 @@
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\ProductBulkController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\TagController;
+use App\Http\Controllers\Admin\TagProductController;
 use App\Http\Controllers\Admin\TaxClassController;
 use Illuminate\Support\Facades\Route;
 
@@ -28,10 +31,17 @@ use Illuminate\Support\Facades\Route;
 | structure; only the store *default* band is a setting, and that stays in
 | shipping and tax settings where it already lives.
 |
+| Tags join that group for the same reason: a tag is a bucket products are
+| filed into, not merchandise. It is a bucket with teeth, though — the home
+| page's Featured rail and the New Arrival badge are both a match on a tag's
+| name — so the membership screen under `tags/{tag}/products` is where a
+| merchandiser sees what a rail actually contains.
+|
 | Products, categories and brands are bound by slug through their models' own
-| route keys. Attributes and tax classes are not: neither declares
-| `getRouteKeyName()`, and neither ever appears in a storefront URL, so there
-| is no slug worth putting in an admin one.
+| route keys. Attributes, tax classes and tags are not: none declares
+| `getRouteKeyName()`, and none ever appears in a storefront URL, so there is
+| no slug worth putting in an admin one. The `{product}` in the tag membership
+| routes is still bound by slug, because that binding belongs to the product.
 |
 | `products/create` is registered before `products/{product}/edit` only for
 | readability — the two patterns cannot collide. `products.restore` binds
@@ -52,6 +62,12 @@ Route::middleware('can:products.manage')->group(function (): void {
     Route::patch('products/{product}/restore', [ProductController::class, 'restore'])
         ->withTrashed()
         ->name('products.restore');
+
+    // The bulk bar's one endpoint, taking a list of ids and an action rather
+    // than binding a product. A literal segment, so it cannot collide with
+    // `products/{product}` — that pattern is only registered for PATCH and
+    // DELETE, and `POST products` is the store route.
+    Route::post('products/bulk', ProductBulkController::class)->name('products.bulk');
 
     // Media is posted on its own route rather than as part of the edit form:
     // a multipart body cannot ride a PATCH everywhere, and an image upload is
@@ -82,6 +98,23 @@ Route::middleware('can:catalog.manage')->group(function (): void {
     Route::get('attributes/{attribute}/edit', [AttributeController::class, 'edit'])->name('attributes.edit');
     Route::patch('attributes/{attribute}', [AttributeController::class, 'update'])->name('attributes.update');
     Route::delete('attributes/{attribute}', [AttributeController::class, 'destroy'])->name('attributes.destroy');
+
+    // `tags/create` is registered before `tags/{tag}/edit` only for
+    // readability — the two patterns have different segment counts and cannot
+    // collide. `tags/{tag}/products` is a screen of its own rather than a
+    // panel on the editor: the editor is two fields, and the membership list
+    // is the part a merchandiser actually came for.
+    Route::get('tags', [TagController::class, 'index'])->name('tags.index');
+    Route::get('tags/create', [TagController::class, 'create'])->name('tags.create');
+    Route::post('tags', [TagController::class, 'store'])->name('tags.store');
+    Route::get('tags/{tag}/edit', [TagController::class, 'edit'])->name('tags.edit');
+    Route::patch('tags/{tag}', [TagController::class, 'update'])->name('tags.update');
+    Route::delete('tags/{tag}', [TagController::class, 'destroy'])->name('tags.destroy');
+
+    Route::get('tags/{tag}/products', [TagProductController::class, 'index'])->name('tags.products.index');
+    Route::post('tags/{tag}/products', [TagProductController::class, 'store'])->name('tags.products.store');
+    Route::delete('tags/{tag}/products/{product}', [TagProductController::class, 'destroy'])
+        ->name('tags.products.destroy');
 
     Route::get('tax-classes', [TaxClassController::class, 'index'])->name('tax-classes.index');
     Route::get('tax-classes/create', [TaxClassController::class, 'create'])->name('tax-classes.create');

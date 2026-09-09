@@ -26,6 +26,25 @@ export type UseIndexTableOptions<TFields extends Record<string, string>> = {
     defaultSort: { column: string; direction: 'asc' | 'desc' };
     /** Time to wait after the last keystroke before visiting. */
     debounceMs?: number;
+    /**
+     * Called once per debounced filter visit, immediately before it is sent.
+     *
+     * Purely additive and optional — twelve index pages pass nothing and
+     * behave exactly as they did. It exists for state a page holds that only
+     * makes sense against the rows currently on screen; row selection is the
+     * first such state (see `useRowSelection`).
+     *
+     * The hook fires as the request leaves rather than as the response lands,
+     * so the state clears in the same beat as the table changing. Waiting for
+     * the response would leave stale ticks sitting over the new rows for a
+     * frame, and clearing on the keystroke instead would un-tick rows that are
+     * still on screen and still perfectly valid for another 300ms.
+     *
+     * Sort and pagination do not come through here — they are `<Link>`s, and
+     * without `preserveState` the Vue adapter re-keys the page and remounts it,
+     * which resets page-local state on its own.
+     */
+    onBeforeVisit?: () => void;
 };
 
 export type UseIndexTableReturn<TFields extends Record<string, string>> = {
@@ -62,7 +81,14 @@ export type UseIndexTableReturn<TFields extends Record<string, string>> = {
 export function useIndexTable<TFields extends Record<string, string>>(
     options: UseIndexTableOptions<TFields>,
 ): UseIndexTableReturn<TFields> {
-    const { toUrl, sortState, fields, defaultSort, debounceMs = 300 } = options;
+    const {
+        toUrl,
+        sortState,
+        fields,
+        defaultSort,
+        debounceMs = 300,
+        onBeforeVisit,
+    } = options;
 
     const form = ref({ ...fields }) as Ref<TFields>;
 
@@ -99,6 +125,8 @@ export function useIndexTable<TFields extends Record<string, string>>(
         () => {
             clearTimeout(debounce);
             debounce = setTimeout(() => {
+                onBeforeVisit?.();
+
                 router.get(toUrl(activeQuery()), undefined, {
                     preserveState: true,
                     preserveScroll: true,
